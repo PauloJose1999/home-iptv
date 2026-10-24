@@ -345,7 +345,7 @@
   var TAB_KIND = ['live', 'movie', 'tv'];
 
   function renderTop() {
-    $('title').textContent = tr('For You');
+    $('title').textContent = '';
     var tabs = $('tabs');
     tabs.innerHTML = '';
     var names = [tr('light|Live TV'), tr('Movies'), tr('Shows')];
@@ -358,7 +358,7 @@
     var defs = [['live_tv', tr('light|Live TV')], ['hdmi', tr('HDMI Inputs')], ['settings', tr('light|Settings')]];
     for (var b = 0; b < 3; b++) {
       var r = el('button', 'round' + (b === 2 ? ' last' : ''), buttons);
-      r.style.left = (1596 + 88 * b) + 'px';
+      r.style.left = (1660 + 66 * b) + 'px';
       sym(defs[b][0], r);
       el('div', 'tip', r, defs[b][1]);
       hover(r, Z.TOP, 3 + b);
@@ -380,13 +380,22 @@
   // MARK: - TV aberta: the channels, live (a big card and two small ones, as in smart_tv_ui.html)
 
   var liveChannels = null, channelsAt = 0;
-  var LIVE_RECTS = [[80, 262, 1120, 442], [1232, 262, 608, 209], [1232, 495, 608, 209]];
+  var LIVE_RECTS = [[80, 150, 1120, 560], [1232, 150, 608, 268], [1232, 442, 608, 268]];
   // Each channel's card color, by its name; others take the theme's purple.
   var CHANNEL_COLORS = [
     [/globo/i, ['#2563EB', '#1E1B4B']], [/sbt/i, ['#E11D48', '#4C0519']], [/record/i, ['#0EA5E9', '#082F49']],
     [/band/i, ['#16A34A', '#052E16']], [/cnn/i, ['#DC2626', '#1C0A0A']], [/cultura/i, ['#F59E0B', '#451A03']],
     [/rede ?tv/i, ['#7C3AED', '#1E1B4B']]
   ];
+
+  /** A channel's name as shown: without "HD", and "RECORD NEWS" as "Record News" (short ones like SBT stay). */
+  function channelName(name) {
+    var n = (name || '').replace(/\s+(HD|SD|4K)$/i, '');
+    if (n !== n.toUpperCase()) return n;
+    return n.toLowerCase().replace(/(^|\s)(\S)(\S*)/g, function (m, sp, a, rest) {
+      return sp + (rest.length < 3 ? (a + rest).toUpperCase() : a.toUpperCase() + rest);
+    });
+  }
 
   function channelColors(name, i) {
     for (var k = 0; k < CHANNEL_COLORS.length; k++) if (CHANNEL_COLORS[k][0].test(name)) return CHANNEL_COLORS[k][1];
@@ -397,6 +406,7 @@
     TV.channels(CONFIG.liveChannels || [], 3, function (list) {
       liveChannels = list;
       channelsAt = Date.now();
+      for (var i = 0; list && i < list.length; i++) list[i].program = list[i].program || TV.known(list[i].id);
       if (st.tab === 0) renderCards();
       if (done) done();
     });
@@ -441,7 +451,7 @@
     cards = list;
     holder.innerHTML = '';
     for (var c = 0; c < list.length; c++) {
-      var ch = list[c].channel, r = liveRect(c, list.length), name = ch ? ch.name : tr('Live TV');
+      var ch = list[c].channel, r = liveRect(c, list.length), name = ch ? channelName(ch.name) : tr('Live TV');
       var card = el('div', 'card live' + (c === 0 ? ' big' : ' small'), holder);
       card.style.left = r[0] + 'px';
       card.style.top = r[1] + 'px';
@@ -467,7 +477,7 @@
 
   function liveRect(i, n) {
     var r = LIVE_RECTS[i];
-    return [r[0], r[1], r[2], n === 2 && i === 1 ? 442 : r[3]];
+    return [r[0], r[1], r[2], n === 2 && i === 1 ? 560 : r[3]];
   }
 
   // MARK: - The player: the antenna's picture, live, in the focused channel card (the big one otherwise)
@@ -479,7 +489,7 @@
   // only shows on the card of the channel the TV is on.
 
   var NO_TUNE = 'fmtv.noTune';
-  var player = {video: null, ok: false, failed: false, tuned: null, timer: 0, tuneAt: 0, current: null};
+  var player = {video: null, ok: false, failed: false, tuned: null, timer: 0, tuneAt: 0, current: null, learned: false};
 
   function canTune() {
     try { return !localStorage.getItem(NO_TUNE); } catch (e) { return true; }
@@ -525,16 +535,17 @@
     }
     player.video = null;
     player.ok = false;
-    player.tuned = null;
+    player.learned = false;
     var nodes = $('cards').children;
     for (var i = 0; i < nodes.length; i++) setClass(nodes[i], 'playing', false);
   }
 
   /** Puts the picture on the card that should play, and switches the tuner to its channel after a moment. */
   function placePlayer() {
-    if (st.tab !== 0 || saverOn) { stopPlayer(); return; }
+    // The picture, and its sound, only while a channel card is focused: nothing plays from the shelf or the tabs.
+    if (st.tab !== 0 || saverOn || st.zone !== Z.CARDS) { stopPlayer(); return; }
     if (!player.video) { startPlayer(); if (!player.video) return; }
-    var nodes = $('cards').children, at = st.zone === Z.CARDS ? st.card : 0, card = cards[at];
+    var nodes = $('cards').children, at = st.card, card = cards[at];
     var ch = card && card.channel, tune = canTune();
     // Without switching, only the card of the channel the TV is on can show it.
     if (!tune && (!ch || ch.id !== player.current)) {
@@ -557,9 +568,23 @@
       player.timer = setTimeout(function () {
         player.tuned = ch.id;
         player.tuneAt = Date.now();
-        TV.tune(ch);
+        TV.tune(ch, function () { setTimeout(learnProgram, 2500); });
       }, 1200);
+    } else if (player.ok && !player.learned) {
+      player.learned = true;
+      setTimeout(learnProgram, 2500);
     }
+  }
+
+  /** What's on the tuned channel, now that it's playing: the TV tells it for that one only. */
+  function learnProgram() {
+    TV.nowOnTuner(function (res) {
+      if (!res || !res.program || !liveChannels) return;
+      for (var i = 0; i < liveChannels.length; i++) {
+        if (liveChannels[i].id === res.channelId) liveChannels[i].program = res.program;
+      }
+      if (st.tab === 0) renderLive();
+    });
   }
 
   function renderCards() {

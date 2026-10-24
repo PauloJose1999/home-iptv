@@ -51,36 +51,69 @@ var TV = (function () {
         JSON.stringify({subscribe: true, clientName: self}));
   }
 
-  // webOS 6 gives Developer Mode apps only the "public" group, which leaves out listLaunchPoints. There the list comes
-  // from the TV's remote control API on 127.0.0.1:3000 (the one LG's phone app uses), which takes file:// pages.
-  // The TV asks once to allow it; the key it gives back is kept.
-  var SSAP_KEY = 'fmtv.ssapKey', SSAP_REFUSED = 'fmtv.ssapRefused';
+  // webOS 6 gives Developer Mode apps only the "public" group, which leaves out listLaunchPoints and the channels. Those
+  // come from the TV's remote control API on 127.0.0.1:3000 (the one LG's phone app uses), which takes file:// pages.
+  // The TV asks once to allow it; the key it gives back is kept (or comes in config.properties, ssap_key=, when the TV
+  // was paired from its own shell).
+  var SSAP_KEY = 'fmtv.ssapKey', SSAP_REFUSED = 'fmtv.ssapRefused2';
 
-  // What the remote control API is asked for: the apps, and for the "TV aberta" tab the channels, what's on them and
-  // switching to one. A TV that allowed an older, shorter list asks once more for these.
-  var SSAP_PERMISSIONS = ['READ_INSTALLED_APPS', 'READ_TV_CHANNEL_LIST', 'READ_CURRENT_CHANNEL', 'CONTROL_INPUT_TV'];
+  // The same list the key was granted for: a key only works with the permissions it was given. READ_TV_PROGRAM_INFO
+  // is what's on; CONTROL_INPUT_TV and TEST_OPEN switch the channel.
+  var SSAP_PERMISSIONS = ['LAUNCH', 'LAUNCH_WEBAPP', 'APP_TO_APP', 'READ_APP_STATUS', 'READ_RUNNING_APPS',
+    'READ_INSTALLED_APPS', 'READ_CURRENT_CHANNEL', 'READ_TV_CHANNEL_LIST', 'READ_TV_PROGRAM_INFO',
+    'READ_TV_CURRENT_TIME', 'READ_TV_CONTENT_STATE', 'CONTROL_INPUT_TV', 'CONTROL_AUDIO', 'TEST_OPEN',
+    'TEST_PROTECTED', 'READ_INPUT_DEVICE_LIST', 'READ_COUNTRY_INFO'];
 
   function ssapAllowed() {
     try { return !localStorage.getItem(SSAP_REFUSED); } catch (e) { return true; }
   }
 
-  /** One call to the remote control API; done(result) with null on failure. */
-  function ssap(uri, payload, done) {
-    if (typeof payload === 'function') { done = payload; payload = null; }
-    var ws = null, finished = false, key = null;
-    var timer = setTimeout(function () { finish(null); }, 90000);   // time to answer the TV's prompt
-    function finish(result) {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      try { ws.close(); } catch (e) {}
-      done(result);
-    }
+  function ssapKey() {
+    var key = null;
     try { key = localStorage.getItem(SSAP_KEY); } catch (e) {}
-    try { ws = new WebSocket('ws://127.0.0.1:3000'); } catch (e) { finish(null); return; }
+    return key || (window.CONFIG && CONFIG.ssapKey) || null;
+  }
+
+  function ssapPaired() { return !!ssapKey(); }
+
+  // One connection for every call, opened when the first one comes: two at once would each ask the TV to pair, and the
+  // second's error was taken for a "no". Calls wait while the TV asks.
+  var conn = {ws: null, ready: false, queue: [], waiting: {}, next: 1};
+
+  function ssapClose() {
+    var w = conn.waiting;
+    conn.ws = null;
+    conn.ready = false;
+    conn.waiting = {};
+    var q = conn.queue;
+    conn.queue = [];
+    for (var id in w) if (w.hasOwnProperty(id)) w[id](null);
+    for (var i = 0; i < q.length; i++) q[i].done(null);
+  }
+
+  function ssapSend(call) {
+    var id = 'c' + (conn.next++);
+    var timer = setTimeout(function () {
+      if (conn.waiting[id]) { delete conn.waiting[id]; call.done(null); }
+    }, 15000);
+    conn.waiting[id] = function (m) {
+      clearTimeout(timer);
+      call.done(m && m.type !== 'error' && m.payload && m.payload.returnValue !== false ? m.payload : null);
+    };
+    var request = {type: 'request', id: id, uri: 'ssap://' + call.uri};
+    if (call.payload) request.payload = call.payload;
+    try { conn.ws.send(JSON.stringify(request)); } catch (e) { delete conn.waiting[id]; call.done(null); }
+  }
+
+  function ssapOpen() {
+    var ws;
+    try { ws = new WebSocket('ws://127.0.0.1:3000'); } catch (e) { ssapClose(); return; }
+    conn.ws = ws;
+    var pairing = setTimeout(function () { if (!conn.ready) { try { ws.close(); } catch (e) {} ssapClose(); } }, 90000);
     ws.onopen = function () {
       var payload = {forcePairing: false, pairingType: 'PROMPT',
         manifest: {manifestVersion: 1, appVersion: '1.0', permissions: SSAP_PERMISSIONS}};
+      var key = ssapKey();
       if (key) payload['client-key'] = key;
       ws.send(JSON.stringify({type: 'register', id: 'register', payload: payload}));
     };
@@ -88,19 +121,38 @@ var TV = (function () {
       var m = null;
       try { m = JSON.parse(event.data); } catch (e) {}
       if (!m) return;
-      if (m.type === 'registered') {
-        try { localStorage.setItem(SSAP_KEY, m.payload['client-key']); } catch (e) {}
-        var request = {type: 'request', id: 'call', uri: 'ssap://' + uri};
-        if (payload) request.payload = payload;
-        ws.send(JSON.stringify(request));
-      } else if (m.id === 'call' || m.type === 'error') {
-        if (m.id === 'register' && m.type === 'error') {
-          try { localStorage.setItem(SSAP_REFUSED, '1'); } catch (e) {}   // the person said no on the TV
+      if (m.id === 'register') {
+        if (m.type === 'registered') {
+          clearTimeout(pairing);
+          try { localStorage.setItem(SSAP_KEY, m.payload['client-key']); } catch (e) {}
+          conn.ready = true;
+          var q = conn.queue;
+          conn.queue = [];
+          for (var i = 0; i < q.length; i++) ssapSend(q[i]);
+        } else if (m.type === 'error') {
+          // Only a "no" on the TV stops asking; any other error (busy, a key that expired) tries again next time.
+          if (/reject|denied|cancel/i.test(m.error || '')) { try { localStorage.setItem(SSAP_REFUSED, '1'); } catch (e) {} }
+          try { localStorage.removeItem(SSAP_KEY); } catch (e) {}
+          clearTimeout(pairing);
+          try { ws.close(); } catch (e) {}
+          ssapClose();
         }
-        finish(m.type !== 'error' && m.payload && m.payload.returnValue !== false ? m.payload : null);
+        return;
       }
+      var cb = conn.waiting[m.id];
+      if (cb) { delete conn.waiting[m.id]; cb(m); }
     };
-    ws.onerror = ws.onclose = function () { finish(null); };
+    ws.onerror = ws.onclose = function () { if (conn.ws === ws) { clearTimeout(pairing); ssapClose(); } };
+  }
+
+  /** One call to the remote control API; done(result) with null on failure. */
+  function ssap(uri, payload, done) {
+    if (typeof payload === 'function') { done = payload; payload = null; }
+    if (!webos) { setTimeout(function () { done(null); }, 0); return; }
+    var call = {uri: uri, payload: payload, done: done};
+    if (conn.ready) { ssapSend(call); return; }
+    conn.queue.push(call);
+    if (!conn.ws) ssapOpen();
   }
 
   // LG inputs: the antenna and the four HDMI ports, with the apps LG opens for them.
@@ -315,16 +367,52 @@ var TV = (function () {
     return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime() : 0;
   }
 
+  /** One program as LG gives it, as {title, start, end}, or null. */
+  function program(p) {
+    if (!p) return null;
+    var start = lgTime(p.localStartTime || p.startTime), end = lgTime(p.localEndTime || p.endTime);
+    if (!end && start && p.duration) end = start + p.duration * 1000;
+    return start && end ? {title: p.programName || p.programTitle || p.title || '', start: start, end: end} : null;
+  }
+
   /** What's on a channel now, from LG's program list: {title, start, end} or null. */
   function onNow(list) {
     var now = Date.now();
     for (var i = 0; list && i < list.length; i++) {
-      var p = list[i];
-      var start = lgTime(p.localStartTime || p.startTime), end = lgTime(p.localEndTime || p.endTime);
-      if (!end && start && p.duration) end = start + p.duration * 1000;
-      if (start && end && start <= now && now < end) return {title: p.programName || p.programTitle || p.title || '', start: start, end: end};
+      var p = program(list[i]);
+      if (p && p.start <= now && now < p.end) return p;
     }
     return null;
+  }
+
+  // What's on each channel, as last seen. LG's guide only tells what's on the channel the tuner is on (the program list
+  // of the others comes back empty on Brazilian open TV), so each channel's program is kept from when it was tuned,
+  // until it ends.
+  var GUIDE = 'fmtv.guide';
+  var guide = {};
+  try { guide = JSON.parse(localStorage.getItem(GUIDE) || '{}') || {}; } catch (e) { guide = {}; }
+
+  function remember(channelId, p) {
+    if (!channelId || !p) return;
+    guide[channelId] = p;
+    var now = Date.now();
+    for (var id in guide) if (guide.hasOwnProperty(id) && guide[id].end < now) delete guide[id];
+    try { localStorage.setItem(GUIDE, JSON.stringify(guide)); } catch (e) {}
+  }
+
+  function known(channelId) {
+    var p = guide[channelId];
+    return p && p.end > Date.now() ? p : null;
+  }
+
+  /** What's on the channel the tuner is on, kept for later; done({channelId, program} | null). */
+  function nowOnTuner(done) {
+    if (!webos || !ssapAllowed()) { setTimeout(function () { done(null); }, 0); return; }
+    ssap('tv/getChannelCurrentProgramInfo', function (res) {
+      var p = program(res);
+      if (res && res.channelId && p) remember(res.channelId, p);
+      done(res && res.channelId ? {channelId: res.channelId, program: p} : null);
+    });
   }
 
   function lgChannelList(done) {
@@ -336,8 +424,8 @@ var TV = (function () {
   }
 
   // For the browser preview: Brazilian open TV, with programs around now.
-  var SAMPLE_CHANNELS = [['5-1', '5.1', 'Globo HD', 'Jornal Nacional', -32, 50], ['5-2', '5.2', 'GloboNews', 'Jornal das Dez', -20, 60],
-    ['44-1', '44.1', 'CNN Brasil', 'CNN Prime Time', -10, 90], ['4-1', '4.1', 'SBT', 'Programa do Ratinho', -5, 40]];
+  var SAMPLE_CHANNELS = [['12-1', '12-1', 'Globo HD', 'É de Casa', -32, 195], ['27-1', '27-1', 'RECORD NEWS HD', 'Record News Rural', -20, 60],
+    ['7-1', '7-1', 'Band Minas HD', 'Band Esporte Clube', -10, 90], ['5-1', '5-1', 'TV ALTEROSA HD', 'Sábado Animado', -5, 40]];
 
   function sampleChannels() {
     var now = Date.now();
@@ -346,10 +434,6 @@ var TV = (function () {
     });
   }
 
-  /**
-   * The TV's channels, the ones whose name matches `wanted` first (["Globo", "SBT"]), at most `max`, each with what's
-   * on now when the TV tells: [{id, number, name, program: {title, start, end} | null}], or null when it can't list them.
-   */
   /** A channel's name, to compare: lower case, letters and digits only, without HD/SD/4K. */
   function plainName(x) {
     return (x || '').toLowerCase().replace(/\b(hd|sd|4k)\b/g, '').replace(/[^a-z0-9]/g, '');
@@ -394,13 +478,16 @@ var TV = (function () {
       }
       var out = pickChannels(all, wanted, max);
       if (!out.length || !ssapAllowed()) { done(out); return; }
-      var left = out.length;
+      var left = out.length + 1;
+      function one() { if (--left === 0) { out.forEach(function (ch) { ch.program = ch.program || known(ch.id); }); done(out); } }
       out.forEach(function (ch) {
         ssap('tv/getChannelProgramInfo', {channelId: ch.id}, function (res) {
           ch.program = res ? onNow(res.programList) : null;
-          if (--left === 0) done(out);
+          if (ch.program) remember(ch.id, ch.program);
+          one();
         });
       });
+      nowOnTuner(one);
     });
   }
 
@@ -454,8 +541,7 @@ var TV = (function () {
         // Denied to Developer Mode apps (webOS 6 and newer): once the TV has allowed the remote control API, it lists
         // every app with its icon; until then, the known apps the TV says it has, while the TV asks once (an answer
         // only counts from the next load on, and a "no" isn't asked again).
-        var paired = false, refused = false;
-        try { paired = !!localStorage.getItem(SSAP_KEY); refused = !!localStorage.getItem(SSAP_REFUSED); } catch (e) {}
+        var paired = ssapPaired(), refused = !ssapAllowed();
         if (paired) {
           ssap('com.webos.applicationManager/listLaunchPoints', function (res2) {
             if (res2) done(list(res2)); else knownApps(done);
@@ -517,9 +603,11 @@ var TV = (function () {
     /** Live TV on a channel from channels(). */
     openChannel: openChannel,
 
-    /** The player in the cards: switch the tuner, and which channel it's on. */
+    /** The player in the cards: switch the tuner, which channel it's on, and what's on it (kept for each channel). */
     tune: tune,
     currentChannel: currentChannel,
+    nowOnTuner: nowOnTuner,
+    known: known,
 
     /** The TV's own settings; done(ok). */
     settings: function (done) {
