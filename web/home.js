@@ -259,9 +259,12 @@
   function pickShelf() {
     var chosen = Prefs.shelf(), out = [];
     if (chosen) {
+      // The apps picked in Home Settings › Shelf come first, in their order; every other app follows, so the shelf
+      // always scrolls through all of them.
       for (var i = 0; i < chosen.length; i++) {
-        for (var j = 0; j < apps.length; j++) if (apps[j].id === chosen[i]) out.push(apps[j]);
+        for (var j = 0; j < apps.length; j++) if (apps[j].id === chosen[i] && out.indexOf(apps[j]) < 0) out.push(apps[j]);
       }
+      for (var o = 0; o < apps.length; o++) if (out.indexOf(apps[o]) < 0) out.push(apps[o]);
     } else {
       // Every app on the TV: the well-known ones first, in SHELF's order, then the rest as the TV lists them. The shelf
       // scrolls through them all.
