@@ -76,9 +76,8 @@
     ['jellyfin', /jellyfin/i, /jellyfin/i, ['#AA5CC3', '#00A4DC']],
     ['spotify', /spotify/, /spotify/i, ['#1DB954', '#0F7A36']]
   ];
-  // Apps shown at once, as on Android: 8 (today's smallest tiles, 178 wide); the shelf scrolls for the rest. The
-  // built-in list keeps 8 too.
-  var SHELF_VISIBLE = 8, FEW_APPS = 8;
+  // Apps shown at once, as on Android: 8 (today's smallest tiles, 178 wide); the shelf scrolls for the rest.
+  var SHELF_VISIBLE = 8;
 
   function shelfKey(app) {
     for (var i = 0; i < SHELF.length; i++) if (SHELF[i][1].test(app.id) || SHELF[i][2].test(app.title)) return SHELF[i];
@@ -264,15 +263,18 @@
         for (var j = 0; j < apps.length; j++) if (apps[j].id === chosen[i]) out.push(apps[j]);
       }
     } else {
-      for (var s = 0; s < SHELF.length && out.length < FEW_APPS; s++) {
+      // Every app on the TV: the well-known ones first, in SHELF's order, then the rest as the TV lists them. The shelf
+      // scrolls through them all.
+      for (var s = 0; s < SHELF.length; s++) {
         for (var a = 0; a < apps.length; a++) {
           if ((SHELF[s][1].test(apps[a].id) || SHELF[s][2].test(apps[a].title)) && out.indexOf(apps[a]) < 0) { out.push(apps[a]); break; }
         }
       }
-      if (!out.length) out = apps.slice(0, FEW_APPS);
+      for (var r = 0; r < apps.length; r++) if (out.indexOf(apps[r]) < 0) out.push(apps[r]);
     }
     shelf = out;
-    others = apps.filter(function (x) { return shelf.indexOf(x) < 0; });
+    // All Apps lists every app, alphabetically, the shelf's too.
+    others = apps.slice().sort(function (x, y) { var p = x.title.toLowerCase(), q = y.title.toLowerCase(); return p < q ? -1 : p > q ? 1 : 0; });
   }
 
   // MARK: - Focus
@@ -337,13 +339,14 @@
 
   // MARK: - Top: title, tabs, buttons, quotes
 
-  var TAB_KIND = [null, 'movie', 'tv'];
+  // The first tab is open TV (the channels, live); then the movies and the shows from the TV's apps.
+  var TAB_KIND = ['live', 'movie', 'tv'];
 
   function renderTop() {
     $('title').textContent = tr('For You');
     var tabs = $('tabs');
     tabs.innerHTML = '';
-    var names = [tr('Explore'), tr('Movies'), tr('Shows')];
+    var names = [tr('light|Live TV'), tr('Movies'), tr('Shows')];
     for (var i = 0; i < 3; i++) {
       var t = el('button', 'tab', tabs, names[i]);
       hover(t, Z.TOP, i);
@@ -372,11 +375,84 @@
 
   // MARK: - Picks and background
 
+  // MARK: - TV aberta: the channels, live (a big card and two small ones, as in smart_tv_ui.html)
+
+  var liveChannels = null, channelsAt = 0;
+  var LIVE_RECTS = [[80, 262, 1120, 442], [1232, 262, 608, 209], [1232, 495, 608, 209]];
+  // Each channel's card color, by its name; others take the theme's purple.
+  var CHANNEL_COLORS = [
+    [/globo/i, ['#2563EB', '#1E1B4B']], [/sbt/i, ['#E11D48', '#4C0519']], [/record/i, ['#0EA5E9', '#082F49']],
+    [/band/i, ['#16A34A', '#052E16']], [/cnn/i, ['#DC2626', '#1C0A0A']], [/cultura/i, ['#F59E0B', '#451A03']],
+    [/rede ?tv/i, ['#7C3AED', '#1E1B4B']]
+  ];
+
+  function channelColors(name, i) {
+    for (var k = 0; k < CHANNEL_COLORS.length; k++) if (CHANNEL_COLORS[k][0].test(name)) return CHANNEL_COLORS[k][1];
+    return i === 0 ? ['#7C3AED', '#1E1B4B'] : ['#6D28D9', '#0F172A'];
+  }
+
+  function loadChannels(done) {
+    TV.channels(CONFIG.liveChannels || [], 3, function (list) {
+      liveChannels = list;
+      channelsAt = Date.now();
+      if (st.tab === 0) renderCards();
+      if (done) done();
+    });
+  }
+
+  /** The cards of the first tab: the channels, or Live TV alone when the TV doesn't list them. */
+  function liveCards() {
+    var out = [];
+    for (var i = 0; liveChannels && i < liveChannels.length && i < 3; i++) out.push({live: true, channel: liveChannels[i], id: 'ch' + liveChannels[i].id});
+    if (!out.length) out.push({live: true, channel: null, id: 'livetv'});
+    return out;
+  }
+
+  function renderLive() {
+    var list = liveCards(), holder = $('cards'), now = Date.now();
+    cards = list;
+    holder.innerHTML = '';
+    setClass(body, 'no-picks', false);
+    for (var c = 0; c < list.length; c++) {
+      var ch = list[c].channel, r = LIVE_RECTS[c], name = ch ? ch.name : tr('Live TV');
+      var card = el('div', 'card live' + (c === 0 ? ' big' : ' small'), holder);
+      card.style.left = r[0] + 'px';
+      card.style.top = r[1] + 'px';
+      card.style.width = r[2] + 'px';
+      card.style.height = (list.length === 2 && c === 1 ? 442 : r[3]) + 'px';
+      var img = el('div', 'img', card);
+      paint(img, channelColors(name, c)[0], channelColors(name, c)[1]);
+      sym('live_tv', el('div', 'mark', card));
+      var head = el('div', 'head', card);
+      el('span', 'chan', head, name);
+      if (ch && ch.number) el('span', 'num', head, trf('Channel {n}', {n: ch.number}));
+      var badge = el('span', 'badge', card);
+      el('span', 'dot', badge);
+      badge.appendChild(document.createTextNode(tr('badge|Live')));
+      var foot = el('div', 'foot', card), p = ch && ch.program;
+      if (p && p.title) el('div', 'prog', foot, p.title);
+      if (p && p.start && p.end) {
+        el('div', 'when', foot, formatDate('format|h:mm', p.start) + ' — ' + formatDate('format|h:mm', p.end));
+        if (c === 0) {
+          var share = Math.max(0, Math.min(1, (now - p.start) / (p.end - p.start)));
+          var bar = el('div', 'bar', foot);
+          el('div', 'fill', bar).style.width = Math.round(share * 100) + '%';
+          el('div', 'left', foot, trf('{n} min left', {n: Math.max(1, Math.ceil((p.end - now) / 60000))}));
+        }
+      }
+      hover(card, Z.CARDS, c);
+    }
+    st.card = Math.min(st.card, list.length - 1);
+    backdrop('');
+    updateFocus();
+  }
+
   function renderCards() {
+    if (st.tab === 0) { renderLive(); return; }
     var list = Data.picks(TAB_KIND[st.tab]);
     var holder = $('cards');
     setClass(body, 'no-picks', !list.length);
-    var same = list.length === cards.length;
+    var same = list.length === cards.length && !(cards[0] && cards[0].live);
     for (var i = 0; same && i < list.length; i++) same = list[i].id === cards[i].id && list[i].backdrop === cards[i].backdrop && list[i].meta === cards[i].meta;
     if (same && holder.children.length === list.length) return;
     cards = list;
@@ -426,6 +502,8 @@
     var d = new Date(), c = $('clock');
     c.firstChild.textContent = formatDate('format|h:mm', d.getTime());
     c.lastChild.textContent = formatDate('format|EEEE, MMMM d', d.getTime());
+    $('topclock').textContent = formatDate('format|h:mm', d.getTime());
+    if (st.tab === 0 && cards.length) renderLive(true);   // the programs' progress, every minute
   }
 
   /** On the minute, so the clock never runs late (the 30-second refresh could, by up to 30 s). */
@@ -863,7 +941,14 @@
         else openSettings();
         return;
       case Z.CARDS:
-        var p = cards[st.card], app = p && Data.appFor(p.app);
+        var p = cards[st.card];
+        if (p && p.live) {
+          var ch = p.channel;
+          if (ch) TV.openChannel(ch, function (ok) { if (!ok) toast(trf("Couldn't open {app}.", {app: ch.name})); });
+          else { var tv = liveTV(); if (tv) launcher(tv.id, tr('Live TV'))(); }
+          return;
+        }
+        var app = p && Data.appFor(p.app);
         if (app) launcher(app.id, app.title)();
         return;
       case Z.SHELF:
@@ -900,11 +985,25 @@
         if (dx) st.shelf = Math.max(0, Math.min(shelf.length - 1, st.shelf + dx));
         else if (dy > 0) { openDrawer(); return; }
         else if (dy < 0) {
-          if (cards.length) { st.zone = Z.CARDS; st.card = nearest(cardNodes, centerX(tiles[st.shelf])); }
+          if (cards.length) {
+            st.zone = Z.CARDS;
+            st.card = nearest(cardNodes, centerX(tiles[st.shelf]));
+            if (st.tab === 0 && st.card === 1 && cards.length > 2) st.card = 2;   // the lower of the stacked channels
+          }
           else { st.zone = Z.TOP; st.top = st.tab; }
         }
         break;
       case Z.CARDS:
+        if (st.tab === 0 && cards.length > 1) {
+          // The big channel on the left, the other two stacked on the right.
+          if (dx > 0 && st.card === 0) st.card = 1;
+          else if (dx < 0 && st.card > 0) st.card = 0;
+          else if (dy > 0 && st.card === 1 && cards.length > 2) st.card = 2;
+          else if (dy < 0 && st.card === 2) st.card = 1;
+          else if (dy < 0) { st.zone = Z.TOP; st.top = st.tab; }
+          else if (dy > 0 && shelf.length) { st.zone = Z.SHELF; st.shelf = nearest(tiles, centerX(cardNodes[st.card])); }
+          break;
+        }
         if (dx) st.card = Math.max(0, Math.min(cards.length - 1, st.card + dx));
         else if (dy < 0) { st.zone = Z.TOP; st.top = st.tab; }
         else if (shelf.length) { st.zone = Z.SHELF; st.shelf = nearest(tiles, centerX(cardNodes[st.card])); }
@@ -994,7 +1093,7 @@
     setClass(body, 'night', night);
     if (night === lastNight) return;
     lastNight = night;
-    document.documentElement.style.background = night ? '#0B0B0D' : '';
+    document.documentElement.style.background = night ? '#020617' : '';
     try { localStorage.setItem('fmtv.night', night ? 'true' : 'false'); } catch (e) {}   // for index.html, next start
   }
 
@@ -1104,6 +1203,7 @@
       TV.inputs(function (list2) {
         inputs = list2;
         if (done) done();
+        loadChannels();
       });
     });
   }
@@ -1155,6 +1255,7 @@
   setInterval(function () {
     checkNight();
     Data.refresh();
+    if (Date.now() - channelsAt > 5 * 60000) loadChannels();   // what's on now, every 5 minutes
     if (!saverOn && !sheetOpen() && Date.now() - idleAt > SAVER_AFTER) showSaver();
     if (saverOn) tickSaverClock($('saver').querySelector('.clock'));
   }, 30000);

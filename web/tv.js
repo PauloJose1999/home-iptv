@@ -56,8 +56,17 @@ var TV = (function () {
   // The TV asks once to allow it; the key it gives back is kept.
   var SSAP_KEY = 'fmtv.ssapKey', SSAP_REFUSED = 'fmtv.ssapRefused';
 
+  // What the remote control API is asked for: the apps, and for the "TV aberta" tab the channels, what's on them and
+  // switching to one. A TV that allowed an older, shorter list asks once more for these.
+  var SSAP_PERMISSIONS = ['READ_INSTALLED_APPS', 'READ_TV_CHANNEL_LIST', 'READ_CURRENT_CHANNEL', 'CONTROL_INPUT_TV'];
+
+  function ssapAllowed() {
+    try { return !localStorage.getItem(SSAP_REFUSED); } catch (e) { return true; }
+  }
+
   /** One call to the remote control API; done(result) with null on failure. */
-  function ssap(uri, done) {
+  function ssap(uri, payload, done) {
+    if (typeof payload === 'function') { done = payload; payload = null; }
     var ws = null, finished = false, key = null;
     var timer = setTimeout(function () { finish(null); }, 90000);   // time to answer the TV's prompt
     function finish(result) {
@@ -71,7 +80,7 @@ var TV = (function () {
     try { ws = new WebSocket('ws://127.0.0.1:3000'); } catch (e) { finish(null); return; }
     ws.onopen = function () {
       var payload = {forcePairing: false, pairingType: 'PROMPT',
-        manifest: {manifestVersion: 1, appVersion: '1.0', permissions: ['READ_INSTALLED_APPS']}};
+        manifest: {manifestVersion: 1, appVersion: '1.0', permissions: SSAP_PERMISSIONS}};
       if (key) payload['client-key'] = key;
       ws.send(JSON.stringify({type: 'register', id: 'register', payload: payload}));
     };
@@ -81,7 +90,9 @@ var TV = (function () {
       if (!m) return;
       if (m.type === 'registered') {
         try { localStorage.setItem(SSAP_KEY, m.payload['client-key']); } catch (e) {}
-        ws.send(JSON.stringify({type: 'request', id: 'call', uri: 'ssap://' + uri}));
+        var request = {type: 'request', id: 'call', uri: 'ssap://' + uri};
+        if (payload) request.payload = payload;
+        ws.send(JSON.stringify(request));
       } else if (m.id === 'call' || m.type === 'error') {
         if (m.id === 'register' && m.type === 'error') {
           try { localStorage.setItem(SSAP_REFUSED, '1'); } catch (e) {}   // the person said no on the TV
@@ -295,6 +306,88 @@ var TV = (function () {
     }
   }
 
+  // MARK: - Live channels (LG), for the "TV aberta" tab
+
+  /** A time as LG gives it ("2026,10,24,20,30,00", "2026/10/24 20:30:00", seconds or ms) in ms, or 0. */
+  function lgTime(v) {
+    if (typeof v === 'number') return v < 1e12 ? v * 1000 : v;
+    var m = /(\d{4})\D(\d{1,2})\D(\d{1,2})\D+(\d{1,2})\D(\d{1,2})(?:\D(\d{1,2}))?/.exec(v || '');
+    return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime() : 0;
+  }
+
+  /** What's on a channel now, from LG's program list: {title, start, end} or null. */
+  function onNow(list) {
+    var now = Date.now();
+    for (var i = 0; list && i < list.length; i++) {
+      var p = list[i];
+      var start = lgTime(p.localStartTime || p.startTime), end = lgTime(p.localEndTime || p.endTime);
+      if (!end && start && p.duration) end = start + p.duration * 1000;
+      if (start && end && start <= now && now < end) return {title: p.programName || p.programTitle || p.title || '', start: start, end: end};
+    }
+    return null;
+  }
+
+  function lgChannelList(done) {
+    luna('luna://com.webos.service.tv.channel/getChannelList', {}, function (res) {
+      if (res && res.channelList && res.channelList.length) { done(res.channelList); return; }
+      if (!ssapAllowed()) { done(null); return; }
+      ssap('tv/getChannelList', function (res2) { done(res2 && res2.channelList ? res2.channelList : null); });
+    });
+  }
+
+  // For the browser preview: Brazilian open TV, with programs around now.
+  var SAMPLE_CHANNELS = [['5-1', '5.1', 'Globo', 'Jornal Nacional', -32, 50], ['4-1', '4.1', 'SBT', 'Programa do Ratinho', -20, 60],
+    ['7-1', '7.1', 'Record', 'Jornal da Record', -10, 45], ['13-1', '13.1', 'Band', 'Jornal da Band', -5, 40]];
+
+  function sampleChannels() {
+    var now = Date.now();
+    return SAMPLE_CHANNELS.map(function (c) {
+      return {id: c[0], number: c[1], name: c[2], program: {title: c[3], start: now + c[4] * 60000, end: now + (c[4] + c[5]) * 60000}};
+    });
+  }
+
+  /**
+   * The TV's channels, the ones whose name matches `wanted` first (["Globo", "SBT"]), at most `max`, each with what's
+   * on now when the TV tells: [{id, number, name, program: {title, start, end} | null}], or null when it can't list them.
+   */
+  function channels(wanted, max, done) {
+    if (!webos) { done(samsung ? null : sampleChannels().slice(0, max)); return; }
+    lgChannelList(function (list) {
+      if (!list) { done(null); return; }
+      var all = [];
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        if (!c || c.Invisible || c.invisible || c.skipped) continue;
+        all.push({id: c.channelId, number: c.channelNumber || '', name: c.channelName || c.channelNumber || '', program: null});
+      }
+      var out = [];
+      for (var w = 0; w < wanted.length && out.length < max; w++) {
+        var needle = wanted[w].toLowerCase();
+        for (var j = 0; j < all.length; j++) {
+          if (out.indexOf(all[j]) < 0 && all[j].name.toLowerCase().indexOf(needle) >= 0) { out.push(all[j]); break; }
+        }
+      }
+      for (var k = 0; k < all.length && out.length < max; k++) if (out.indexOf(all[k]) < 0) out.push(all[k]);
+      if (!out.length || !ssapAllowed()) { done(out); return; }
+      var left = out.length;
+      out.forEach(function (ch) {
+        ssap('tv/getChannelProgramInfo', {channelId: ch.id}, function (res) {
+          ch.program = res ? onNow(res.programList) : null;
+          if (--left === 0) done(out);
+        });
+      });
+    });
+  }
+
+  /** Live TV on this channel; done(ok). */
+  function openChannel(ch, done) {
+    if (!webos) { if (done) setTimeout(function () { done(true); }, 0); return; }
+    luna('luna://com.webos.applicationManager/launch', {id: 'com.webos.app.livetv', params: {channelId: ch.id}}, function (res) {
+      if (!ssapAllowed()) { if (done) done(!!res); return; }
+      ssap('tv/openChannel', {channelId: ch.id}, function (res2) { if (done) done(!!res || !!res2); });
+    });
+  }
+
   // MARK: - The TV, whichever it is
 
   return {
@@ -378,6 +471,12 @@ var TV = (function () {
         done(list);
       });
     },
+
+    /** LG's channels for the "TV aberta" tab (see above). */
+    channels: channels,
+
+    /** Live TV on a channel from channels(). */
+    openChannel: openChannel,
 
     /** The TV's own settings; done(ok). */
     settings: function (done) {

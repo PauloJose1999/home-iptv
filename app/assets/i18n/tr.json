@@ -12,6 +12,7 @@
  "BRAVIA CORE button": "BRAVIA CORE tuşu",
  "COMPARISON": "KARŞILAŞTIRMA",
  "Cancel": "İptal",
+ "Channel {n}": "Kanal {n}",
  "City": "Şehir",
  "Clear": "Güneşli",
  "Cloudy": "Bulutlu",
@@ -159,6 +160,7 @@
  "YouTube button": "YouTube tuşu",
  "YouTube, Prime Video and Google Play: the TV itself controls those buttons.": "YouTube, Prime Video ve Google Play: bu tuşları TV'nin kendisi yönetir.",
  "Your TV's home screen and screensaver": "TV'nin ana ekranı ve ekran koruyucusu",
+ "badge|Live": "Canlı",
  "debugging is off on the TV (port 5555 closed)": "TV'de hata ayıklama kapalı (5555 bağlantı noktası kapalı)",
  "debugging permission wasn't accepted on the TV": "TV'de hata ayıklama izni verilmedi",
  "format|EEEE, MMMM d": "d MMMM EEEE",
@@ -209,6 +211,7 @@
  "{n} MB": "{n} MB",
  "{n} h ago": "{n} sa önce",
  "{n} min ago": "{n} dk önce",
+ "{n} min left": "{n} dk kaldı",
  "{n} ms": "{n} ms",
  "← → to move · OK to drop · Back to cancel": "← → taşı · OK bırak · Geri iptal"
 }
