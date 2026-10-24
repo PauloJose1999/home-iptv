@@ -283,7 +283,7 @@ var IPTV = (function () {
   }
 
   /** The list's channel for a name ("GloboNews"): the one that is that name, else the shortest that contains it. */
-  function find(name) {
+  function lookup(name) {
     var needle = plain(name), best = null;
     if (!needle) return null;
     for (var i = 0; i < list.length; i++) {
@@ -331,7 +331,7 @@ var IPTV = (function () {
     close: close,
     isOpen: function () { return st.open; },
     load: load,
-    find: find,
+    lookup: lookup,
     playChannel: playChannel,
     parseM3u: parseM3u
   };

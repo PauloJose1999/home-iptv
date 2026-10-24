@@ -418,7 +418,7 @@
           if (plain(antenna[i].name).indexOf(needle) >= 0) { got = antenna.splice(i, 1)[0]; break; }
         }
         if (!got) {
-          var ch = IPTV.find(wanted[w]);
+          var ch = IPTV.lookup(wanted[w]);
           if (ch) got = {id: 'iptv:' + ch.url, number: '', name: ch.name, program: null, iptv: ch};
         }
         if (got) out.push(got);
