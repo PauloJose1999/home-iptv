@@ -685,3 +685,32 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* The Magic Remote's pointer: no text selection, no outlines. */
 * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+/* MARK: - IPTV (iptv.js): the groups on the left, the channels on the right, and the player over everything */
+
+#iptv { z-index: 5; background: #020617; color: #FFF; opacity: 0; visibility: hidden; -webkit-transition: opacity 0.24s, visibility 0s 0.24s; transition: opacity 0.24s, visibility 0s 0.24s; }
+#iptv.open { opacity: 1; visibility: visible; -webkit-transition-delay: 0s; transition-delay: 0s; }
+#iptv .title { position: absolute; left: 80px; top: 56px; font-size: 44px; font-weight: 800; letter-spacing: -0.01em; }
+#iptv .title::after { content: ''; display: block; width: 70px; height: 5px; margin-top: 10px; border-radius: 3px; background: #A855F7; }
+#iptv .groups { position: absolute; left: 80px; top: 170px; width: 380px; -webkit-transition: -webkit-transform 0.2s; transition: transform 0.2s; }
+#iptv .group { height: 62px; margin-bottom: 12px; padding: 0 24px; border-radius: 18px; font-size: 26px; font-weight: 600; line-height: 62px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255, 255, 255, 0.6); }
+#iptv .group.on { color: #FFF; background: rgba(255, 255, 255, 0.06); }
+#iptv .group.focus { background: #7C3AED; color: #FFF; }
+#iptv .grid { position: absolute; left: 500px; top: 170px; right: 0; height: 860px; overflow: hidden; }
+#iptv .rows { position: absolute; left: 0; top: 0; -webkit-transition: -webkit-transform 0.2s; transition: transform 0.2s; }
+#iptv .chan { position: absolute; width: 310px; height: 150px; }
+#iptv .chan .face { position: absolute; left: 0; top: 0; width: 310px; height: 104px; border-radius: 18px; background: #1E293B; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); overflow: hidden; -webkit-transition: -webkit-transform 0.15s; transition: transform 0.15s; }
+#iptv .chan .face img { position: absolute; left: 50%; top: 50%; max-width: 70%; max-height: 70%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
+#iptv .chan .face .word { position: absolute; left: 16px; right: 16px; top: 34px; text-align: center; font-size: 28px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #E9D5FF; }
+#iptv .chan .label { position: absolute; left: 4px; right: 4px; top: 114px; font-size: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255, 255, 255, 0.75); }
+#iptv .chan.focus .face { -webkit-transform: scale(1.06); transform: scale(1.06); box-shadow: 0 0 0 3px #A855F7, 0 14px 30px rgba(124, 58, 237, 0.45); }
+#iptv .chan.focus .label { color: #FFF; }
+#iptv .status { position: absolute; left: 500px; top: 180px; font-size: 28px; font-weight: 600; color: rgba(255, 255, 255, 0.7); display: none; }
+#iptv .status.on { display: block; }
+#iptv .player { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #000; display: none; }
+#iptv.playing .player { display: block; }
+#iptv.playing .status { left: 0; right: 0; top: 500px; text-align: center; z-index: 2; }
+#iptv .info { position: absolute; left: 80px; right: 80px; bottom: 70px; padding: 28px 36px; border-radius: 28px; background: rgba(2, 6, 23, 0.82); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); opacity: 0; z-index: 2; -webkit-transition: opacity 0.3s; transition: opacity 0.3s; }
+#iptv.playing .info.on { opacity: 1; }
+#iptv .info .name { font-size: 44px; font-weight: 800; }
+#iptv .info .sub { margin-top: 6px; font-size: 24px; font-weight: 600; color: #C4B5FD; }

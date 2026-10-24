@@ -15,7 +15,8 @@ import translate  # noqa: E402  (the catalogues and the keys the web app uses)
 
 GENERIC = {'tmdbKey': '', 'tmdbRegion': '', 'latitude': '', 'longitude': '', 'city': '', 'language': 'auto',
            'currency': '', 'temperature': 'auto', 'showCrypto': True, 'hideAnimation': False, 'hideApps': [],
-           'liveChannels': ['Globo', 'Record News', 'Band'], 'ssapKey': ''}
+           'liveChannels': ['Globo', 'Record News', 'Band'], 'ssapKey': '',
+           'iptv': {'m3u': '', 'server': '', 'user': '', 'pass': ''}}
 
 
 def config_from_args(args):
@@ -61,6 +62,8 @@ def read_config(path):
         'hideApps': [s.strip() for s in values.get('hide_apps', '').split(',') if s.strip()],
         'liveChannels': [s.strip() for s in values.get('live_channels', 'Globo,Record News,Band').split(',') if s.strip()],
         'ssapKey': values.get('ssap_key', ''),
+        'iptv': {'m3u': values.get('iptv_m3u', ''), 'server': values.get('iptv_server', ''),
+                 'user': values.get('iptv_user', ''), 'pass': values.get('iptv_pass', '')},
     }
 
 

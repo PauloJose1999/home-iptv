@@ -393,7 +393,7 @@
 
   /** A channel's name as shown: without "HD", and "RECORD NEWS" as "Record News" (short ones like SBT stay). */
   function channelName(name) {
-    var n = (name || '').replace(/\s+(HD|SD|4K)$/i, '');
+    var n = (name || '').replace(/\s+(F?HD|SD|UHD|4K)$/i, '');
     if (n !== n.toUpperCase()) return n;
     return n.toLowerCase().replace(/(^|\s)(\S)(\S*)/g, function (m, sp, a, rest) {
       return sp + (rest.length < 3 ? (a + rest).toUpperCase() : a.toUpperCase() + rest);
@@ -405,13 +405,38 @@
     return i === 0 ? ['#7C3AED', '#1E1B4B'] : ['#6D28D9', '#0F172A'];
   }
 
+  /** The channels wanted on the cards that the antenna doesn't have, from the IPTV list (GloboNews, CNN Brasil…). */
+  function withIptv(list, done) {
+    var wanted = CONFIG.liveChannels || [];
+    if (!IPTV.enabled || !wanted.length) { done(list); return; }
+    IPTV.load(function () {
+      function plain(x) { return (x || '').toLowerCase().replace(/\b(f?hd|sd|4k)\b/g, '').replace(/[^a-z0-9]/g, ''); }
+      var out = [], antenna = (list || []).slice();
+      for (var w = 0; w < wanted.length && out.length < 3; w++) {
+        var needle = plain(wanted[w]), got = null;
+        for (var i = 0; i < antenna.length; i++) {
+          if (plain(antenna[i].name).indexOf(needle) >= 0) { got = antenna.splice(i, 1)[0]; break; }
+        }
+        if (!got) {
+          var ch = IPTV.find(wanted[w]);
+          if (ch) got = {id: 'iptv:' + ch.url, number: '', name: ch.name, program: null, iptv: ch};
+        }
+        if (got) out.push(got);
+      }
+      while (out.length < 3 && antenna.length) out.push(antenna.shift());
+      done(out);
+    });
+  }
+
   function loadChannels(done) {
-    TV.channels(CONFIG.liveChannels || [], 3, function (list) {
+    TV.channels(CONFIG.liveChannels || [], 6, function (antenna) {
+     withIptv(antenna, function (list) {
       liveChannels = list;
       channelsAt = Date.now();
       for (var i = 0; list && i < list.length; i++) list[i].program = list[i].program || TV.known(list[i].id);
       if (st.tab === 0) renderCards();
       if (done) done();
+     });
     });
   }
 
@@ -734,6 +759,7 @@
       drawerItems.push({label: x.label || tr('Live TV'), symbol: x.symbol, off: !x.connected, run: launcher(x.id, x.label)});
     }
     drawerInputs = drawerItems.length;
+    if (IPTV.enabled) drawerItems.push({label: tr('IPTV'), symbol: 'live_tv', run: function () { closeDrawer(); IPTV.open(); }});
     drawerItems.push({label: tr('All Apps'), symbol: 'apps', run: openApps});
     drawerItems.push({label: tr('Home Settings'), symbol: 'settings', run: openSettings});
     drawerItems.push({label: tr('TV Settings'), symbol: 'tv_settings', run: tvSettings});
@@ -1087,7 +1113,8 @@
         var p = cards[st.card];
         if (p && p.live) {
           var ch = p.channel;
-          if (ch) TV.openChannel(ch, function (ok) { if (!ok) toast(trf("Couldn't open {app}.", {app: ch.name})); });
+          if (ch && ch.iptv) { stopPlayer(); IPTV.playChannel(ch.iptv); }
+          else if (ch) TV.openChannel(ch, function (ok) { if (!ok) toast(trf("Couldn't open {app}.", {app: ch.name})); });
           else { var tv = liveTV(); if (tv) launcher(tv.id, tr('Live TV'))(); }
           return;
         }
@@ -1396,7 +1423,7 @@
   I18N.set(Prefs.language());
   checkNight();   // now, from the last forecast: not after the TV lists its apps, with the day look until then
   // LG's screensaver waits only when ours will show: not under a sheet (ours waits there), and not without photos.
-  TV.holdScreenSaver(function () { return !sheetOpen() && saverPhotos().length > 0; });
+  TV.holdScreenSaver(function () { return IPTV.isOpen() || (!sheetOpen() && saverPhotos().length > 0); });
   fit();
   renderTop();
   tickClock();
@@ -1408,6 +1435,7 @@
     checkNight();
     Data.refresh();
     if (Date.now() - channelsAt > 5 * 60000) loadChannels();   // what's on now, every 5 minutes
+    if (IPTV.isOpen()) idleAt = Date.now();   // watching a channel: no screensaver
     if (!saverOn && !sheetOpen() && Date.now() - idleAt > SAVER_AFTER) showSaver();
     if (saverOn) tickSaverClock($('saver').querySelector('.clock'));
   }, 30000);
