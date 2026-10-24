@@ -311,6 +311,8 @@
     focusRows($('langpick'), st.lang, st.zone === Z.LANG);
     if (langHint) langHint.textContent = (st.lang + 1) + ' / ' + languageChoices().length + '  ·  ' + tr('OK picks, Back cancels.');
     setClass(body, 'drawer-open', st.zone === Z.DRAWER);
+    if (st.tab === 0 && cards[0] && cards[0].live) placePlayer();
+    else if (player.video) stopPlayer();
   }
 
   function focusRows(sheet, index, on) {
@@ -408,20 +410,46 @@
     return out;
   }
 
+  /** Fills a card's bottom: the program, its start and end with the progress between them, and (big) the time left. */
+  function fillFoot(foot, ch, big) {
+    var p = ch && ch.program, now = Date.now();
+    foot.innerHTML = '';
+    el('div', 'prog', foot, p && p.title ? p.title : ch ? '' : tr('Live TV'));
+    if (!p || !p.start || !p.end) return;
+    var line = el('div', 'timeline', foot);
+    el('span', 't', line, formatDate('format|h:mm', p.start));
+    var bar = el('div', 'bar', line);
+    el('div', 'fill', bar).style.width = Math.round(Math.max(0, Math.min(1, (now - p.start) / (p.end - p.start))) * 100) + '%';
+    el('span', 't', line, formatDate('format|h:mm', p.end));
+    if (big) el('div', 'left', foot, trf('{n} min left', {n: Math.max(1, Math.ceil((p.end - now) / 60000))}));
+  }
+
+  var liveIds = '';
+
+  /** The channel cards; when the same channels are on them, only their programs and progress change (the player stays). */
   function renderLive() {
-    var list = liveCards(), holder = $('cards'), now = Date.now();
+    var list = liveCards(), holder = $('cards');
+    var ids = list.map(function (x) { return x.id; }).join(',');
+    setClass(body, 'no-picks', false);
+    if (ids === liveIds && holder.children.length === list.length && cards[0] && cards[0].live) {
+      cards = list;
+      for (var u = 0; u < list.length; u++) fillFoot(holder.children[u].querySelector('.foot'), list[u].channel, u === 0);
+      placePlayer();
+      return;
+    }
+    liveIds = ids;
     cards = list;
     holder.innerHTML = '';
-    setClass(body, 'no-picks', false);
     for (var c = 0; c < list.length; c++) {
-      var ch = list[c].channel, r = LIVE_RECTS[c], name = ch ? ch.name : tr('Live TV');
+      var ch = list[c].channel, r = liveRect(c, list.length), name = ch ? ch.name : tr('Live TV');
       var card = el('div', 'card live' + (c === 0 ? ' big' : ' small'), holder);
       card.style.left = r[0] + 'px';
       card.style.top = r[1] + 'px';
       card.style.width = r[2] + 'px';
-      card.style.height = (list.length === 2 && c === 1 ? 442 : r[3]) + 'px';
+      card.style.height = r[3] + 'px';
       var img = el('div', 'img', card);
       paint(img, channelColors(name, c)[0], channelColors(name, c)[1]);
+      el('div', 'shade', card);
       sym('live_tv', el('div', 'mark', card));
       var head = el('div', 'head', card);
       el('span', 'chan', head, name);
@@ -429,22 +457,109 @@
       var badge = el('span', 'badge', card);
       el('span', 'dot', badge);
       badge.appendChild(document.createTextNode(tr('badge|Live')));
-      var foot = el('div', 'foot', card), p = ch && ch.program;
-      if (p && p.title) el('div', 'prog', foot, p.title);
-      if (p && p.start && p.end) {
-        el('div', 'when', foot, formatDate('format|h:mm', p.start) + ' — ' + formatDate('format|h:mm', p.end));
-        if (c === 0) {
-          var share = Math.max(0, Math.min(1, (now - p.start) / (p.end - p.start)));
-          var bar = el('div', 'bar', foot);
-          el('div', 'fill', bar).style.width = Math.round(share * 100) + '%';
-          el('div', 'left', foot, trf('{n} min left', {n: Math.max(1, Math.ceil((p.end - now) / 60000))}));
-        }
-      }
+      fillFoot(el('div', 'foot', card), ch, c === 0);
       hover(card, Z.CARDS, c);
     }
     st.card = Math.min(st.card, list.length - 1);
     backdrop('');
     updateFocus();
+  }
+
+  function liveRect(i, n) {
+    var r = LIVE_RECTS[i];
+    return [r[0], r[1], r[2], n === 2 && i === 1 ? 442 : r[3]];
+  }
+
+  // MARK: - The player: the antenna's picture, live, in the focused channel card (the big one otherwise)
+  //
+  // webOS shows the tuner in a page through a <video> with LG's broadcast source. Not every TV lets an app installed
+  // through Developer Mode do it: when the picture doesn't come within a few seconds, the cards stay as they are. The
+  // TV has one tuner, so one card plays: focusing another switches the tuner to its channel after a moment. If that
+  // switch takes the TV out of this app (some TVs open their Live TV app for it), it isn't done again, and the picture
+  // only shows on the card of the channel the TV is on.
+
+  var NO_TUNE = 'fmtv.noTune';
+  var player = {video: null, ok: false, failed: false, tuned: null, timer: 0, tuneAt: 0, current: null};
+
+  function canTune() {
+    try { return !localStorage.getItem(NO_TUNE); } catch (e) { return true; }
+  }
+
+  function startPlayer() {
+    if (player.video || player.failed || TV.name === 'tizen') return;
+    var v;
+    if (TV.name === 'webos') {
+      v = document.createElement('video');
+      v.autoplay = true;
+      var src = document.createElement('source');
+      src.type = 'service/webos-broadcast';
+      src.src = 'tv://';
+      v.appendChild(src);
+    } else {
+      v = document.createElement('div');   // the browser preview: a stand-in for the picture
+      v.className = 'sample';
+    }
+    v.id = 'player';
+    $('top').insertBefore(v, $('cards'));
+    player.video = v;
+    if (TV.name !== 'webos') { player.ok = true; placePlayer(); return; }
+    function works() { if (!player.ok) { player.ok = true; placePlayer(); } }
+    v.addEventListener('playing', works);
+    v.addEventListener('loadeddata', works);
+    v.addEventListener('error', function () { failPlayer(); }, true);
+    setTimeout(function () { if (!player.ok) failPlayer(); }, 10000);
+    if (!canTune()) TV.currentChannel(function (ch) { player.current = ch ? ch.id : null; placePlayer(); });
+  }
+
+  function failPlayer() {
+    player.failed = true;
+    stopPlayer();
+  }
+
+  /** Lets go of the tuner (the TV's Live TV app needs it): when the app goes to the background or leaves the tab. */
+  function stopPlayer() {
+    clearTimeout(player.timer);
+    if (player.video && player.video.parentNode) {
+      try { player.video.pause(); } catch (e) {}
+      player.video.parentNode.removeChild(player.video);
+    }
+    player.video = null;
+    player.ok = false;
+    player.tuned = null;
+    var nodes = $('cards').children;
+    for (var i = 0; i < nodes.length; i++) setClass(nodes[i], 'playing', false);
+  }
+
+  /** Puts the picture on the card that should play, and switches the tuner to its channel after a moment. */
+  function placePlayer() {
+    if (st.tab !== 0 || saverOn) { stopPlayer(); return; }
+    if (!player.video) { startPlayer(); if (!player.video) return; }
+    var nodes = $('cards').children, at = st.zone === Z.CARDS ? st.card : 0, card = cards[at];
+    var ch = card && card.channel, tune = canTune();
+    // Without switching, only the card of the channel the TV is on can show it.
+    if (!tune && (!ch || ch.id !== player.current)) {
+      at = -1;
+      for (var k = 0; k < cards.length; k++) if (cards[k].channel && cards[k].channel.id === player.current) at = k;
+      ch = at >= 0 ? cards[at].channel : null;
+    }
+    var show = player.ok && at >= 0 && !sheetOpen() && st.zone !== Z.DRAWER;
+    for (var i = 0; i < nodes.length; i++) setClass(nodes[i], 'playing', show && i === at);
+    var v = player.video;
+    v.style.visibility = show ? '' : 'hidden';
+    if (!show) return;
+    var r = liveRect(at, cards.length);
+    v.style.left = r[0] + 'px';
+    v.style.top = r[1] + 'px';
+    v.style.width = r[2] + 'px';
+    v.style.height = r[3] + 'px';
+    clearTimeout(player.timer);
+    if (tune && ch && ch.id !== player.tuned && TV.name === 'webos') {
+      player.timer = setTimeout(function () {
+        player.tuned = ch.id;
+        player.tuneAt = Date.now();
+        TV.tune(ch);
+      }, 1200);
+    }
   }
 
   function renderCards() {
@@ -503,7 +618,7 @@
     c.firstChild.textContent = formatDate('format|h:mm', d.getTime());
     c.lastChild.textContent = formatDate('format|EEEE, MMMM d', d.getTime());
     $('topclock').textContent = formatDate('format|h:mm', d.getTime());
-    if (st.tab === 0 && cards.length) renderLive(true);   // the programs' progress, every minute
+    if (st.tab === 0 && cards[0] && cards[0].live) renderLive();   // the programs' progress, every minute
   }
 
   /** On the minute, so the clock never runs late (the 30-second refresh could, by up to 30 s). */
@@ -1107,6 +1222,7 @@
   function showSaver() {
     var photos = saverPhotos();
     saverOn = true;
+    stopPlayer();
     var s = $('saver');
     s.innerHTML = '';
     var a = el('div', 'photo', s), b = el('div', 'photo', s);
@@ -1148,6 +1264,7 @@
     saverOn = false;
     clearTimeout(saverTimer);
     setClass($('saver'), 'on', false);
+    if (st.tab === 0 && cards[0] && cards[0].live) placePlayer();
   }
 
   function poke() {
@@ -1236,7 +1353,14 @@
   document.addEventListener('webOSRelaunch', reopened);   // LG: opened again while running
   window.addEventListener('appcontrol', reopened);        // Samsung: the same
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) { hideSaver(); return; }
+    if (document.hidden) {
+      // Switching the channel took the TV out of this app: don't switch again, only show the channel it's on.
+      if (player.tuneAt && Date.now() - player.tuneAt < 4000) { try { localStorage.setItem(NO_TUNE, '1'); } catch (e) {} }
+      stopPlayer();
+      hideSaver();
+      return;
+    }
+    player.failed = false;
     idleAt = Date.now();
     loadApps(function () { renderShelf(); renderDrawer(); updateFocus(); Data.refresh(); });
   });

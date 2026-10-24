@@ -336,8 +336,8 @@ var TV = (function () {
   }
 
   // For the browser preview: Brazilian open TV, with programs around now.
-  var SAMPLE_CHANNELS = [['5-1', '5.1', 'Globo', 'Jornal Nacional', -32, 50], ['4-1', '4.1', 'SBT', 'Programa do Ratinho', -20, 60],
-    ['7-1', '7.1', 'Record', 'Jornal da Record', -10, 45], ['13-1', '13.1', 'Band', 'Jornal da Band', -5, 40]];
+  var SAMPLE_CHANNELS = [['5-1', '5.1', 'Globo HD', 'Jornal Nacional', -32, 50], ['5-2', '5.2', 'GloboNews', 'Jornal das Dez', -20, 60],
+    ['44-1', '44.1', 'CNN Brasil', 'CNN Prime Time', -10, 90], ['4-1', '4.1', 'SBT', 'Programa do Ratinho', -5, 40]];
 
   function sampleChannels() {
     var now = Date.now();
@@ -350,8 +350,40 @@ var TV = (function () {
    * The TV's channels, the ones whose name matches `wanted` first (["Globo", "SBT"]), at most `max`, each with what's
    * on now when the TV tells: [{id, number, name, program: {title, start, end} | null}], or null when it can't list them.
    */
+  /** A channel's name, to compare: lower case, letters and digits only, without HD/SD/4K. */
+  function plainName(x) {
+    return (x || '').toLowerCase().replace(/\b(hd|sd|4k)\b/g, '').replace(/[^a-z0-9]/g, '');
+  }
+
+  /**
+   * The wanted ones first, in their order: each name takes the channel that is that name ("Globo HD" for Globo), else
+   * the shortest one that contains it, so "Globo" doesn't take GloboNews. The TV's first channels fill the rest.
+   */
+  function pickChannels(all, wanted, max) {
+    var out = [];
+    for (var w = 0; w < wanted.length && out.length < max; w++) {
+      var needle = plainName(wanted[w]), best = null;
+      if (!needle) continue;
+      for (var j = 0; j < all.length; j++) {
+        var n = plainName(all[j].name);
+        if (out.indexOf(all[j]) >= 0 || n.indexOf(needle) < 0) continue;
+        if (n === needle) { best = all[j]; break; }
+        if (!best || n.length < plainName(best.name).length) best = all[j];
+      }
+      if (best) out.push(best);
+    }
+    for (var k = 0; k < all.length && out.length < max; k++) if (out.indexOf(all[k]) < 0) out.push(all[k]);
+    return out;
+  }
+
+  /**
+   * The TV's channels, the ones whose name matches `wanted` first (["Globo", "GloboNews"]), at most `max`, each with
+   * what's on now when the TV tells: [{id, number, name, program: {title, start, end} | null}], or null when it can't
+   * list them.
+   */
   function channels(wanted, max, done) {
-    if (!webos) { done(samsung ? null : sampleChannels().slice(0, max)); return; }
+    if (samsung) { setTimeout(function () { done(null); }, 0); return; }
+    if (!webos) { done(pickChannels(sampleChannels(), wanted, max)); return; }
     lgChannelList(function (list) {
       if (!list) { done(null); return; }
       var all = [];
@@ -360,14 +392,7 @@ var TV = (function () {
         if (!c || c.Invisible || c.invisible || c.skipped) continue;
         all.push({id: c.channelId, number: c.channelNumber || '', name: c.channelName || c.channelNumber || '', program: null});
       }
-      var out = [];
-      for (var w = 0; w < wanted.length && out.length < max; w++) {
-        var needle = wanted[w].toLowerCase();
-        for (var j = 0; j < all.length; j++) {
-          if (out.indexOf(all[j]) < 0 && all[j].name.toLowerCase().indexOf(needle) >= 0) { out.push(all[j]); break; }
-        }
-      }
-      for (var k = 0; k < all.length && out.length < max; k++) if (out.indexOf(all[k]) < 0) out.push(all[k]);
+      var out = pickChannels(all, wanted, max);
       if (!out.length || !ssapAllowed()) { done(out); return; }
       var left = out.length;
       out.forEach(function (ch) {
@@ -376,6 +401,20 @@ var TV = (function () {
           if (--left === 0) done(out);
         });
       });
+    });
+  }
+
+  /** Switches the tuner to this channel without opening anything (for the player in the cards); done(ok). */
+  function tune(ch, done) {
+    if (!webos || !ssapAllowed()) { if (done) setTimeout(function () { done(false); }, 0); return; }
+    ssap('tv/openChannel', {channelId: ch.id}, function (res) { if (done) done(!!res); });
+  }
+
+  /** The channel the TV is on: {id, number, name} or null. */
+  function currentChannel(done) {
+    if (!webos || !ssapAllowed()) { setTimeout(function () { done(null); }, 0); return; }
+    ssap('tv/getCurrentChannel', function (res) {
+      done(res && res.channelId ? {id: res.channelId, number: res.channelNumber || '', name: res.channelName || ''} : null);
     });
   }
 
@@ -477,6 +516,10 @@ var TV = (function () {
 
     /** Live TV on a channel from channels(). */
     openChannel: openChannel,
+
+    /** The player in the cards: switch the tuner, and which channel it's on. */
+    tune: tune,
+    currentChannel: currentChannel,
 
     /** The TV's own settings; done(ok). */
     settings: function (done) {
