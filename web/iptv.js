@@ -1,7 +1,8 @@
 /*
  * IPTV: the channels of an IPTV list, and a full-screen player for them, inside the home screen (no other app opens).
  * The list comes from config.properties: iptv_m3u (an M3U link), or iptv_server, iptv_user and iptv_pass (an
- * Xtream Codes server, as most providers give). Opened from the drawer (↓ on the shelf): the groups on the left, the
+ * Xtream Codes server, as most providers give). Without either, the free and official Brazilian channels of the
+ * Free-TV list (iptv-brasil.m3u, packed with the app). A channel on YouTube opens in the YouTube app. Opened from the drawer (↓ on the shelf): the groups on the left, the
  * channels on the right; OK plays one. In the player, ↑ ↓ change the channel, OK shows its name, Back goes back.
  * While open, this takes the remote's keys (a capturing listener), so home.js needs nothing more than IPTV.open().
  * Plain ES5, like the rest of web/.
@@ -11,7 +12,8 @@ var IPTV = (function () {
 
   var cfg = (window.CONFIG && CONFIG.iptv) || {};
   var server = (cfg.server || '').replace(/\/+$/, '');
-  var enabled = !!(cfg.m3u || (server && cfg.user && cfg.pass));
+  var m3u = cfg.m3u || (server ? '' : 'iptv-brasil.m3u');
+  var enabled = !!(m3u || (server && cfg.user && cfg.pass));
 
   var COLS = 4;
   var list = [], groups = [], loading = false, loaded = false, failed = '';
@@ -114,7 +116,7 @@ var IPTV = (function () {
       if (done) done();
     }
     if (server) xtream(finish);
-    else request(cfg.m3u, function (err, text) {
+    else request(m3u, function (err, text) {
       if (err) { finish(err); return; }
       var channels = parseM3u(text);
       finish(channels.length ? null : 'the list is empty', channels);
@@ -200,9 +202,22 @@ var IPTV = (function () {
 
   // MARK: - The player
 
+  /** A YouTube live ("watch?v=…" or "youtu.be/…"): its video id, or ''. */
+  function youtubeId(url) {
+    var m = /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|live\/)|youtu\.be\/)([\w-]{11})/.exec(url || '');
+    return m ? m[1] : '';
+  }
+
   function play(index) {
     var ch = st.shown[index];
     if (!ch) return;
+    var yt = youtubeId(ch.url);
+    if (yt) {
+      // The TV's <video> can't play a YouTube page: the YouTube app plays it.
+      TV.launch('youtube.leanback.v4', {contentTarget: 'https://www.youtube.com/tv?v=' + yt}, function () {});
+      if (st.direct) close();
+      return;
+    }
     st.playing = index;
     st.cell = index;
     setClass(root, 'playing', true);
