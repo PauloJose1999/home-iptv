@@ -529,7 +529,8 @@
     if (!ch) return TV.name === 'webos' ? {kind: 'tv'} : null;
     var net = ch.iptv ? ch.iptv.url : ch.stream;
     if (net && !/youtube\.com|youtu\.be/.test(net)) return {kind: 'net', url: net};
-    if (TV.name === 'webos' && player.current && ch.id === player.current) return {kind: 'tv'};
+    // The antenna: on the card of the channel it's on, or to find out (the TV only tells while its picture runs).
+    if (TV.name === 'webos' && (!player.current || ch.id === player.current)) return {kind: 'tv'};
     if (TV.name === 'browser') return {kind: 'sample'};
     return null;
   }
@@ -606,7 +607,20 @@
           if (player.video !== v || player.ok) return;
           player.ok = true;
           setClass($('cards').children[at], 'playing', true);
-          if (src.kind === 'tv' && !player.learned) { player.learned = true; setTimeout(learnProgram, 2000); }
+          if (src.kind === 'tv') {
+            // Now the TV tells which channel the antenna is on: another card's channel isn't played here.
+            setTimeout(function () {
+              if (player.video !== v) return;
+              TV.currentChannel(function (cur) {
+                if (player.video !== v || !cur) return;
+                player.current = cur.id;
+                player.currentAt = Date.now();
+                var mine = cards[at] && cards[at].channel;
+                if (mine && mine.id !== cur.id) { stopPlayer(); player.key = key; }
+                else if (!player.learned) { player.learned = true; learnProgram(); }
+              });
+            }, 1500);
+          }
         }
         if (src.kind === 'sample') { works(); return; }
         v.addEventListener('playing', works);
