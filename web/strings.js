@@ -1,10 +1,10 @@
 /*
- * On-screen text in the viewer's language, from the Android app's catalogues (app/assets/i18n/<lang>.json, packed into
+ * On-screen text in the viewer's language, from the catalogues (assets/i18n/<lang>.json, packed into
  * i18n.js by tools/webapp.py), keyed by the English text in the code: tr('Live TV'). A key "context|Text" is "Text" where
  * a language needs another word. Text built at runtime is a pattern with named placeholders: trf('{n} min ago', {n: 12});
  * a count is plural('plural|one:{n} season|other:{n} seasons', 3); a date or time is formatDate('format|h:mm a', at).
- * tools/translate.py keeps the catalogues in step with this code and the Android app's.
- * Written for the Chromium of older TVs (webOS 3, Tizen 3): ES5, and Intl only where it's there.
+ * tools/translate.py keeps the catalogues in step with this code.
+ * Written for the Chromium of older TVs (webOS 3 and 4): ES5, and Intl only where it's there.
  */
 var I18N = (function () {
   'use strict';
@@ -83,7 +83,7 @@ var I18N = (function () {
   // MARK: - Dates and times, from the catalogues' SimpleDateFormat patterns
 
   /**
-   * A date or time in the catalogue's pattern for a "format|..." key, as Java's SimpleDateFormat writes it on Android:
+   * A date or time in the catalogue's pattern for a "format|..." key, as Java's SimpleDateFormat writes it:
    * formatDate('format|EEEE, MMMM d', at). Names come from the TV's own Intl; a pattern with a letter this doesn't
    * know falls back to the English one, so a catalogue can't break the clock.
    */

@@ -1,9 +1,9 @@
 /*
- * The home screen for web-app TVs (LG webOS, Samsung Tizen), with the Android app's design and behavior (HomeView):
- *  - top: the "For You" title and the tabs (Explore, Movies, Shows); icon-only glass buttons at the right (Live TV,
- *    HDMI Inputs, Settings) and the crypto quotes at the end of the tab row;
+ * The home screen for LG TVs (webOS):
+ *  - top: the tabs (TV aberta, Movies, Shows); the clock and icon-only glass buttons at the right (Live TV, HDMI
+ *    Inputs, Settings);
  *  - three picks for this hour in the selected tab; the background is the first one's photo, blurred and almost white;
- *  - the glass shelf with the apps; ↓ opens the drawer (inputs, shortcuts, weather, prices); ↑ or Back closes it;
+ *  - the glass shelf with the apps; ↓ opens the drawer (inputs, shortcuts, weather); ↑ or Back closes it;
  *  - a night look from sunset to sunrise; a screensaver after a few idle minutes.
  * The remote's arrows, OK and Back move the focus; a pointer (LG's Magic Remote) focuses what it points at.
  */
@@ -28,21 +28,6 @@
     return s;
   }
 
-  function coin(i, parent) {
-    var c = window.COINS && window.COINS[i];
-    if (!c) return;
-    var ns = 'http://www.w3.org/2000/svg';
-    var svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('viewBox', '0 0 32 32');
-    for (var k = 0; k < c.length; k++) {
-      var p = document.createElementNS(ns, 'path');
-      p.setAttribute('d', c[k]);
-      p.setAttribute('fill-rule', 'evenodd');
-      svg.appendChild(p);
-    }
-    parent.appendChild(svg);
-  }
-
   function hasClass(e, c) { return (' ' + e.className + ' ').indexOf(' ' + c + ' ') >= 0; }
   function setClass(e, c, on) {
     if (!e) return;
@@ -60,7 +45,7 @@
 
   // MARK: - Apps on the shelf
 
-  /** Shelf apps in this order when installed, like the Android app: key, LG app id, name on the TV, brand gradient. */
+  /** Shelf apps in this order when installed: key, LG app id, name on the TV, brand gradient. */
   var SHELF = [
     ['netflix', /^netflix$/, /netflix/i, ['#0A0A0A', '#000000']],
     ['youtube', /youtube/, /^youtube$/i, ['#1C1C1E', '#09090A']],
@@ -76,7 +61,7 @@
     ['jellyfin', /jellyfin/i, /jellyfin/i, ['#AA5CC3', '#00A4DC']],
     ['spotify', /spotify/, /spotify/i, ['#1DB954', '#0F7A36']]
   ];
-  // Apps shown at once, as on Android: 8 (today's smallest tiles, 178 wide); the shelf scrolls for the rest.
+  // Apps shown at once: 8 (today's smallest tiles, 178 wide); the shelf scrolls for the rest.
   var SHELF_VISIBLE = 8;
 
   function shelfKey(app) {
@@ -98,9 +83,9 @@
 
   // MARK: - Logos
 
-  // The TV's icons are small squares with their own background (white behind Netflix, black behind Max). Like the
-  // Android app does with the TV art, the logo is lifted off it once: the background goes transparent and the rest is
-  // cropped to the logo, which then fills the tile on the brand's color.
+  // The TV's icons are small squares with their own background (white behind Netflix, black behind Max). The logo is
+  // lifted off it once: the background goes transparent and the rest is cropped to the logo, which then fills the
+  // tile on the brand's color.
   var lifted = {};   // icon url -> {src, bg: [r, g, b], ink: luminance histogram} or false (keep the icon as it is)
   var LIFT_SIZE = 240;
 
@@ -297,7 +282,6 @@
     }
     list = $('buttons').children;
     for (i = 0; i < list.length; i++) setClass(list[i], 'focus', st.zone === Z.TOP && st.top === 3 + i);
-    setClass($('quotes'), 'hide', st.zone === Z.TOP && st.top >= 3);
     list = $('cards').children;
     for (i = 0; i < list.length; i++) setClass(list[i], 'focus', st.zone === Z.CARDS && st.card === i);
     list = $('tiles').children;
@@ -342,7 +326,7 @@
     return (r.left + r.right) / 2;
   }
 
-  // MARK: - Top: title, tabs, buttons, quotes
+  // MARK: - Top: tabs and buttons
 
   // The first tab is open TV (the channels, live); then the movies and the shows from the TV's apps.
   var TAB_KIND = ['live', 'movie', 'tv'];
@@ -365,16 +349,6 @@
       sym(defs[b][0], r);
       el('div', 'tip', r, defs[b][1]);
       hover(r, Z.TOP, 3 + b);
-    }
-  }
-
-  function renderQuotes() {
-    var q = $('quotes'), coins = Data.activeCoins();
-    q.innerHTML = '';
-    for (var i = 0; i < coins.length; i++) {
-      var item = el('span', 'q', q);
-      coin(coins[i], item);
-      el('span', '', item, Data.compact(Data.prices[coins[i]]));
     }
   }
 
@@ -712,7 +686,7 @@
 
   function renderShelf() {
     var n = Math.min(shelf.length, SHELF_VISIBLE), gap = 48, pad = 40;
-    // 16:9 tiles, as on Android: never taller than 126, and the glass keeps its bottom edge.
+    // 16:9 tiles: never taller than 126, and the glass keeps its bottom edge.
     var tw = Math.min(126 * 16 / 9, (1760 - Math.max(0, n - 1) * gap) / Math.max(1, n)), th = tw * 9 / 16;
     var width = n * tw + Math.max(0, n - 1) * gap, left = (1920 - width) / 2;
     var platter = $('platter');
@@ -721,7 +695,6 @@
     platter.style.width = (width + 2 * pad) + 'px';
     platter.style.top = (814 + 126 - th) + 'px';
     platter.style.height = (th + 2 * pad) + 'px';
-    $('quotes').style.right = (1920 - left - width) + 'px';
     var tiles = $('tiles');
     tiles.innerHTML = '';
     tileStep = tw + gap;
@@ -736,7 +709,7 @@
       hover(t, Z.SHELF, i);
     }
     // More apps than fit: a small arrow inside the glass's edge on each side that has more, where no tile reaches
-    // even focused (inside the screen's safe area, as on Android).
+    // even focused (inside the screen's safe area).
     platter.innerHTML = '';
     for (var a = 0; a < 2; a++) {
       var arrow = sym('chevron_right', platter);
@@ -814,22 +787,12 @@
     var d = $('drawer');
     var old = d.querySelectorAll('.panel');
     for (var o = 0; o < old.length; o++) d.removeChild(old[o]);
-    var wx = Prefs.weather(), coins = Data.activeCoins(), qt = coins.length > 0;
-    var split = 80 + 1760 * 0.585;
-    if (wx) {
+    if (Prefs.weather()) {
       var w = el('div', 'panel glass', d);
       w.id = 'weather';
       w.style.left = '80px';
-      w.style.width = ((qt ? split - 16 : 1840) - 80) + 'px';
+      w.style.width = '1760px';
       renderWeather(w);
-    }
-    if (qt) {
-      var q = el('div', 'panel glass', d);
-      q.id = 'prices';
-      var left = wx ? split + 16 : 80;
-      q.style.left = left + 'px';
-      q.style.width = (1840 - left) + 'px';
-      renderPrices(q, coins);
     }
   }
 
@@ -858,21 +821,6 @@
     var sun = el('div', 'sun', card);
     if (w.sunrise) { var a = el('span', '', sun); sym('sunrise', a); a.appendChild(document.createTextNode(trf('Sunrise {time}', {time: Data.time(w.sunrise)}))); }
     if (w.sunset) { var b = el('span', '', sun); sym('sunset', b); b.appendChild(document.createTextNode(trf('Sunset {time}', {time: Data.time(w.sunset)}))); }
-  }
-
-  function renderPrices(card, coins) {
-    el('div', 'head', card, tr('Crypto'));
-    var stale = Data.staleness(Data.pricesAt, 5 * 60000);
-    el('div', 'side', card, stale ? trf('quotes|{ago}', {ago: stale}) : tr('24h change'));
-    for (var j = 0; j < coins.length; j++) {
-      var i = coins[j], row = el('div', 'coin', card);
-      row.style.top = (86 + 52 * j) + 'px';
-      coin(i, row);
-      el('span', 'n', row, Data.coinName(i));
-      el('span', 'p', row, Data.money(Data.prices[i]));
-      var ch = Data.changes[i];
-      if (!isNaN(ch)) el('span', 'c ' + (ch >= 0 ? 'up' : 'down'), row, Data.change(ch));
-    }
   }
 
   function openDrawer() {
@@ -938,18 +886,8 @@
       {label: tr('Theme'), value: theme === 'light' ? tr('Light') : theme === 'dark' ? tr('Dark') : auto,
         step: function (d) { cycle('theme', ['auto', 'light', 'dark'], theme, d); checkNight(); }},
       {label: tr('Weather widget'), toggle: Prefs.weather(),
-        step: function () { Prefs.set('weather', !Prefs.weather()); renderPanels(); }},
-      {label: tr('Quotes widget'), toggle: Prefs.quotes(),
-        step: function () { Prefs.set('quotes', !Prefs.quotes()); Data.settingsChanged(); }}
+        step: function () { Prefs.set('weather', !Prefs.weather()); renderPanels(); }}
     ];
-    var names = ['Bitcoin', 'Ethereum', 'Solana', tr('Dollar')];
-    var count = Data.currency === 'BRL' ? 4 : 3;
-    for (var i = 0; i < count; i++) {
-      (function (i) {
-        rows.push({label: names[i], toggle: Prefs.quotes() && Prefs.coin(i), dim: !Prefs.quotes(),
-          step: function () { if (Prefs.quotes()) { Prefs.setCoin(i, !Prefs.coin(i)); Data.settingsChanged(); } }});
-      })(i);
-    }
     rows.push({label: tr('Shelf'), value: '›', step: function (d) { if (d >= 0) openShelfEdit(); }});
     rows.push({label: tr('TV Settings'), value: '›', step: function (d) { if (d >= 0) tvSettings(); }});
     return rows;
@@ -994,7 +932,7 @@
     updateFocus();
   }
 
-  // MARK: - Language: a list of every catalogue in its own name, as on Android (moving through it doesn't switch the app)
+  // MARK: - Language: a list of every catalogue in its own name (moving through it doesn't switch the app)
 
   var langHint = null;
 
@@ -1374,7 +1312,6 @@
 
   function renderAll() {
     renderTop();
-    renderQuotes();
     cards = [];
     renderCards();
     renderShelf();
@@ -1417,7 +1354,6 @@
   }
 
   Data.onChange(function () {
-    renderQuotes();
     renderCards();
     renderPanels();
     checkNight();
@@ -1432,7 +1368,6 @@
 
   window.addEventListener('resize', fit);
   document.addEventListener('webOSRelaunch', reopened);   // LG: opened again while running
-  window.addEventListener('appcontrol', reopened);        // Samsung: the same
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
       stopPlayer();

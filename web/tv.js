@@ -1,15 +1,13 @@
 /*
  * The TV's side of the web home screen: its apps, opening one, its inputs, its settings, the Back key, its time zone.
  *  - LG webOS: the TV's service bus (Luna), the same calls LG's launcher makes.
- *  - Samsung Tizen: Tizen's web APIs (tizen.application for the apps, tizen.tvwindow for the inputs).
  *  - A desktop browser: a stand-in with sample apps, so the screen can be previewed and tested on a computer.
- * Plain ES5: older TVs run a Chromium from 2015-2017 (webOS 3 and 4, Tizen 3).
+ * Plain ES5: older TVs run a Chromium from 2015-2017 (webOS 3 and 4).
  */
 var TV = (function () {
   'use strict';
 
   var webos = typeof window.PalmServiceBridge !== 'undefined';
-  var samsung = !webos && typeof window.tizen !== 'undefined' && !!window.tizen.application;
   var calls = [];   // a bridge is collected if nothing holds it before its reply arrives
 
   /** One Luna call; done(result) with null on failure. */
@@ -167,52 +165,6 @@ var TV = (function () {
   // Not shown among LG's apps: the inputs above, LG's own home and launchers.
   var HIDDEN = /^(com\.webos\.app\.(livetv|hdmi\d|home|homeconnect|discovery|launcher)|com\.webos\.app\.inputpicker)$/;
 
-  // Not shown among Samsung's apps: Smart Hub's own pieces, the platform's tools and players (but its browser,
-  // Netflix and Prime Video, which live there too), services, keyboards and ad players. The rest is what Smart Hub shows.
-  // Tizen 4 also lists Samsung's own pieces: the YouTube engine's hosts (cobalt-*: "App", "Youtube", "YoutubeTV"),
-  // Bixby, search, previews, the weather and notification popups, Apple TV's stand-in and engine.
-  // A 2020 TU8000 (Tizen 5.5) ships Prime Video as org.tizen.primevideo, next to a -dummy and a _companionapp.
-  var SAMSUNG_HIDDEN = new RegExp('^(org\\.volt\\.|org\\.tizen\\.(?!browser$|netflix|primevideo$)|org\\.tizen\\.netflixlowmem$|ise-|ug-|d75857a5-)' +
-      '|[Ss]ervice$|[Dd]aemon|Preview$|syspopup|[Hh]elper$|AdPlayer|AdSuite|[Kk]eyboard|\\.OTApp$' +
-      '|^com\\.samsung\\.(calendar-account-manager|tv\\.(cobalt-|aria-(dummy|engine)|airplay-app|ambient-support|' +
-      'built-in-app-info-viewer|commonsearch|searchall|preview-|tv-scheduler|csfs|notification-app|mycontents|' +
-      'safLaunchBridge|shortcut|remote-workspace|voiceassistant|mybixby|weather-viewer))');
-
-  // Samsung apps whose iconPath is Tizen's generic pinwheel (a valid image, so onerror never fires): our own icons.
-  // Seen on a 2018 NU7675 (Tizen 4); Smart Hub draws their real icons from a folder apps can't read. On a 2017
-  // MU6100 (Tizen 3) no iconPath loads at all, so common apps get a logo here: Simple Icons' (CC0), cropped and tinted
-  // for the tiles, with a width and height so old WebKit sizes them like PNGs.
-  var SAMSUNG_ICONS = {
-    '9Ur5IzDKqV.TizenYouTube': 'icons/youtube.png',
-    'evKhCgZelL.AmazonIgnitionLauncher2': 'icons/prime.png',
-    'org.tizen.primevideo': 'icons/prime.png',
-    'RN1MCdNq8t.Netflix': 'icons/netflix.svg',
-    'org.tizen.netflix-app': 'icons/netflix.svg',
-    'NvZ26VG9Yw.HBOGOLAG': 'icons/max.svg',
-    'rJeHak5zRg.Spotify': 'icons/spotify.svg',
-    'cexr1qp97S.Deezer': 'icons/deezer.svg',
-    '5SLwh7m3En.TizenYouTubeKids': 'icons/youtubekids.svg',
-    '4OAwqypfRT.RedBullTV': 'icons/redbull.svg',
-    'UCJa2s9hhC.TED': 'icons/ted.svg',
-    'QizQxC7CUf.PlayMovies': 'icons/googleplay.svg',
-    'vIutycUzou.SteamLink': 'icons/steam.svg',
-    'geUOM7qimf.FOXPlay': 'icons/fox.svg',
-    'AprZAARz4r.Jellyfin': 'icons/jellyfin.svg'
-  };
-
-  // Names Smart Hub gets wrong: HBO's app has none (so it never reached the shelf), others are long or old.
-  var SAMSUNG_TITLES = {
-    'NvZ26VG9Yw.HBOGOLAG': 'Max',
-    'rJeHak5zRg.Spotify': 'Spotify',
-    'evKhCgZelL.AmazonIgnitionLauncher2': 'Prime Video'
-  };
-
-  // Samsung's settings menu on Tizen 3, which answers no "settings" app control.
-  var SAMSUNG_MENU = 'org.tizen.menu';
-
-  // Samsung's live TV viewer: it shows whichever source the TV is on (the antenna, or the HDMI picked here).
-  var SAMSUNG_VIEWER = 'org.tizen.tv-viewer';
-
   var SAMPLE = [
     ['netflix', 'Netflix', '#E50914'], ['youtube.leanback.v4', 'YouTube', '#FF0033'], ['amazon', 'Prime Video', '#1A98FF'],
     ['com.disney.disneyplus-prod', 'Disney+', '#1838C8'], ['com.hbo.hbomax', 'Max', '#6C3BE0'],
@@ -223,7 +175,7 @@ var TV = (function () {
 
   // Newer webOS (11 tested) denies listLaunchPoints to Developer Mode apps, but still answers getAppLoadStatus for
   // one app id: these are checked one by one there. Their icons can't be read, so they get our logo where web/icons
-  // has one, as on Samsung, and otherwise their name on the brand's color: [id, title, logo, color].
+  // has one, and otherwise their name on the brand's color: [id, title, logo, color].
   var KNOWN = [
     ['netflix', 'Netflix', 'icons/netflix.svg'], ['youtube.leanback.v4', 'YouTube', 'icons/youtube.png'],
     ['amazon', 'Prime Video', 'icons/prime.png'], ['com.disney.disneyplus-prod', 'Disney+'],
@@ -253,110 +205,6 @@ var TV = (function () {
 
   var self = 'io.freemytv';
   if (webos && window.PalmSystem && window.PalmSystem.identifier) self = window.PalmSystem.identifier.split(' ')[0];
-  if (samsung) {
-    try { self = window.tizen.application.getCurrentApplication().appInfo.id; } catch (e) {}
-  }
-
-  // MARK: - Samsung
-
-  function samsungApps(done) {
-    try {
-      window.tizen.application.getAppsInfo(function (list) {
-        var out = [];
-        for (var i = 0; i < list.length; i++) {
-          var a = list[i];
-          if (!a.id || a.show === false || a.id === self || SAMSUNG_HIDDEN.test(a.id)) continue;
-          var icon = a.iconPath || '';
-          if (icon && icon.indexOf('://') < 0) icon = 'file://' + icon;
-          if (SAMSUNG_ICONS[a.id]) icon = SAMSUNG_ICONS[a.id];
-          out.push({id: a.id, title: SAMSUNG_TITLES[a.id] || a.name || a.id, icon: icon, color: ''});
-        }
-        // The built-in Netflix stays only when the store's Netflix isn't installed.
-        var store = out.some(function (x) { return /\.Netflix$/.test(x.id); });
-        if (store) out = out.filter(function (x) { return x.id.indexOf('org.tizen.netflix') !== 0; });
-        // Smart Hub keeps its own order, which isn't readable: the same alphabetical order as All Apps elsewhere.
-        out.sort(function (x, y) { var a = x.title.toLowerCase(), b = y.title.toLowerCase(); return a < b ? -1 : a > b ? 1 : 0; });
-        done(out);
-      }, function () { done([]); });
-    } catch (e) {
-      done([]);
-    }
-  }
-
-  function samsungLaunch(id, done) {
-    try {
-      window.tizen.application.launch(id, function () { if (done) done(true); }, function () { if (done) done(false); });
-    } catch (e) {
-      if (done) done(false);
-    }
-  }
-
-  /**
-   * The video sources the TV reports ([{type: 'TV' | 'HDMI' | ..., number}]), or null when it doesn't tell. With `all`,
-   * the disconnected ones too: Tizen 4 lists an HDMI device on standby as disconnected (even the one on screen), and
-   * tvwindow.setSource still switches to it, as Samsung's own source menu does.
-   */
-  function samsungSources(done, all) {
-    try {
-      window.tizen.systeminfo.getPropertyValue('VIDEOSOURCE', function (v) {
-        done(v && v.connected ? (all ? v.connected.concat(v.disconnected || []) : v.connected) : null);
-      }, function () { done(null); });
-    } catch (e) {
-      done(null);
-    }
-  }
-
-  /** Puts the TV on a source ("source:HDMI:2"), then brings the TV's viewer up to show it. */
-  function samsungSource(spec, done) {
-    var parts = spec.split(':'), type = parts[1], number = +parts[2];
-    function show(ok) {
-      if (!ok) { if (done) done(false); return; }
-      samsungLaunch(SAMSUNG_VIEWER, function (shown) {
-        if (!shown) {
-          try { window.tizen.application.getCurrentApplication().hide(); } catch (e) {}
-        }
-        if (done) done(true);
-      });
-    }
-    samsungSources(function (sources) {
-      var source = null;
-      for (var i = 0; sources && i < sources.length; i++) {
-        if (sources[i].type === type && sources[i].number === number) source = sources[i];
-      }
-      if (!source) { show(type === 'TV'); return; }   // the antenna: the viewer alone brings it up
-      try {
-        window.tizen.tvwindow.setSource(source, function () { show(true); }, function () { show(false); });
-      } catch (e) {
-        show(false);
-      }
-    }, true);
-  }
-
-  function samsungInputs(done) {
-    var list = [{id: 'source:TV:1', key: 'live', label: null, symbol: 'live_tv', connected: true}];
-    for (var n = 1; n <= 4; n++) list.push({id: 'source:HDMI:' + n, key: 'hdmi' + n, label: 'HDMI ' + n, symbol: 'hdmi', connected: true});
-    samsungSources(function (sources) {
-      if (sources) {
-        for (var i = 1; i < list.length; i++) list[i].connected = false;
-        for (var j = 0; j < sources.length; j++) {
-          var s = sources[j];
-          if (s.type === 'HDMI' && s.number >= 1 && s.number <= 4) list[s.number].connected = true;
-        }
-      }
-      done(list);
-    });
-  }
-
-  /** Samsung's settings: whichever app answers the platform's "settings" request, else the TV's menu (Tizen 3). */
-  function samsungSettings(done) {
-    function menu() { samsungLaunch(SAMSUNG_MENU, done); }
-    try {
-      var control = new window.tizen.ApplicationControl('http://tizen.org/appcontrol/operation/setting', null, null, null, []);
-      window.tizen.application.launchAppControl(control, null, function () { if (done) done(true); }, menu);
-    } catch (e) {
-      menu();
-    }
-  }
 
   // MARK: - Live channels (LG), for the "TV aberta" tab
 
@@ -466,7 +314,6 @@ var TV = (function () {
    * list them.
    */
   function channels(wanted, max, done) {
-    if (samsung) { setTimeout(function () { done(null); }, 0); return; }
     if (!webos) { done(pickChannels(sampleChannels(), wanted, max)); return; }
     lgChannelList(function (list) {
       if (!list) { done(null); return; }
@@ -517,11 +364,10 @@ var TV = (function () {
   // MARK: - The TV, whichever it is
 
   return {
-    name: webos ? 'webos' : samsung ? 'tizen' : 'browser',
+    name: webos ? 'webos' : 'browser',
 
     /** Installed apps, as the TV's launcher lists them: [{id, title, icon, color}]. */
     apps: function (done) {
-      if (samsung) { samsungApps(done); return; }
       if (!webos) {
         done(SAMPLE.map(function (s) { return {id: s[0], title: s[1], icon: '', color: s[2]}; }));
         return;
@@ -555,11 +401,6 @@ var TV = (function () {
 
     /** Opens an app (or an input); done(ok). */
     launch: function (id, params, done) {
-      if (samsung) {
-        if (id.indexOf('source:') === 0) samsungSource(id, done);
-        else samsungLaunch(id, done);
-        return;
-      }
       if (!webos) {
         if (done) setTimeout(function () { done(true); }, 0);
         return;
@@ -571,7 +412,6 @@ var TV = (function () {
 
     /** The antenna and HDMI inputs; `connected` when the TV says a device is on (when it tells). */
     inputs: function (done) {
-      if (samsung) { samsungInputs(done); return; }
       var list = INPUTS.map(function (x) { return {id: x.id, key: x.key, label: x.label, symbol: x.symbol, connected: true}; });
       if (!webos) {
         list[2].connected = false;
@@ -611,8 +451,7 @@ var TV = (function () {
 
     /** The TV's own settings; done(ok). */
     settings: function (done) {
-      if (samsung) samsungSettings(done);
-      else this.launch('com.palm.app.settings', null, done);
+      this.launch('com.palm.app.settings', null, done);
     },
 
     /** LG: keeps the TV's screensaver away while ours will take over (`hold` says when). */
@@ -620,22 +459,15 @@ var TV = (function () {
 
     /** Back on the first screen: back to wherever the person came from. */
     back: function () {
-      if (samsung) {
-        try { window.tizen.application.getCurrentApplication().hide(); } catch (e) {}
-        return;
-      }
       if (window.PalmSystem && window.PalmSystem.platformBack) window.PalmSystem.platformBack();
     },
 
     /** The TV's time zone ("America/Sao_Paulo"), or ''. */
     zone: function () {
-      if (samsung) {
-        try { return window.tizen.time.getLocalTimezone() || ''; } catch (e) {}
-      }
       try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; }
     },
 
-    /** Key codes: the arrows, OK and the TV's Back (LG 461, Samsung 10009). */
-    keys: {left: 37, up: 38, right: 39, down: 40, ok: 13, back: samsung ? 10009 : 461}
+    /** Key codes: the arrows, OK and the TV's Back (461 on LG). */
+    keys: {left: 37, up: 38, right: 39, down: 40, ok: 13, back: 461}
   };
 })();

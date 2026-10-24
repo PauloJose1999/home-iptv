@@ -2,16 +2,14 @@
  * What the home screen shows, kept in localStorage so it opens with numbers:
  *  - the picks: what's trending this week and recent releases, only from the streaming apps on this TV (TMDB, with
  *    the person's own free key from config.properties), three per hour;
- *  - weather, sunrise and sunset (Open-Meteo, every 30 min) and optional crypto prices (Binance, every 5 min).
- * Settings changed on the TV (Prefs) win over config.properties, as on Android. Built without a city (--generic), the
- * TV's time zone gives the city, and its country the currency and the region (zones.js).
+ *  - weather, sunrise and sunset (Open-Meteo, every 30 min).
+ * Settings changed on the TV (Prefs) win over config.properties. Built without a city (--generic), the
+ * TV's time zone gives the city, and its country the region (zones.js).
  */
 var CONFIG = window.CONFIG || {};
 
 var Place = (function () {
   'use strict';
-  var EURO = /^(AT|BE|CY|DE|EE|ES|FI|FR|GR|HR|IE|IT|LT|LU|LV|MT|NL|PT|SI|SK)$/;
-
   /** A time zone's main city: {country, lat, lon, name}, or null. */
   function zone(name) {
     var all = window.ZONES || {}, v = all[name], hops = 0;
@@ -28,7 +26,6 @@ var Place = (function () {
     lon: set ? CONFIG.longitude : tz ? tz.lon : '-74.0060',
     city: CONFIG.city || (!set && tz ? tz.name : ''),
     country: country,
-    currency: (CONFIG.currency || (country === 'BR' ? 'BRL' : EURO.test(country) ? 'EUR' : 'USD')).toUpperCase(),
     /** Fahrenheit for TVs in the US (by their time zone, or their language when it doesn't tell). */
     fahrenheit: tz ? tz.country === 'US' : /-US$/i.test(navigator.language || '')
   };
@@ -47,15 +44,8 @@ var Prefs = (function () {
     temperature: function () { return pick('temperature', CONFIG.temperature || 'auto'); },
     theme: function () { return pick('theme', 'auto'); },
     weather: function () { return pick('weather', true); },
-    quotes: function () { return pick('quotes', CONFIG.showCrypto !== false); },
-    coin: function (i) { var c = pick('coins', null); return c ? c[i] !== false : true; },
     shelf: function () { return pick('shelf', null); },
-    set: function (name, value) { v[name] = value; save(); this.version++; },
-    setCoin: function (i, on) {
-      var c = (pick('coins', null) || [true, true, true, true]).slice();
-      c[i] = on;
-      this.set('coins', c);
-    }
+    set: function (name, value) { v[name] = value; save(); this.version++; }
   };
 })();
 
@@ -135,76 +125,6 @@ var Data = (function () {
       store('weather', {place: PLACE, body: body, at: weatherAt});
       changed();
     });
-  }
-
-  // MARK: - Prices
-
-  var COINS = ['BTC', 'ETH', 'SOL', 'USDT'];
-  var CURRENCY = Place.currency;
-  var QUOTE = CURRENCY === 'USD' ? 'USDT' : CURRENCY;
-  /** Binance refuses the whole request when it has no pairs in the currency (INR...): the prices go in dollars then. */
-  function inDollars() {
-    store('dollarsFor', CURRENCY);
-    CURRENCY = 'USD';
-    QUOTE = 'USDT';
-  }
-  if (stored('dollarsFor') === CURRENCY && CURRENCY !== 'USD') {
-    CURRENCY = 'USD';
-    QUOTE = 'USDT';
-  }
-  var prices = [NaN, NaN, NaN, NaN], changes = [NaN, NaN, NaN, NaN], pricesAt = 0, fetchingPrices = false;
-
-  /** Indexes in COINS of the coins that are on (the dollar only in Brazilian reais, where Binance lists it). */
-  function activeCoins() {
-    var out = [];
-    if (!Prefs.quotes()) return out;
-    for (var i = 0; i < COINS.length; i++) if (Prefs.coin(i) && (i < 3 || CURRENCY === 'BRL')) out.push(i);
-    return out;
-  }
-
-  function parsePrices(list) {
-    var found = 0;
-    for (var i = 0; list && i < list.length; i++) {
-      for (var k = 0; k < COINS.length; k++) {
-        if (list[i].symbol !== COINS[k] + QUOTE) continue;
-        found++;
-        var last = parseFloat(list[i].lastPrice), open = parseFloat(list[i].openPrice);
-        prices[k] = last;
-        changes[k] = open > 0 ? (last - open) / open * 100 : NaN;
-      }
-    }
-    return found;
-  }
-
-  (function () {
-    var p = stored('prices');
-    if (p && p.quote === QUOTE && parsePrices(p.body)) pricesAt = p.at;
-  })();
-
-  function refreshPrices() {
-    var coins = activeCoins(), now = Date.now();
-    if (!coins.length || fetchingPrices || (now - pricesAt < 5 * 60000 && now >= pricesAt)) return;
-    fetchingPrices = true;
-    var symbols = coins.map(function (i) { return '%22' + COINS[i] + QUOTE + '%22'; }).join(',');
-    var path = '/api/v3/ticker/24hr?type=MINI&symbols=%5B' + symbols + '%5D';
-    // Binance.com refuses the US (HTTP 451); Binance.US answers the same call in dollars.
-    var hosts = ['https://api.binance.com', 'https://api.binance.us'];
-    (function next(h, refused) {
-      get(hosts[h] + path, {}, function (err, body) {
-        // A pair Binance doesn't list (HTTP 400): the prices go in dollars. Binance.US has only dollar pairs: its 400
-        // counts only where Binance.com refuses the US (HTTP 451), not after a timeout or a 5xx there.
-        if (err && err.message === 'HTTP 400' && QUOTE !== 'USDT' && (h === 0 || refused)) { fetchingPrices = false; inDollars(); refreshPrices(); return; }
-        if (err || !parsePrices(body)) {
-          if (h + 1 < hosts.length && !(err && err.message === 'HTTP 400')) next(h + 1, err && err.message === 'HTTP 451');
-          else fetchingPrices = false;
-          return;
-        }
-        fetchingPrices = false;
-        pricesAt = Date.now();
-        store('prices', {quote: QUOTE, body: body, at: pricesAt});
-        changed();
-      });
-    })(0);
   }
 
   // MARK: - Picks (TMDB)
@@ -299,7 +219,7 @@ var Data = (function () {
     return out;
   }
 
-  /** TMDB's language, as on Android: Latin American Spanish unless the TV is in Spain, and Germany's German. */
+  /** TMDB's language: Latin American Spanish unless the TV is in Spain, and Germany's German. */
   function lang() {
     if (I18N.lang === 'es') return /-ES\b/i.test(navigator.language || '') ? 'es-ES' : 'es-MX';
     if (I18N.lang === 'de') return 'de-DE';   // TMDB's de-AT and de-CH have few translations of their own
@@ -503,27 +423,14 @@ var Data = (function () {
 
   // MARK: - Formatting
 
-  function fmt(v, digits) {
-    try { return v.toLocaleString(I18N.locale(), {minimumFractionDigits: digits, maximumFractionDigits: digits}); } catch (e) { return v.toFixed(digits); }
-  }
-
-  var SYMBOLS = {USD: '$', BRL: 'R$ ', EUR: '€', GBP: '£', JPY: '¥'};
-
   return {
-    COINS: COINS,
     city: Place.city,
-    currency: CURRENCY,
     onChange: function (fn) { listeners.push(fn); },
     setApps: function (apps) { installed = apps; },
     appFor: appFor,
-    refresh: function () { refreshWeather(); refreshPrices(); refreshRecs(); },
-    settingsChanged: function () { pricesAt = 0; refreshPrices(); changed(); },
+    refresh: function () { refreshWeather(); refreshRecs(); },
     get weather() { return weather; },
     get weatherAt() { return weatherAt; },
-    prices: prices,
-    changes: changes,
-    get pricesAt() { return pricesAt; },
-    activeCoins: activeCoins,
     hasKey: function () { return !!KEY; },
     recsError: function () { return recsError; },
     picks: now,
@@ -541,20 +448,6 @@ var Data = (function () {
       return mins < rise || mins >= set;
     },
 
-    compact: function (v) {
-      if (isNaN(v)) return '—';
-      if (v >= 1000000) return fmt(v / 1000000, 2) + 'M';
-      if (v >= 10000) return fmt(v / 1000, 1) + 'k';
-      if (v >= 1000) return fmt(v / 1000, 2) + 'k';
-      if (v >= 100) return fmt(v, 0);
-      return fmt(v, 2);
-    },
-    money: function (v) {
-      var s = SYMBOLS[CURRENCY] || CURRENCY + ' ';
-      if (isNaN(v)) return s + '—';
-      return s + (v >= 1000 ? fmt(v, 0) : fmt(v, 2));
-    },
-    change: function (v) { return isNaN(v) ? '' : (v >= 0 ? '+' : '−') + fmt(Math.abs(v), 1) + '%'; },
     degrees: function (v) {
       if (v === undefined || v === null || isNaN(v)) return '—';
       var unit = Prefs.temperature();
@@ -594,7 +487,6 @@ var Data = (function () {
       if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snowflake';
       if (code >= 95) return 'thunderstorm';
       return 'rainy';
-    },
-    coinName: function (i) { return i === 3 ? tr('Dollar') : ['Bitcoin', 'Ethereum', 'Solana'][i]; }
+    }
   };
 })();
