@@ -2108,9 +2108,17 @@
     TV.back();
   }
 
+  // The pointer moves the focus only when it really moves, and once it rests a moment on a thing: a row slides to keep
+  // its focus in view, which puts the next poster under a still pointer (a mouseover too), and a pointer crossing a
+  // row would otherwise scroll it at every poster it passes.
+  var POINTER_REST = 150, POINTER_MOVED = 120, pointerAt = {x: -1, y: -1, t: 0}, hoverTimer = 0;
+  document.addEventListener('mousemove', function (e) {
+    if (Math.abs(e.clientX - pointerAt.x) + Math.abs(e.clientY - pointerAt.y) > 2) pointerAt = {x: e.clientX, y: e.clientY, t: Date.now()};
+  });
+
   /** The pointer focuses what it's over (the Magic Remote, or a mouse when previewing). */
   function hover(node, zone, index) {
-    node.onmouseover = function () {
+    var focusHere = function () {
       if (saverOn || (sheetOpen() !== (zone === Z.APPS || zone === Z.SETTINGS || zone === Z.EDIT || zone === Z.LANG))) return;
       if (zone === Z.DRAWER && st.zone !== Z.DRAWER) return;
       if (zone !== Z.DRAWER && st.zone === Z.DRAWER && zone !== Z.SHELF) return;
@@ -2132,7 +2140,13 @@
       else if (zone === Z.LANG) st.lang = index;
       updateFocus();
     };
-    node.onclick = function () { node.onmouseover(); activate(); };
+    node.onmouseover = function () {
+      if (Date.now() - pointerAt.t > POINTER_MOVED) return;   // it came under a still pointer
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(focusHere, POINTER_REST);
+    };
+    node.onmouseout = function () { clearTimeout(hoverTimer); };
+    node.onclick = function () { clearTimeout(hoverTimer); focusHere(); activate(); };
   }
 
   // MARK: - Toast
