@@ -1697,12 +1697,13 @@
     } else { edit.menu = true; edit.menuAt = 0; placeEdit(); }
   });
 
-  // A click on the editor's empty space (not an app, not its options) is Back: it closes the options, puts back the
-  // app being moved, or leaves the editor for Home Settings.
+  // A click on the editor's empty space (not an app, not its options) closes it and Home Settings too, as a click
+  // around Home Settings does; an app being moved goes back where it was.
   $('shelfedit').addEventListener('click', function (e) {
     if (st.zone !== Z.EDIT || edit.dropped) return;
     for (var n = e.target; n && n !== this; n = n.parentNode) if (n.appId || hasClass(n, 'menu')) return;
-    editBack();
+    if (edit.held) cancelHeld();
+    closeSheets();
   });
 
   // MARK: - Opening things
