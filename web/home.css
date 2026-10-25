@@ -685,9 +685,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 #iptv .info .name { font-size: 44px; font-weight: 800; }
 #iptv .info .sub { margin-top: 6px; font-size: 24px; font-weight: 600; color: #C4B5FD; }
 
-/* MARK: - Movies and Shows: as on Netflix, dark, the focused title large at the top and rows of titles below */
+/* MARK: - Movies and Shows: as on Netflix, the focused title large at the top and rows of titles below; light by day
+   and dark at night, as the rest of the home screen (the solid colors are the sky's, under its veil). */
 
-#catalog { display: none; background: #141414; overflow: hidden; }
+#catalog { display: none; background: #F2F4F7; overflow: hidden; }
+.night #catalog { background: #040A1B; }
 .catalog #catalog { display: block; }
 .catalog #platter, .catalog #tiles, .catalog #cards, .catalog #clock { display: none; }
 
@@ -711,12 +713,19 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   top: 0;
   width: 1360px;
   height: 765px;
-  background: -webkit-linear-gradient(left, #141414, rgba(20, 20, 20, 0.6) 30%, rgba(20, 20, 20, 0) 60%),
-    -webkit-linear-gradient(top, rgba(20, 20, 20, 0.5), rgba(20, 20, 20, 0) 25%, rgba(20, 20, 20, 0) 60%, #141414);
-  background: linear-gradient(90deg, #141414, rgba(20, 20, 20, 0.6) 30%, rgba(20, 20, 20, 0) 60%),
-    linear-gradient(rgba(20, 20, 20, 0.5), rgba(20, 20, 20, 0) 25%, rgba(20, 20, 20, 0) 60%, #141414);
+  background: -webkit-linear-gradient(left, #F2F4F7, rgba(242, 244, 247, 0.6) 30%, rgba(242, 244, 247, 0) 60%),
+    -webkit-linear-gradient(top, rgba(242, 244, 247, 0.5), rgba(242, 244, 247, 0) 25%, rgba(242, 244, 247, 0) 60%, #F2F4F7);
+  background: linear-gradient(90deg, #F2F4F7, rgba(242, 244, 247, 0.6) 30%, rgba(242, 244, 247, 0) 60%),
+    linear-gradient(rgba(242, 244, 247, 0.5), rgba(242, 244, 247, 0) 25%, rgba(242, 244, 247, 0) 60%, #F2F4F7);
 }
-#hero .info { position: absolute; left: 80px; top: 176px; width: 900px; color: #FFF; }
+.night #hero .fade {
+  background: -webkit-linear-gradient(left, #040A1B, rgba(4, 10, 27, 0.6) 30%, rgba(4, 10, 27, 0) 60%),
+    -webkit-linear-gradient(top, rgba(4, 10, 27, 0.5), rgba(4, 10, 27, 0) 25%, rgba(4, 10, 27, 0) 60%, #040A1B);
+  background: linear-gradient(90deg, #040A1B, rgba(4, 10, 27, 0.6) 30%, rgba(4, 10, 27, 0) 60%),
+    linear-gradient(rgba(4, 10, 27, 0.5), rgba(4, 10, 27, 0) 25%, rgba(4, 10, 27, 0) 60%, #040A1B);
+}
+#hero .info { position: absolute; left: 80px; top: 176px; width: 900px; color: #0F172A; }
+.night #hero .info { color: #FFF; }
 #hero .htitle {
   max-height: 160px;
   overflow: hidden;
@@ -724,9 +733,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   font-weight: 900;
   line-height: 1.15;
   letter-spacing: -0.02em;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
-#hero .hmeta { margin-top: 18px; font-size: 27px; font-weight: 600; color: rgba(255, 255, 255, 0.85); white-space: nowrap; }
+.night #hero .htitle { text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+#hero .hmeta { margin-top: 18px; font-size: 27px; font-weight: 600; color: #475569; white-space: nowrap; }
+.night #hero .hmeta { color: rgba(255, 255, 255, 0.85); }
 #hero .svc {
   display: inline-block;
   margin-left: 18px;
@@ -738,7 +748,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background: #E50914;
   vertical-align: 2px;
 }
-#hero .story { margin-top: 18px; height: 114px; overflow: hidden; font-size: 27px; line-height: 38px; color: rgba(255, 255, 255, 0.78); }
+#hero .story { margin-top: 18px; height: 114px; overflow: hidden; font-size: 27px; line-height: 38px; color: #334155; }
+.night #hero .story { color: rgba(255, 255, 255, 0.78); }
 
 #rows {
   position: absolute;
@@ -750,7 +761,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .crow { position: absolute; left: 80px; width: 1840px; height: 300px; -webkit-transition: opacity 0.25s; transition: opacity 0.25s; }
 .crow.gone { opacity: 0; }
-.ctitle { font-size: 30px; font-weight: 800; color: #E5E5E5; white-space: nowrap; }
+.ctitle { font-size: 30px; font-weight: 800; color: #1E293B; white-space: nowrap; }
+.night .ctitle { color: #E5E5E5; }
 .strip {
   position: absolute;
   left: 0;
@@ -773,7 +785,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  background-color: #2A2A2A;
+  background-color: #DADDE3;
   background-size: cover;
   background-position: center;
 }
@@ -795,5 +807,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85));
 }
 .item.focus { -webkit-transform: scale(1.1); transform: scale(1.1); z-index: 2; }
-.item.focus .thumb { box-shadow: 0 0 0 4px #FFF, 0 14px 30px rgba(0, 0, 0, 0.6); }
-#catalog .msg { position: absolute; left: 80px; top: 640px; width: 1400px; font-size: 32px; font-weight: 600; color: rgba(255, 255, 255, 0.7); }
+.night .item .thumb { background-color: #1E2433; }
+/* Focused: the theme's purple ring, as on the channel cards. */
+.item.focus .thumb { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(124, 58, 237, 0.35); }
+.night .item.focus .thumb { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(0, 0, 0, 0.6); }
+#catalog .msg { position: absolute; left: 80px; top: 640px; width: 1400px; font-size: 32px; font-weight: 600; color: #475569; }
+.night #catalog .msg { color: rgba(255, 255, 255, 0.7); }

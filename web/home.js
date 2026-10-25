@@ -661,7 +661,6 @@
 
   function renderCards() {
     setClass(body, 'catalog', st.tab !== 0);
-    setClass(body, 'night', Data.isNight(Date.now()) || st.tab !== 0);
     if (st.tab === 0) { renderLive(); return; }
     renderCatalog();
   }
@@ -1388,7 +1387,7 @@
 
   function checkNight() {
     var night = Data.isNight(Date.now());
-    setClass(body, 'night', night || st.tab !== 0);   // Movies and Shows are always dark, as on Netflix
+    setClass(body, 'night', night);
     if (night === lastNight) return;
     lastNight = night;
     document.documentElement.style.background = night ? '#020617' : '';
