@@ -31,6 +31,8 @@ person's, stay only in that file (git ignores it), are never printed and never c
   channels; they come from the TV's remote-control API (SSAP, `ws://127.0.0.1:3000`), one shared connection, paired
   once (the TV asks) with the permissions in `SSAP_PERMISSIONS` (a key only works with the list it was granted for).
   Tested on this TV: `tv/getChannelList`, `tv/getCurrentChannel` and `tv/getChannelCurrentProgramInfo` work;
+  `listLaunchPoints` there gives icons at `http://127.0.0.1:3000/resources/<hash>/…`, valid only while that
+  connection is open (404 after), so `keepIcons` reads them at once into data URLs (`fmtv.icons`);
   `tv/getChannelProgramInfo` returns an empty list on Brazilian open TV, so each channel's program is kept from when it
   was tuned (`guide` in localStorage); `tv/openChannel` switches the tuner but brings the TV's Live TV app to the front
   (and a hidden app's timers stop, so it can't come back by itself).

@@ -187,6 +187,57 @@ var TV = (function () {
     ['com.webos.app.browser', 'Web Browser', '', '#3A7BD5']
   ];
 
+  // The remote control API gives each icon an address that only works while that connection is open (a new one each
+  // time, 404 after), so the icons are read right away and kept as data URLs, by app (fmtv.icons): they always show,
+  // and the logo can be lifted off them (a data URL doesn't taint the canvas).
+  var ICONS = 'fmtv.icons';
+  var iconCache = {};
+  try { iconCache = JSON.parse(localStorage.getItem(ICONS) || '{}') || {}; } catch (e) { iconCache = {}; }
+
+  /** An image at url as a data URL; done(null) when it can't be read. */
+  function dataUrl(url, done) {
+    var x = new XMLHttpRequest();
+    try {
+      x.open('GET', url, true);
+      x.responseType = 'arraybuffer';
+    } catch (e) { done(null); return; }
+    x.timeout = 8000;
+    x.onloadend = function () {
+      if (x.status !== 200 || !x.response || !x.response.byteLength) { done(null); return; }
+      var bytes = new Uint8Array(x.response), bin = '';
+      for (var i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+      var type = x.getResponseHeader('content-type') ||
+          (/\.jpe?g$/i.test(url) ? 'image/jpeg' : /\.svg$/i.test(url) ? 'image/svg+xml' : 'image/png');
+      done('data:' + type + ';base64,' + btoa(bin));
+    };
+    x.send();
+  }
+
+  /** Each app's icon read now, while its address works; else the one kept from before. Apps gone leave the cache. */
+  function keepIcons(apps, done) {
+    var left = apps.length + 1, kept = {};
+    function one() {
+      if (--left > 0) return;
+      iconCache = kept;
+      try { localStorage.setItem(ICONS, JSON.stringify(kept)); } catch (e) {}   // full: they stay for this run
+      done(apps);
+    }
+    apps.forEach(function (a) {
+      if (!/^https?:\/\/127\.0\.0\.1:300\d\//.test(a.icon)) {
+        if (!a.icon && iconCache[a.id]) a.icon = iconCache[a.id];
+        if (iconCache[a.id]) kept[a.id] = iconCache[a.id];
+        one();
+        return;
+      }
+      dataUrl(a.icon, function (d) {
+        a.icon = d || iconCache[a.id] || '';
+        if (a.icon) kept[a.id] = a.icon;
+        one();
+      });
+    });
+    one();
+  }
+
   function knownApps(done) {
     var found = [], left = KNOWN.length, sent = false;
     function finish() {
@@ -197,7 +248,8 @@ var TV = (function () {
     setTimeout(finish, 5000);   // an id that never answers doesn't hold the rest
     KNOWN.forEach(function (k, i) {
       luna('luna://com.webos.applicationManager/getAppLoadStatus', {appId: k[0]}, function (res) {
-        if (res && res.exist) found[i] = {id: k[0], title: k[1], icon: k[2] || '', color: k[3] || ''};
+        // Our logo where web/icons has one, else the TV's own icon kept from a time the API listed it.
+        if (res && res.exist) found[i] = {id: k[0], title: k[1], icon: k[2] || iconCache[k[0]] || '', color: k[3] || ''};
         if (--left === 0) finish();
       });
     });
@@ -390,7 +442,7 @@ var TV = (function () {
         var paired = ssapPaired(), refused = !ssapAllowed();
         if (paired) {
           ssap('com.webos.applicationManager/listLaunchPoints', function (res2) {
-            if (res2) done(list(res2)); else knownApps(done);
+            if (res2) keepIcons(list(res2), done); else knownApps(done);
           });
           return;
         }
