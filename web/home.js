@@ -1689,8 +1689,20 @@
     if (!d) return;
     edit.drag = null;
     if (st.zone !== Z.EDIT) return;
-    if (d.moved) dropHeld();
-    else { edit.menu = true; edit.menuAt = 0; placeEdit(); }
+    if (d.moved) {
+      // The click that ends a drag lands wherever the pointer is: it isn't a click on the empty space.
+      edit.dropped = true;
+      setTimeout(function () { edit.dropped = false; }, 0);
+      dropHeld();
+    } else { edit.menu = true; edit.menuAt = 0; placeEdit(); }
+  });
+
+  // A click on the editor's empty space (not an app, not its options) is Back: it closes the options, puts back the
+  // app being moved, or leaves the editor for Home Settings.
+  $('shelfedit').addEventListener('click', function (e) {
+    if (st.zone !== Z.EDIT || edit.dropped) return;
+    for (var n = e.target; n && n !== this; n = n.parentNode) if (n.appId || hasClass(n, 'menu')) return;
+    editBack();
   });
 
   // MARK: - Opening things
