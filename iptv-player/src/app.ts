@@ -1498,10 +1498,14 @@ class App {
   private async openDeepLink(link: DeepLink): Promise<void> {
     log.info('Deep link', 'event=deeplink.open', `kind=${link.kind}`);
     if (link.kind === 'channel') {
+      // The launcher's own stream first: a playlist channel of the same name may come from an account that's down.
+      if (link.url) {
+        this.playLinkedStream(link.url, link.title, link.logo ?? '');
+        return;
+      }
       const channel = matchTitle(PlaylistService.channels, link);
       const index = channel ? PlaylistService.channels.indexOf(channel) : -1;
       if (index >= 0) this.playChannel(index);
-      else if (link.url) this.playLinkedStream(link.url, link.title, link.logo ?? '');
       else showToast(t('deepLink.notFound', { title: link.title }));
       return;
     }
