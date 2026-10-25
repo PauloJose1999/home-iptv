@@ -270,7 +270,7 @@
 
   // MARK: - Focus
 
-  var Z = {TOP: 'top', CARDS: 'cards', CATALOG: 'catalog', SHELF: 'shelf', DRAWER: 'drawer', APPS: 'apps', SETTINGS: 'settings', EDIT: 'edit', LANG: 'lang'};
+  var Z = {TOP: 'top', CARDS: 'cards', CATALOG: 'catalog', DETAIL: 'detail', SHELF: 'shelf', DRAWER: 'drawer', APPS: 'apps', SETTINGS: 'settings', EDIT: 'edit', LANG: 'lang'};
   var st = {zone: Z.SHELF, top: 0, tab: 0, card: 0, crow: 0, ccol: [], shelf: 0, drawer: 0, grid: 0, row: 0, edit: 0, lang: 0};
   var cards = [];
 
@@ -304,6 +304,7 @@
     if (st.tab === 0 && cards[0] && cards[0].live) placePlayer();
     else if (player.slots.length) stopPlayer();
     placeCatalog();
+    if (st.zone === Z.DETAIL) placeDetail();
   }
 
   function focusRows(sheet, index, on) {
@@ -806,6 +807,230 @@
       if (app) launcher(app.id, app.title)();
       else toast(trf("{title} isn't on this TV's apps.", {title: p.title}));
     });
+  }
+
+  // MARK: - Details: a movie's or a show's page (Watch, cast, similar titles) and a person's (filmography)
+  //
+  // A stack of pages over the tabs: a title opens its page, a cast member theirs, a title of a filmography or a similar
+  // one its own, and Back goes down the stack to the row and item it was left on. A page draws what it already has at
+  // once (the title from its row, a cast member's name and photo) and the rest when TMDB answers; only the photos near
+  // the focus load. Watch is the same OK as before this page (openTitle: the IPTV player, or the streaming app).
+
+  var pages = [];   // {type: 'title' | 'person', kind, id, item, data, error, rows, row, cols, nodes}
+  // Rows start under the header (a person's, without Watch, is shorter); a lower row, focused, comes up to LIFT_TO.
+  var DETAIL_TOP = 650, PERSON_TOP = 560, LIFT_TO = 540, CAST_STEP = 220, POSTER_STEP = 250, ROW_H = {cast: 330, posters: 480};
+
+  function openDetail(page) {
+    page.row = 0;
+    page.cols = [];
+    pages.push(page);
+    st.zone = Z.DETAIL;
+    setClass(body, 'detail-open', true);
+    renderDetail();
+    var answer = function (err, data) {
+      page.data = data || null;
+      page.error = !!err;
+      if (pages[pages.length - 1] === page) renderDetail();
+    };
+    if (page.type === 'person') Data.personDetails(page.id, answer);
+    else Data.titleDetails(page.kind, page.id, answer);
+  }
+
+  /** Back: the page under this one, as it was left; from the last one, the tab it was opened from. */
+  function detailBack() {
+    pages.pop();
+    if (pages.length) { renderDetail(); return; }
+    setClass(body, 'detail-open', false);
+    $('detail').lastChild.innerHTML = '';
+    st.zone = Z.CATALOG;
+    updateFocus();
+  }
+
+  /** What a page's rows hold: Watch, then cast and similar titles; a person's movies, shows and other work. */
+  function detailRows(page) {
+    var d = page.data, rows = [];
+    if (page.type === 'title') {
+      rows.push({type: 'actions', items: [{label: tr('Watch')}]});
+      if (d && d.cast.length) rows.push({type: 'cast', title: tr('Cast'), items: d.cast});
+      if (d && d.similar.length) rows.push({type: 'posters', title: page.kind === 'movie' ? tr('Similar movies') : tr('Similar shows'), items: d.similar});
+      return rows;
+    }
+    if (d && d.movies.length) rows.push({type: 'posters', title: tr('Movies'), items: d.movies});
+    if (d && d.shows.length) rows.push({type: 'posters', title: tr('Shows'), items: d.shows});
+    if (d && d.work.length) rows.push({type: 'posters', title: tr('Directing and other work'), items: d.work});
+    return rows;
+  }
+
+  /** The first letters of a name, where there's no photo. */
+  function initials(name) {
+    var words = (name || '?').split(/\s+/);
+    return (words[0].charAt(0) + (words.length > 1 ? words[words.length - 1].charAt(0) : '')).toUpperCase();
+  }
+
+  /** "November 11, 1974" from TMDB's "1974-11-11", in the TV's language. */
+  function longDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    return m ? formatDate('format|MMMM d, y', new Date(+m[1], m[2] - 1, +m[3], 12).getTime()) : '';
+  }
+
+  /** What a person is known for, as TMDB names it in English. */
+  function department(name) {
+    switch (name) {
+      case 'Acting': return tr('dept|Acting');
+      case 'Directing': return tr('dept|Directing');
+      case 'Writing': return tr('dept|Writing');
+      case 'Production': return tr('dept|Production');
+      default: return name;
+    }
+  }
+
+  function renderDetail() {
+    var page = pages[pages.length - 1], box = $('detail'), holder = box.lastChild;
+    var d = page.data, it = page.item || {}, person = page.type === 'person';
+    holder.innerHTML = '';
+    page.rows = detailRows(page);
+    page.row = Math.max(0, Math.min(page.row, page.rows.length - 1));
+    page.nodes = [];
+
+    // The backdrop, as on the tabs: the title's, or for a person their best-known title's.
+    var known = person && d ? (d.movies[0] || d.shows[0]) : null;
+    var backdrop = person ? known && known.backdrop : (d && d.backdrop) || it.backdrop;
+    setClass(box.firstChild, 'on', false);
+    if (backdrop) {
+      var url = Data.image(backdrop, 'w1280'), img = new Image();
+      img.onload = function () {
+        if (pages[pages.length - 1] !== page) return;
+        box.firstChild.style.backgroundImage = 'url(' + url + ')';
+        setClass(box.firstChild, 'on', true);
+      };
+      img.src = url;
+    }
+
+    var head = el('div', 'dhead', holder);
+    var photo = el('div', 'dposter', head), photoPath = person ? (d && d.profile) || it.profile : (d && d.poster) || it.poster;
+    if (photoPath) photo.style.backgroundImage = 'url(' + Data.image(photoPath, 'w342') + ')';
+    else el('div', 'initials', photo, initials(person ? it.name : it.title));
+    var info = el('div', 'dinfo', head);
+
+    if (person) {
+      el('div', 'dtitle', info, (d && d.name) || it.name || '');
+      if (d) {
+        var born = d.birthday && d.place ? trf('Born {date} in {place}', {date: longDate(d.birthday), place: d.place})
+            : d.birthday ? trf('Born {date}', {date: longDate(d.birthday)}) : d.place ? trf('Born in {place}', {place: d.place}) : '';
+        var line = [];
+        if (d.department) line.push(department(d.department));
+        if (born) line.push(born);
+        if (d.deathday) line.push(trf('Died {date}', {date: longDate(d.deathday)}));
+        if (line.length) el('div', 'dmeta', info, line.join('  ·  '));
+        if (d.biography) el('div', 'dstory bio', info, d.biography);
+        if (page.rows.length) el('div', 'dsmall', info, tr("The titles TMDB knows of, not necessarily the whole career."));
+      }
+    } else {
+      var t = d || it;
+      el('div', 'dtitle', info, t.title || '');
+      var meta = el('div', 'dmeta', info), parts = [];
+      if (t.year) parts.push(t.year);
+      if (t.rating) parts.push('★ ' + (Math.round(t.rating * 10) / 10).toFixed(1));
+      if (d && d.runtime && page.kind === 'movie') parts.push(trf('runtime|{n} min', {n: d.runtime}));
+      if (d && d.seasons) parts.push(plural('plural|one:{n} season|other:{n} seasons', d.seasons));
+      if (d && d.genreNames.length) parts.push(d.genreNames.slice(0, 3).join(', '));
+      el('span', '', meta, parts.join('  ·  '));
+      Data.imdbRating({kind: page.kind, id: page.id, title: t.title, year: t.year}, function (rating) {
+        if (rating && pages[pages.length - 1] === page && meta.parentNode) meta.insertBefore(el('span', 'imdb', null, 'IMDb ' + rating), meta.firstChild);
+      });
+      if (t.overview) el('div', 'dstory', info, t.overview);
+      if (d && d.directors.length) {
+        var names = {names: d.directors.join(', ')};
+        el('div', 'dline', info, page.kind === 'movie' ? trf('Directed by {names}', names) : trf('Created by {names}', names));
+      }
+      var actions = el('div', 'dactions', info), nodes = [];
+      for (var a = 0; a < page.rows[0].items.length; a++) {
+        var btn = el('div', 'dbtn', actions, page.rows[0].items[a].label);
+        hover(btn, Z.DETAIL, a);
+        nodes.push(btn);
+      }
+      page.nodes[0] = nodes;
+    }
+    if (!d) el('div', 'dnote', info, page.error ? (person ? tr("Couldn't load this person's page.") : tr("Couldn't load more about this title.")) : tr('Loading…'));
+
+    // The rows under the header: cast (round photos, name, character) and posters (title, year or role).
+    var top = page.firstTop = person ? PERSON_TOP : DETAIL_TOP;
+    for (var r = 0; r < page.rows.length; r++) {
+      var row = page.rows[r];
+      if (row.type === 'actions') continue;
+      var rowNode = el('div', 'drow ' + row.type, holder), items = [];
+      rowNode.style.top = top + 'px';
+      row.top = top;
+      top += ROW_H[row.type];
+      el('div', 'dlabel', rowNode, row.title);
+      var strip = el('div', 'dstrip', rowNode);
+      for (var i = 0; i < row.items.length; i++) {
+        var x = row.items[i], node = el('div', 'ditem ' + (row.type === 'cast' ? 'cast' : 'poster'), strip);
+        node.style.left = i * (row.type === 'cast' ? CAST_STEP : POSTER_STEP) + 'px';
+        var pic = el('div', row.type === 'cast' ? 'circle' : 'pimg', node);
+        if (!(row.type === 'cast' ? x.profile : x.poster)) el('div', 'initials', pic, row.type === 'cast' ? initials(x.name) : x.title);
+        el('div', 'dname', node, row.type === 'cast' ? x.name : x.title);
+        var second = row.type === 'cast' ? x.character : person ? [x.year, x.role].filter(Boolean).join('  ·  ') : x.year;
+        if (second) el('div', 'drole', node, second);
+        hover(node, Z.DETAIL, r * 1000 + i);
+        items.push(node);
+      }
+      page.nodes[r] = items;
+      row.strip = strip;
+      row.node = rowNode;
+    }
+    updateFocus();
+  }
+
+  /** The focus, the rows' scroll (the focused row comes up, its item stays in view) and the photos near the focus. */
+  function placeDetail() {
+    var page = pages[pages.length - 1];
+    if (!page || !page.rows) return;
+    var holder = $('detail').lastChild, focusRow = page.rows[page.row];
+    // A row below the first one comes up to where the first one is; Watch and the first row keep the page still.
+    var lift = focusRow && focusRow.top > page.firstTop ? focusRow.top - LIFT_TO : 0;
+    holder.style.webkitTransform = holder.style.transform = 'translateY(' + (-lift) + 'px)';
+    for (var r = 0; r < page.rows.length; r++) {
+      var row = page.rows[r], nodes = page.nodes[r] || [], col = page.cols[r] || 0, first = Math.max(0, col - 2);
+      var step = row.type === 'cast' ? CAST_STEP : POSTER_STEP;
+      if (row.strip) row.strip.style.webkitTransform = row.strip.style.transform = 'translateX(' + (-first * step) + 'px)';
+      for (var i = 0; i < nodes.length; i++) {
+        setClass(nodes[i], 'focus', st.zone === Z.DETAIL && r === page.row && i === col);
+        // Only the photos of the rows near the focus, on screen or next to it, are loaded.
+        if (!nodes[i].loaded && row.type !== 'actions' && Math.abs(r - page.row) <= 1 && i >= first - 1 && i <= first + 9) {
+          var x = row.items[i], path = row.type === 'cast' ? x.profile : x.poster;
+          nodes[i].loaded = true;
+          if (path) nodes[i].firstChild.style.backgroundImage = 'url(' + Data.image(path, 'w185') + ')';
+        }
+      }
+    }
+  }
+
+  function detailMove(dx, dy) {
+    var page = pages[pages.length - 1];
+    if (!page || !page.rows.length) return;
+    if (dx) {
+      var n = page.rows[page.row].items.length;
+      page.cols[page.row] = Math.max(0, Math.min(n - 1, (page.cols[page.row] || 0) + dx));
+    } else if (dy) {
+      page.row = Math.max(0, Math.min(page.rows.length - 1, page.row + dy));
+    }
+  }
+
+  /** OK: Watch; a cast member's page; a title's page. */
+  function detailActivate() {
+    var page = pages[pages.length - 1];
+    if (!page || !page.rows.length) return;
+    var row = page.rows[page.row], x = row.items[page.cols[page.row] || 0];
+    if (!x) return;
+    if (row.type === 'actions') {
+      var t = page.data || page.item || {};
+      openTitle({kind: page.kind, id: page.id, title: t.title, year: t.year, original: t.original});
+    } else if (row.type === 'cast') {
+      openDetail({type: 'person', id: x.id, item: {name: x.name, profile: x.profile}});
+    } else {
+      openDetail({type: 'title', kind: x.kind, id: x.id, item: x});
+    }
   }
 
   var bgUrl = null, bgFront = 'bgA';
@@ -1541,7 +1766,13 @@
         if (app) launcher(app.id, app.title)();
         return;
       case Z.CATALOG:
-        openTitle(focusedItem());
+        // A TMDB title opens its page (Watch is there, focused); one of the provider's rows plays as before.
+        var item = focusedItem();
+        if (item && !item.streamId && !item.seriesId) openDetail({type: 'title', kind: item.kind, id: item.id, item: item});
+        else openTitle(item);
+        return;
+      case Z.DETAIL:
+        detailActivate();
         return;
       case Z.SHELF:
         if (shelf[st.shelf]) launcher(shelf[st.shelf].id, shelf[st.shelf].title)();
@@ -1600,6 +1831,9 @@
         else if (dy < 0) { st.zone = Z.TOP; st.top = st.tab; }
         else if (shelf.length) { st.zone = Z.SHELF; st.shelf = nearest(tiles, centerX(cardNodes[st.card])); }
         break;
+      case Z.DETAIL:
+        detailMove(dx, dy);
+        break;
       case Z.CATALOG:
         var row = catalog && catalog.rows[st.crow];
         if (dx && row) st.ccol[st.crow] = Math.max(0, Math.min(row.items.length - 1, (st.ccol[st.crow] || 0) + dx));
@@ -1646,6 +1880,7 @@
   }
 
   function back() {
+    if (st.zone === Z.DETAIL) { detailBack(); return; }
     if (st.zone === Z.EDIT) { editBack(); return; }
     if (st.zone === Z.LANG) { closePicker(false); return; }
     if (sheetOpen()) { closeSheets(); return; }
@@ -1669,6 +1904,10 @@
       if (zone === Z.TOP) { st.top = index; if (index < 3) selectTab(index); }
       else if (zone === Z.CARDS) st.card = index;
       else if (zone === Z.CATALOG) { st.crow = Math.floor(index / 1000); st.ccol[st.crow] = index % 1000; }
+      else if (zone === Z.DETAIL && pages.length) {
+        pages[pages.length - 1].row = Math.floor(index / 1000);
+        pages[pages.length - 1].cols[Math.floor(index / 1000)] = index % 1000;
+      }
       else if (zone === Z.SHELF) st.shelf = index;
       else if (zone === Z.DRAWER) st.drawer = index;
       else if (zone === Z.APPS) st.grid = index;

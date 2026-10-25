@@ -352,6 +352,149 @@ var Data = (function () {
     });
   }
 
+  // MARK: - Details: a title's page (cast, similar titles) and a person's (filmography)
+  //
+  // One TMDB request each (append_to_response), only when the page opens; what the pages show is kept 3 days (the 40
+  // last pages, trimmed to what's drawn), so going back and forth costs nothing.
+
+  var DETAIL_DAYS = 3, DETAIL_MAX = 40, CAST_MAX = 20, SIMILAR_MAX = 20, CREDITS_MAX = 60;
+  // TV credits that are appearances as oneself (talk shows, news, reality, awards), not roles.
+  var SELF_GENRES = [10767, 10763, 10764];
+  var details = stored('details') || {};   // 'movie:1' | 'tv:2' | 'person:3' -> {at, lang, data}
+
+  function cachedDetail(k) {
+    var hit = details[k], t = Date.now();
+    return hit && hit.lang === I18N.lang && t - hit.at < DETAIL_DAYS * 86400000 && t >= hit.at ? hit.data : null;
+  }
+
+  function keepDetail(k, data) {
+    details[k] = {at: Date.now(), lang: I18N.lang, data: data};
+    var keys = Object.keys(details);
+    if (keys.length > DETAIL_MAX) {
+      keys.sort(function (a, b) { return details[a].at - details[b].at; });
+      for (var i = 0; i < keys.length - DETAIL_MAX; i++) delete details[keys[i]];
+    }
+    store('details', details);
+  }
+
+  function dateOf(o) { return o.release_date || o.first_air_date || ''; }
+
+  /** A title as the pages and rows draw it. */
+  function brief(o, kind) {
+    var date = dateOf(o);
+    return {
+      id: o.id, kind: kind, title: kind === 'movie' ? o.title : o.name,
+      original: kind === 'movie' ? o.original_title : o.original_name,
+      poster: o.poster_path || '', backdrop: o.backdrop_path || '', overview: o.overview || '',
+      year: date ? date.slice(0, 4) : '', rating: o.vote_average || 0, genres: o.genre_ids || []
+    };
+  }
+
+  /**
+   * Similar titles: TMDB's recommendations first (what people who liked this one watched), then its similar titles;
+   * each scored by that, by the genres it shares with this one and by its rating, without repeats or this title.
+   */
+  function rankSimilar(o, kind) {
+    var mine = (o.genres || []).map(function (g) { return g.id; }), seen = {}, scored = [];
+    seen[o.id] = true;
+    function add(list, weight) {
+      for (var i = 0; list && i < list.length; i++) {
+        var x = list[i];
+        if (seen[x.id] || !x.poster_path || (x.vote_count || 0) < 10) continue;
+        seen[x.id] = true;
+        var shared = 0;
+        for (var g = 0; x.genre_ids && g < x.genre_ids.length; g++) if (mine.indexOf(x.genre_ids[g]) >= 0) shared++;
+        scored.push({score: weight * 10 - i * 0.3 + shared * 3 + Math.min(x.vote_average || 0, 10) * 0.5, item: brief(x, kind)});
+      }
+    }
+    add(o.recommendations && o.recommendations.results, 2);
+    add(o.similar && o.similar.results, 1);
+    scored.sort(function (a, b) { return b.score - a.score; });
+    return scored.slice(0, SIMILAR_MAX).map(function (s) { return s.item; });
+  }
+
+  /** A movie's or a show's page: done(err, data). */
+  function titleDetails(kind, id, done) {
+    var k = kind + ':' + id, hit = cachedDetail(k);
+    if (hit) { done(null, hit); return; }
+    if (!KEY) { done(new Error('no key')); return; }
+    tmdb('/' + kind + '/' + id + '?language=' + lang() + '&append_to_response=credits,recommendations,similar', function (err, o) {
+      if (err || !o || !o.id) { done(err || new Error('TMDB returned nothing')); return; }
+      var b = brief(o, kind), credits = o.credits || {}, crew = credits.crew || [];
+      b.genreNames = (o.genres || []).map(function (g) { return genre(g.name); });
+      b.runtime = kind === 'movie' ? o.runtime || 0 : (o.episode_run_time && o.episode_run_time[0]) || 0;
+      b.seasons = o.number_of_seasons || 0;
+      b.directors = (kind === 'movie' ? crew.filter(function (c) { return c.job === 'Director'; }) : o.created_by || [])
+          .map(function (c) { return c.name; }).slice(0, 3);
+      b.cast = (credits.cast || []).slice(0, CAST_MAX).map(function (c) {
+        return {id: c.id, name: c.name, character: c.character || '', profile: c.profile_path || ''};
+      });
+      b.similar = rankSimilar(o, kind);
+      var finish = function () { keepDetail(k, b); done(null, b); };
+      // Too few: the most popular titles of its two main genres, still never this one.
+      var top = (o.genres || []).slice(0, 2).map(function (g) { return g.id; });
+      if (b.similar.length >= 6 || !top.length) { finish(); return; }
+      tmdb('/discover/' + kind + '?language=' + lang() + '&sort_by=popularity.desc&vote_count.gte=50&with_genres=' + top.join(','), function (e2, r) {
+        var have = {};
+        have[o.id] = true;
+        for (var s = 0; s < b.similar.length; s++) have[b.similar[s].id] = true;
+        for (var i = 0; !e2 && r && r.results && i < r.results.length && b.similar.length < SIMILAR_MAX; i++) {
+          var x = r.results[i];
+          if (!have[x.id] && x.poster_path) { have[x.id] = true; b.similar.push(brief(x, kind)); }
+        }
+        finish();
+      });
+    });
+  }
+
+  /** A person's credits of one kind, each title once (its roles together), the most relevant first. */
+  function credits(list, kind, crew) {
+    var byId = {}, out = [];
+    for (var i = 0; list && i < list.length; i++) {
+      var c = list[i];
+      if (c.media_type !== kind) continue;
+      if (!crew && kind === 'tv' && c.genre_ids && c.genre_ids.some(function (g) { return SELF_GENRES.indexOf(g) >= 0; })) continue;
+      var role = crew ? c.job : c.character;
+      if (byId[c.id]) {
+        if (role && byId[c.id].role.indexOf(role) < 0) byId[c.id].role += ', ' + role;
+        continue;
+      }
+      var b = brief(c, kind);
+      b.role = role || '';
+      b.popularity = c.popularity || 0;
+      byId[c.id] = b;
+      out.push(b);
+    }
+    out.sort(function (a, b) { return b.popularity - a.popularity || (b.year > a.year ? 1 : b.year < a.year ? -1 : 0); });
+    return out.slice(0, CREDITS_MAX);
+  }
+
+  /** A person's page: done(err, data). */
+  function personDetails(id, done) {
+    var k = 'person:' + id, hit = cachedDetail(k);
+    if (hit) { done(null, hit); return; }
+    if (!KEY) { done(new Error('no key')); return; }
+    tmdb('/person/' + id + '?language=' + lang() + '&append_to_response=combined_credits', function (err, o) {
+      if (err || !o || !o.id) { done(err || new Error('TMDB returned nothing')); return; }
+      var cc = o.combined_credits || {};
+      var p = {
+        id: o.id, name: o.name, profile: o.profile_path || '', biography: o.biography || '',
+        birthday: o.birthday || '', deathday: o.deathday || '', place: o.place_of_birth || '',
+        department: o.known_for_department || '',
+        movies: credits(cc.cast, 'movie', false), shows: credits(cc.cast, 'tv', false),
+        // Directing, writing, producing…: a title once, its jobs together; the ones also acted in stay in their row.
+        work: credits((cc.crew || []), 'movie', true).concat(credits((cc.crew || []), 'tv', true)).slice(0, CREDITS_MAX)
+      };
+      var finish = function () { keepDetail(k, p); done(null, p); };
+      if (p.biography || I18N.lang === 'en') { finish(); return; }
+      // No biography in this language: the English one, when TMDB has it.
+      tmdb('/person/' + id + '?language=en-US', function (e2, en) {
+        if (!e2 && en && en.biography) { p.biography = en.biography; p.biographyLang = 'en'; }
+        finish();
+      });
+    });
+  }
+
   // MARK: - IMDb rating (OMDb, with the person's free key from config.properties): only the title the focus rests on
   // asks, and the answer is kept a week, so a tab never sends a request per title.
 
@@ -426,6 +569,8 @@ var Data = (function () {
     catalog: catalog,
     whereToWatch: whereToWatch,
     imdbRating: imdbRating,
+    titleDetails: titleDetails,
+    personDetails: personDetails,
     showcase: showcase,
     image: function (path, size) {
       if (!path) return '';
