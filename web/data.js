@@ -389,8 +389,6 @@ var Data = (function () {
     appFor: appFor,
     refresh: refreshWeather,
     get weather() { return weather; },
-    get weatherAt() { return weatherAt; },
-    hasKey: function () { return !!KEY; },
     catalog: catalog,
     whereToWatch: whereToWatch,
     showcase: showcase,
@@ -421,14 +419,6 @@ var Data = (function () {
     hour: function (at) { return formatDate('format|h a', at); },
     /** "5:21 AM", "05:21": the clock, sunrise and sunset. */
     time: function (at) { return formatDate('format|h:mm a', at); },
-    /** "12 min ago" when the data is old (no internet), or empty. */
-    staleness: function (at, every) {
-      if (!at) return '';
-      var age = Date.now() - at;
-      if (age < every * 2) return '';
-      var m = Math.floor(age / 60000), h = Math.floor(m / 60);
-      return m < 60 ? trf('{n} min ago', {n: m}) : trf('{n} h ago', {n: h});
-    },
     condition: function (code, day) {
       if (code === undefined || code === null || code < 0) return '';
       if (code === 0) return day ? tr('Clear') : tr('night|Clear');

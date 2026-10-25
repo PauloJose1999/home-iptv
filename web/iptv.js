@@ -349,7 +349,6 @@ var IPTV = (function () {
     lookup: lookup,
     /** Every channel of the list (after load). */
     channels: function () { return list; },
-    playChannel: playChannel,
-    parseM3u: parseM3u
+    playChannel: playChannel
   };
 })();

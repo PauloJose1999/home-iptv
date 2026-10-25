@@ -392,12 +392,6 @@ var TV = (function () {
     });
   }
 
-  /** Switches the tuner to this channel without opening anything (for the player in the cards); done(ok). */
-  function tune(ch, done) {
-    if (!webos || !ssapAllowed()) { if (done) setTimeout(function () { done(false); }, 0); return; }
-    ssap('tv/openChannel', {channelId: ch.id}, function (res) { if (done) done(!!res); });
-  }
-
   /** The channel the TV is on: {id, number, name} or null. */
   function currentChannel(done) {
     if (!webos || !ssapAllowed()) { setTimeout(function () { done(null); }, 0); return; }
@@ -507,8 +501,7 @@ var TV = (function () {
     /** Live TV on a channel from channels(). */
     openChannel: openChannel,
 
-    /** The player in the cards: switch the tuner, which channel it's on, and what's on it (kept for each channel). */
-    tune: tune,
+    /** The player in the cards: which channel it's on and what's on it (kept for each channel). */
     currentChannel: currentChannel,
     nowOnTuner: nowOnTuner,
     known: known,
