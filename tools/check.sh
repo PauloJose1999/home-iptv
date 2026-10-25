@@ -20,4 +20,31 @@ if grep -nE '\.(includes|startsWith|endsWith|padStart|padEnd|repeat|find|findInd
   exit 1
 fi
 
+# Each file is one function: a name declared twice there (two `var ROW_H`) silently replaces the first.
+python3 - <<'PY'
+import re, sys, glob
+bad = []
+for f in sorted(glob.glob('web/*.js')):
+    seen = {}
+    for n, line in enumerate(open(f, encoding='utf-8'), 1):
+        if re.match(r'^(var |\}\))', line):
+            seen = {}   # a file can hold several modules (data.js: Place, Prefs, Data), each its own function
+        m = re.match(r'^  (?:var|function) (.*)', line)
+        if not m:
+            continue
+        # Without the comment and the strings, whose words aren't declarations.
+        decl = re.sub(r"//.*|'(?:[^'\\]|\\.)*'", '', m.group(1))
+        if line.startswith('  function'):
+            names = re.findall(r'^([A-Za-z_$][\w$]*)', decl)
+        else:
+            names = re.findall(r'(?:^|,\s*)([A-Za-z_$][\w$]*)\s*(?==|,|;|$)', decl.strip())
+        for name in names:
+            if name in seen:
+                bad.append('%s:%d: %s was already declared on line %d' % (f, n, name, seen[name]))
+            seen.setdefault(name, n)
+for b in bad:
+    print(b)
+sys.exit(1 if bad else 0)
+PY
+
 echo "All checks passed."

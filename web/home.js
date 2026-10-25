@@ -818,7 +818,7 @@
 
   var pages = [];   // {type: 'title' | 'person', kind, id, item, data, error, rows, row, cols, nodes}
   // Rows start under the header (a person's, without Watch, is shorter); a lower row, focused, comes up to LIFT_TO.
-  var DETAIL_TOP = 650, PERSON_TOP = 560, LIFT_TO = 540, CAST_STEP = 220, POSTER_STEP = 250, ROW_H = {cast: 330, posters: 480};
+  var DETAIL_TOP = 650, PERSON_TOP = 560, LIFT_TO = 540, CAST_STEP = 220, POSTER_STEP = 250, DETAIL_ROW_H = {cast: 330, posters: 480};
 
   function openDetail(page) {
     page.row = 0;
@@ -961,7 +961,7 @@
       var rowNode = el('div', 'drow ' + row.type, holder), items = [];
       rowNode.style.top = top + 'px';
       row.top = top;
-      top += ROW_H[row.type];
+      top += DETAIL_ROW_H[row.type];
       el('div', 'dlabel', rowNode, row.title);
       var strip = el('div', 'dstrip', rowNode);
       for (var i = 0; i < row.items.length; i++) {
@@ -1886,7 +1886,7 @@
     if (sheetOpen()) { closeSheets(); return; }
     if (st.zone === Z.DRAWER) { closeDrawer(); return; }
     // Movies and Shows: Back goes up to the tabs, then to TV aberta.
-    if (st.zone === Z.CATALOG) { st.zone = Z.TOP; st.top = st.tab; updateFocus(); return; }
+    if (st.zone === Z.CATALOG) { st.zone = Z.TOP; st.top = st.tab; st.crow = 0; updateFocus(); return; }   // and back to the first row
     if (st.tab !== 0) { selectTab(0); st.zone = Z.SHELF; updateFocus(); return; }
     if (st.zone !== Z.SHELF && shelf.length) { st.zone = Z.SHELF; updateFocus(); return; }
     TV.back();
