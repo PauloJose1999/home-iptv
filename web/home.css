@@ -339,6 +339,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .card.live .mark .sym { width: 120px; height: 120px; }
 .card.live.small .mark { right: 28px; margin-top: -40px; width: 80px; height: 80px; }
 .card.live.small .mark .sym { width: 80px; height: 80px; }
+/* The channel's logo from the IPTV list, in place of the symbol, while no picture plays on the card. */
+.card.live .mark.has-logo { width: 280px; height: 160px; margin-top: -80px; text-align: right; }
+.card.live.small .mark.has-logo { width: 180px; height: 100px; margin-top: -50px; }
+.card.live .mark .logo { max-width: 100%; max-height: 100%; opacity: 0.92; }
 .card.live .head { position: absolute; left: 30px; top: 26px; right: 200px; white-space: nowrap; color: #FFF; }
 .card.live.small .head { right: 170px; overflow: hidden; text-overflow: ellipsis; }
 .card.live .chan { font-size: 36px; font-weight: 900; letter-spacing: -0.02em; vertical-align: middle; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45); }

@@ -398,11 +398,12 @@
         if (got) out.push(got);
       }
       while (out.length < 3 && antenna.length) out.push(antenna.shift());
-      // An antenna channel the list also has plays its own stream in the card (Record News, TV Cultura…).
+      // An antenna channel the list also has plays its own stream in the card (Record News, TV Cultura…), and every
+      // card takes the list's logo for the channel.
       for (var k = 0; k < out.length; k++) {
-        if (out[k].iptv) continue;
+        if (out[k].iptv) { out[k].logo = out[k].iptv.logo; continue; }
         var same = IPTV.lookup(channelName(out[k].name));
-        if (same) out[k].stream = same.url;
+        if (same) { out[k].stream = same.url; out[k].logo = same.logo; }
       }
       done(out);
     });
@@ -468,7 +469,7 @@
       var img = el('div', 'img', card);
       paint(img, channelColors(name, c)[0], channelColors(name, c)[1]);
       el('div', 'shade', card);
-      sym('live_tv', el('div', 'mark', card));
+      channelMark(el('div', 'mark', card), ch);
       var head = el('div', 'head', card);
       el('span', 'chan', head, name);
       if (ch && ch.number) el('span', 'num', head, trf('Channel {n}', {n: ch.number}));
@@ -483,6 +484,17 @@
     updateFocus();
   }
 
+  /** The channel's logo on its card, while no picture plays there; the TV symbol when the list has none (or it fails). */
+  function channelMark(mark, ch) {
+    var symbol = sym('live_tv', mark);
+    if (!ch || !ch.logo) return;
+    var img = el('img', 'logo', mark);
+    img.style.display = 'none';
+    img.onload = function () { img.style.display = ''; symbol.style.display = 'none'; setClass(mark, 'has-logo', true); };
+    img.onerror = function () { if (img.parentNode) img.parentNode.removeChild(img); };
+    img.src = ch.logo;
+  }
+
   function liveRect(i, n) {
     var r = LIVE_RECTS[i];
     return [r[0], r[1], r[2], n === 2 && i === 1 ? 560 : r[3]];
@@ -493,7 +505,9 @@
   // Each card plays its own channel: from the internet when the IPTV list has it (Record News, TV Cultura… a stream per
   // channel, so moving to another card changes picture and sound), else from the antenna. The TV has one tuner, and
   // switching it from here takes the TV out of this app, so the antenna plays only on the card of the channel the TV is
-  // on; the other antenna cards stay as they are (OK opens them full screen). Nothing plays when no card is focused.
+  // on; the other antenna cards show the channel's logo (OK opens them full screen). With no card focused (the shelf,
+  // the top, the drawer), the last focused card, or else the first one that can, keeps playing without sound, so the
+  // home screen always shows TV.
 
   var player = {video: null, key: '', ok: false, timer: 0, current: null, currentAt: 0, learned: false};
 
@@ -556,12 +570,22 @@
     });
   }
 
-  /** Plays the focused card's channel in it; everything else is silent. */
+  /** The card that plays without sound while none is focused: the last focused one, else the first that can play. */
+  function previewCard() {
+    if (sourceFor(cards[st.card])) return st.card;
+    for (var i = 0; i < cards.length; i++) if (sourceFor(cards[i])) return i;
+    return st.card;
+  }
+
+  /** Plays the focused card's channel in it, with sound; with no card focused, one card plays silent. */
   function placePlayer() {
-    if (st.tab !== 0 || saverOn || st.zone !== Z.CARDS || sheetOpen() || IPTV.isOpen()) { stopPlayer(); return; }
+    if (st.tab !== 0 || saverOn || sheetOpen() || IPTV.isOpen()) { stopPlayer(); return; }
     checkCurrent();
-    var at = st.card, src = sourceFor(cards[at]);
+    var focused = st.zone === Z.CARDS;
+    var at = focused ? st.card : previewCard(), src = sourceFor(cards[at]);
     var key = src ? src.kind + ':' + (src.url || '') + ':' + at : '';
+    // The same channel goes on playing when the focus comes or goes: only its sound changes.
+    if (player.video && key === player.key) player.video.muted = !focused;
     if (key !== player.key) {
       stopPlayer();
       if (!src) return;
@@ -570,6 +594,7 @@
       player.timer = setTimeout(function () {
         if (player.key !== key) return;
         var v = makeVideo(src);
+        v.muted = st.zone !== Z.CARDS;
         var r = liveRect(at, cards.length);
         v.style.left = r[0] + 'px';
         v.style.top = r[1] + 'px';
@@ -1256,7 +1281,8 @@
       var p = photos.length ? photos[saverIndex++ % photos.length] : null;
       var back = front === a ? b : a;
       if (p) {
-        back.style.backgroundImage = 'url(' + Data.image(p.backdrop, 'original') + ')';
+        // w1280 rather than the original (up to 4K): the same on a TV's screen, a fraction of the download and memory
+        back.style.backgroundImage = 'url(' + Data.image(p.backdrop, 'w1280') + ')';
         back.style.webkitTransform = back.style.transform = 'scale(1.0)';
         clock.lastChild.textContent = p.title;
         setTimeout(function () {
