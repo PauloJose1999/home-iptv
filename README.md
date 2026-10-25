@@ -9,7 +9,8 @@ numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/
 - **TV aberta:** três canais em cartões (um grande e dois pequenos), com o nome, o selo AO VIVO, o programa, o horário
   de começo e de fim e a barra de progresso. O cartão em foco toca o seu canal, imagem e som: pela internet quando a
   lista IPTV tem o canal, senão pela antena. OK abre o canal em tela cheia.
-- **Filmes e Séries:** o que está em alta no Brasil, só dos apps que você tem na TV (TMDB).
+- **Filmes e Séries:** como na Netflix: o título em foco grande no topo e fileiras (em alta, por app, lançamentos,
+  mais bem avaliados, gêneros), só dos apps que você tem na TV (TMDB). Só carrega quando você abre a aba.
 - **Barra de apps:** todos os apps da TV, rolando com as setas.
 - **IPTV dentro do launcher:** os canais gratuitos e oficiais do Brasil (lista
   [Free-TV](https://github.com/Free-TV/IPTV)) ou a sua lista M3U ou Xtream, tocados em tela cheia sem abrir outro app

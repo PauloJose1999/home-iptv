@@ -38,6 +38,9 @@ person's, stay only in that file (git ignores it), are never printed and never c
   IPTV stream when the list has it, else the antenna (`<video>` with `service/webos-broadcast`), only on the card of
   the channel the tuner is on (one tuner: one antenna card). Cards without a picture show the channel's logo from the
   IPTV list.
+- Movies and Shows tabs: a Netflix-like catalog (dark, the focused title large on top, rows below). `Data.catalog`
+  fetches a tab's rows from TMDB only when the tab is opened (one request per row, one after the other), only titles
+  on the TV's streaming apps, kept 6 hours; only photos near the focus load (w300), the large one when focus rests.
 - `web/iptv.js`: the IPTV list (M3U or Xtream, from `config.properties`; by default `web/iptv-brasil.m3u`, the Free-TV
   Brazilian channels) and its full-screen player; it takes the remote's keys while open.
 - Text: `tr('…')`, `trf('{n} min', {n: 3})`, `plural('plural|…', n)`, `formatDate('format|h:mm', at)`, from

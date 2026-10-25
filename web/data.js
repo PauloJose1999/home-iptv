@@ -1,7 +1,7 @@
 /*
  * What the home screen shows, kept in localStorage so it opens with numbers:
- *  - the picks: what's trending this week and recent releases, only from the streaming apps on this TV (TMDB, with
- *    the person's own free key from config.properties), three per hour;
+ *  - the Movies and Shows catalogs, as on Netflix: rows of titles only from the streaming apps on this TV (TMDB, with
+ *    the person's own free key from config.properties), fetched only when their tab is opened;
  *  - weather, sunrise and sunset (Open-Meteo, every 30 min).
  * Settings changed on the TV (Prefs) win over config.properties. Built without a city (--generic), the
  * TV's time zone gives the city, and its country the region (zones.js).
@@ -179,46 +179,6 @@ var Data = (function () {
     get(url, bearer ? {Authorization: 'Bearer ' + KEY, Accept: 'application/json'} : {Accept: 'application/json'}, done);
   }
 
-  var cache = stored('recs') || {};
-  var picks = cache.picks || [], listAt = cache.listAt || 0, period = cache.period, listLang = cache.lang || '', stamp = cache.stamp || '';
-  var fetchingRecs = false, failedAt = 0, recsError = '';
-
-  function saveRecs() { store('recs', {picks: picks, listAt: listAt, period: period, lang: listLang, stamp: stamp}); }
-
-  function hourPeriod(d) {
-    var h = d.getHours();
-    return h >= 5 && h < 12 ? 0 : h >= 12 && h < 18 ? 1 : 2;
-  }
-
-  function sourceStamp() {
-    var s = KEY.length + ':' + KEY.slice(-6) + ':' + REGION + (CONFIG.hideAnimation ? ':no-animation' : '');
-    for (var i = 0; i < SERVICES.length; i++) s += appFor(SERVICES[i][1]) ? '1' : '0';
-    return s;
-  }
-
-  function franchise(title) {
-    var t = (title || '').toLowerCase(), cut = t.indexOf(':');
-    if (cut < 0) cut = t.indexOf(' - ');
-    return (cut > 0 ? t.slice(0, cut) : t).replace(/^\s+|\s+$/g, '');
-  }
-
-  /** This hour's 3 picks: movies ("movie"), shows ("tv") or both (null). */
-  function now(kind) {
-    var list = [];
-    if (!KEY) return list;
-    for (var i = 0; i < picks.length; i++) {
-      var p = picks[i];
-      if ((kind === null || kind === p.kind) && (!p.detailed || (p.app && appFor(p.app)))) list.push(p);
-    }
-    if (!list.length) return list;
-    var hour = Math.floor(Date.now() / 3600000), out = [], seen = {};
-    for (var j = 0; j < list.length && out.length < 3; j++) {
-      var q = list[(hour * 3 + j) % list.length], f = franchise(q.title);
-      if (!seen[f]) { seen[f] = true; out.push(q); }
-    }
-    return out;
-  }
-
   /** TMDB's language: Latin American Spanish unless the TV is in Spain, and Germany's German. */
   function lang() {
     if (I18N.lang === 'es') return /-ES\b/i.test(navigator.language || '') ? 'es-ES' : 'es-MX';
@@ -246,88 +206,8 @@ var Data = (function () {
     }
   }
 
-  /** The best backdrop: no text over it, the largest, then the best rated. */
-  function bestBackdrop(images) {
-    var list = images && images.backdrops, best = null, score = -1;
-    for (var i = 0; list && i < list.length; i++) {
-      var b = list[i];
-      if (!b.file_path) continue;
-      var s = (b.iso_639_1 === null ? 1e7 : 0) + Math.min(b.width || 0, 3840) * 100 + (b.vote_average || 0);
-      if (s > score) { score = s; best = b.file_path; }
-    }
-    return best;
-  }
-
-  /** Genre, runtime or seasons, and the service it's on among the TV's apps. */
-  function details(p, done) {
-    tmdb('/' + p.kind + '/' + p.id + '?language=' + lang() + '&append_to_response=watch/providers,images&include_image_language=null,'
-        + I18N.base + ',en', function (err, o) {
-      if (err) { done(err); return; }
-      var best = bestBackdrop(o.images);
-      if (best) p.backdrop = best;
-      var parts = [];
-      if (p.kind === 'tv') parts.push(tr('Series'));
-      if (o.genres && o.genres.length) {
-        parts.push(genre(o.genres[0].name));
-      }
-      if (p.kind === 'movie' && o.runtime > 0) {
-        var h = Math.floor(o.runtime / 60), m = o.runtime % 60;
-        parts.push(h ? trf('{h}h {m}m', {h: h, m: m}) : trf('{m}m', {m: m}));
-      } else if (p.kind === 'tv' && o.number_of_seasons > 0) {
-        parts.push(plural('plural|one:{n} season|other:{n} seasons', o.number_of_seasons));
-      }
-      var wp = o['watch/providers'], here = wp && wp.results && wp.results[REGION], flat = here && here.flatrate;
-      p.app = null;
-      for (var i = 0; flat && i < flat.length && !p.app; i++) {
-        var s = service(flat[i].provider_name, flat[i].provider_id);
-        if (s && appFor(s[1])) { p.app = s[1]; p.service = s[4]; }
-      }
-      if (p.service && p.app) parts.push(p.service);
-      p.meta = parts.join(' · ');
-      title(p, o, function () {
-        p.detailed = true;
-        done(null);
-      });
-    });
-  }
-
-  /**
-   * Without a title in the TV's language TMDB answers with the original one, so a Korean series on a German TV reads
-   * "닥터X: 하얀 마피아의 시대". Then the English title, when TMDB has one (one more request, only for those).
-   */
-  function title(p, o, done) {
-    var field = p.kind === 'movie' ? 'title' : 'name', own = o[field] || p.title;
-    p.title = own;
-    if (I18N.lang === 'en' || !own || own !== o['original_' + field] || o.original_language === I18N.base
-        || o.original_language === 'en') { done(); return; }
-    tmdb('/' + p.kind + '/' + p.id + '?language=en-US', function (err, en) {
-      if (!err && en && en[field]) p.title = en[field];
-      done();
-    });
-  }
-
   /** TMDB's Animation genre (movies and shows: cartoons and anime), left out with hide_animation=true. */
   var ANIMATION = 16;
-
-  function animated(o) {
-    for (var i = 0; o.genre_ids && i < o.genre_ids.length; i++) if (o.genre_ids[i] === ANIMATION) return true;
-    return false;
-  }
-
-  function addPick(list, o, kind) {
-    if (!o.backdrop_path) return;
-    if (CONFIG.hideAnimation && animated(o)) return;
-    list.push({id: o.id, kind: kind, title: kind === 'movie' ? o.title : o.name, backdrop: o.backdrop_path, meta: '', app: null, detailed: false});
-  }
-
-  function keyOf(p) { return p.kind + ':' + p.id; }
-
-  function alternate(out, seen, a, b, max) {
-    for (var i = 0; i < Math.max(a.length, b.length) && out.length < max; i++) {
-      if (i < a.length && !seen[keyOf(a[i])]) { seen[keyOf(a[i])] = true; out.push(a[i]); }
-      if (i < b.length && out.length < max && !seen[keyOf(b[i])]) { seen[keyOf(b[i])] = true; out.push(b[i]); }
-    }
-  }
 
   /** Runs fn on each item one after the other (the TV's network is shared with what's playing). */
   function each(items, fn, done) {
@@ -338,85 +218,148 @@ var Data = (function () {
     })();
   }
 
-  function fetchList(done) {
-    tmdb('/watch/providers/movie?language=' + lang() + '&watch_region=' + REGION, function (err, res) {
+  // MARK: - Catalog: the Movies and Shows tabs, as on Netflix
+  //
+  // Nothing is fetched until a tab is opened: then its rows come one by one (each a TMDB request, one after the other),
+  // only with titles on the streaming apps this TV has, and are kept 6 hours (memory and localStorage).
+
+  // The genre rows, by TMDB id: what a family watches, and novelas.
+  var GENRE_ROWS = {movie: [35, 18, 10749, 10751, 28, 99], tv: [10766, 35, 18, 80, 10751, 99]};
+  var catalogs = {};   // kind -> {rows: [{title, items}], at, lang, stamp, loading, error}
+  try { localStorage.removeItem('fmtv.recs'); } catch (e) {}   // the three picks of the version before
+
+  function appsStamp() {
+    var s = KEY.length + ':' + KEY.slice(-6) + ':' + REGION + (CONFIG.hideAnimation ? ':no-animation' : '');
+    for (var i = 0; i < SERVICES.length; i++) s += appFor(SERVICES[i][1]) ? '1' : '0';
+    return s;
+  }
+
+  function item(o, kind, app) {
+    var date = kind === 'movie' ? o.release_date : o.first_air_date;
+    return {
+      id: o.id, kind: kind, title: kind === 'movie' ? o.title : o.name, backdrop: o.backdrop_path,
+      overview: o.overview || '', year: date ? date.slice(0, 4) : '', rating: o.vote_average || 0,
+      genres: o.genre_ids || [], app: app ? app[1] : null, service: app ? app[4] : ''
+    };
+  }
+
+  /** The browser preview without a TMDB key: sample rows, to see the screen. */
+  function sampleCatalog(kind) {
+    var rows = [], names = ['Em alta', 'No Netflix', 'Comédia', 'Drama'];
+    for (var r = 0; r < names.length; r++) {
+      var items = [];
+      for (var i = 0; i < 12; i++) {
+        items.push({id: r * 100 + i, kind: kind, title: (kind === 'movie' ? 'Filme ' : 'Série ') + (r * 12 + i + 1), backdrop: '',
+          overview: 'Uma história de exemplo para a prévia no computador, com duas ou três linhas de texto para ver como fica.',
+          year: '2026', rating: 7.5, genres: [], app: 'netflix', service: 'Netflix'});
+      }
+      rows.push({title: names[r], items: items});
+    }
+    return {rows: rows, at: Date.now(), lang: I18N.lang, stamp: '', loading: false, error: ''};
+  }
+
+  /**
+   * The tab's catalog: update(catalog) runs now with what's kept, and again as each row arrives. Fetches only when
+   * what's kept is old (6 h), in another language, or the TV's apps changed.
+   */
+  function catalog(kind, update) {
+    var c = catalogs[kind] || stored('catalog.' + kind), stamp = appsStamp(), t = Date.now();
+    if (!KEY) {
+      c = TV.name === 'browser' ? sampleCatalog(kind) : {rows: [], loading: false, error: 'no key'};
+      catalogs[kind] = c;
+      update(c);
+      return;
+    }
+    if (c && (c.loading || (c.stamp === stamp && c.lang === I18N.lang && t - c.at < 6 * 3600000 && t >= c.at && c.rows.length))) {
+      catalogs[kind] = c;
+      c.update = update;
+      update(c);
+      return;
+    }
+    if (!installed.length) { update(c || {rows: [], loading: true, error: ''}); return; }
+    var fresh = {rows: [], at: t, lang: I18N.lang, stamp: stamp, loading: true, error: '', update: update};
+    catalogs[kind] = fresh;
+    if (c && c.rows && c.rows.length) { c.update = update; update(c); }   // the old rows until the new ones come
+    fetchCatalog(kind, fresh, function (err) {
+      fresh.loading = false;
+      if (err && !fresh.rows.length) { fresh.error = err.message; if (c && c.rows && c.rows.length) { c.loading = false; catalogs[kind] = c; } }
+      else store('catalog.' + kind, {rows: fresh.rows, at: fresh.at, lang: fresh.lang, stamp: fresh.stamp, genreNames: fresh.genreNames});
+      catalogs[kind].update(catalogs[kind]);
+    });
+  }
+
+  function fetchCatalog(kind, c, done) {
+    var common = '&language=' + lang() + '&watch_region=' + REGION + '&with_watch_monetization_types=flatrate&include_adult=false'
+        + (CONFIG.hideAnimation ? '&without_genres=' + ANIMATION : '');
+    tmdb('/watch/providers/' + kind + '?language=' + lang() + '&watch_region=' + REGION, function (err, res) {
       if (err) { done(err); return; }
-      var ids = [];
+      var mine = [], ids = [];
       for (var i = 0; res.results && i < res.results.length; i++) {
         var s = service(res.results[i].provider_name, res.results[i].provider_id);
-        if (s && appFor(s[1])) ids.push(res.results[i].provider_id);
+        if (s && appFor(s[1])) { mine.push([res.results[i].provider_id, s]); ids.push(res.results[i].provider_id); }
       }
       if (!ids.length) { done(new Error("none of the TV's streaming apps are on TMDB")); return; }
-      var common = '&language=' + lang() + '&watch_region=' + REGION + '&with_watch_monetization_types=flatrate&include_adult=false'
-          + '&sort_by=popularity.desc&with_watch_providers=' + encodeURIComponent(ids.join('|'))
-          + (CONFIG.hideAnimation ? '&without_genres=' + ANIMATION : '');
-      var hot = {movie: [], tv: []}, fresh = {movie: [], tv: []};
-      each(['movie', 'tv'], function (kind, next) {
-        tmdb('/trending/' + kind + '/week?language=' + lang(), function (e, r) {
-          var candidates = [];
-          for (var j = 0; !e && j < r.results.length && j < 16; j++) addPick(candidates, r.results[j], kind);
-          // Trending is only kept when it's on one of the TV's apps: the details say where.
-          each(candidates, function (p, n) {
-            details(p, function (de) { if (!de && p.app) hot[kind].push(p); n(); });
-          }, next);
-        });
-      }, function () {
-        tmdb('/discover/movie?vote_count.gte=30&primary_release_date.gte=' + day(-365) + '&primary_release_date.lte=' + day(0) + common, function (e1, r1) {
-          for (var j = 0; !e1 && j < r1.results.length; j++) addPick(fresh.movie, r1.results[j], 'movie');
-          tmdb('/discover/tv?vote_count.gte=20&air_date.gte=' + day(-90) + '&air_date.lte=' + day(0) + common, function (e2, r2) {
-            for (var k = 0; !e2 && k < r2.results.length; k++) addPick(fresh.tv, r2.results[k], 'tv');
-            var list = [], seen = {};
-            alternate(list, seen, hot.movie, hot.tv, 24);
-            alternate(list, seen, fresh.movie, fresh.tv, 24);
-            if (!list.length) { done(new Error('TMDB returned no recommendations')); return; }
-            picks = list;
-            done(null);
+      var all = '&with_watch_providers=' + encodeURIComponent(ids.join('|'));
+      var dated = kind === 'movie' ? 'primary_release_date' : 'first_air_date';
+      // [title, query, the app every title of the row is on]
+      var plan = [[tr('Popular on your apps'), 'sort_by=popularity.desc' + all, null]];
+      for (var m = 0; m < mine.length; m++) {
+        plan.push([trf('On {app}', {app: mine[m][1][4]}), 'sort_by=popularity.desc&with_watch_providers=' + mine[m][0], mine[m][1]]);
+      }
+      plan.push([tr('New releases'), 'sort_by=popularity.desc&' + dated + '.gte=' + day(-180) + '&' + dated + '.lte=' + day(0) + all, null]);
+      plan.push([tr('Top rated'), 'sort_by=vote_average.desc&vote_count.gte=' + (kind === 'movie' ? 1000 : 300) + all, null]);
+      tmdb('/genre/' + kind + '/list?language=' + lang(), function (e, g) {
+        var names = {};
+        for (var n = 0; !e && g.genres && n < g.genres.length; n++) names[g.genres[n].id] = genre(g.genres[n].name);
+        c.genreNames = names;
+        var wanted = GENRE_ROWS[kind];
+        for (var w = 0; w < wanted.length; w++) {
+          if (names[wanted[w]] && !(CONFIG.hideAnimation && wanted[w] === ANIMATION)) {
+            plan.push([names[wanted[w]], 'sort_by=popularity.desc&with_genres=' + wanted[w] + all, null]);
+          }
+        }
+        each(plan, function (row, next) {
+          tmdb('/discover/' + kind + '?' + row[1] + common, function (e2, r) {
+            var items = [];
+            for (var j = 0; !e2 && r.results && j < r.results.length; j++) {
+              if (r.results[j].backdrop_path) items.push(item(r.results[j], kind, row[2]));
+            }
+            if (items.length) {
+              c.rows.push({title: row[0], items: items});
+              if (catalogs[kind] === c) c.update(c);
+            }
+            next();
           });
-        });
+        }, function () { done(c.rows.length ? null : new Error('TMDB returned nothing')); });
       });
     });
   }
 
-  /** Fetches the list when stale (6 h, a new period of the day, language, key or apps), then this hour's details. */
-  function refreshRecs() {
-    if (!KEY || fetchingRecs || !installed.length) return;
-    var t = Date.now(), p = hourPeriod(new Date()), st = sourceStamp();
-    if (st === stamp && failedAt && t - failedAt < 10 * 60000 && t >= failedAt) return;
-    var stale = st !== stamp || p !== period || t - listAt > 6 * 3600000 || t < listAt || !picks.length || listLang !== I18N.lang;
-    var wanted = all(), missing = false;
-    for (var i = 0; i < wanted.length; i++) missing = missing || !wanted[i].detailed;
-    if (!stale && !missing) return;
-    fetchingRecs = true;
-    stamp = st;
-    function finish(err) {
-      fetchingRecs = false;
-      if (err) { recsError = err.message; failedAt = Date.now(); } else { recsError = ''; failedAt = 0; }
-      saveRecs();
-      changed();
-    }
-    function detailWanted() {
-      var todo = all().filter(function (x) { return !x.detailed; });
-      each(todo, function (x, next) { details(x, function () { next(); }); }, function () { finish(null); });
-    }
-    if (stale) {
-      fetchList(function (err) {
-        if (err) { finish(err); return; }
-        listAt = Date.now();
-        period = p;
-        listLang = I18N.lang;
-        detailWanted();
-      });
-    } else {
-      detailWanted();
-    }
+  /** The app on this TV a title is on: done(app or null). Known for the rows of one app; else TMDB is asked. */
+  function whereToWatch(p, done) {
+    if (p.app && appFor(p.app)) { done(appFor(p.app)); return; }
+    if (!KEY) { done(null); return; }
+    tmdb('/' + p.kind + '/' + p.id + '/watch/providers', function (err, o) {
+      var here = !err && o.results && o.results[REGION], flat = here && here.flatrate;
+      for (var i = 0; flat && i < flat.length; i++) {
+        var s = service(flat[i].provider_name, flat[i].provider_id);
+        if (s && appFor(s[1])) { p.app = s[1]; p.service = s[4]; done(appFor(s[1])); return; }
+      }
+      done(null);
+    });
   }
 
-  /** This hour's picks for the three tabs, without repeats (the screensaver shows them too). */
-  function all() {
-    var out = [], seen = {}, kinds = [null, 'movie', 'tv'];
+  /** Photos for the screensaver: titles of the catalogs already loaded (or kept) that are on the TV's apps. */
+  function showcase() {
+    var out = [], seen = {}, kinds = ['movie', 'tv'];
     for (var k = 0; k < kinds.length; k++) {
-      var list = now(kinds[k]);
-      for (var i = 0; i < list.length; i++) if (!seen[keyOf(list[i])]) { seen[keyOf(list[i])] = true; out.push(list[i]); }
+      var c = catalogs[kinds[k]] || stored('catalog.' + kinds[k]);
+      for (var r = 0; c && c.rows && r < c.rows.length; r++) {
+        for (var i = 0; i < c.rows[r].items.length && i < 6; i++) {
+          var p = c.rows[r].items[i];
+          if (p.backdrop && p.app && !seen[p.kind + p.id]) { seen[p.kind + p.id] = true; out.push(p); }
+        }
+      }
     }
     return out;
   }
@@ -428,13 +371,13 @@ var Data = (function () {
     onChange: function (fn) { listeners.push(fn); },
     setApps: function (apps) { installed = apps; },
     appFor: appFor,
-    refresh: function () { refreshWeather(); refreshRecs(); },
+    refresh: refreshWeather,
     get weather() { return weather; },
     get weatherAt() { return weatherAt; },
     hasKey: function () { return !!KEY; },
-    recsError: function () { return recsError; },
-    picks: now,
-    showcase: all,
+    catalog: catalog,
+    whereToWatch: whereToWatch,
+    showcase: showcase,
     image: function (path, size) { return path ? 'https://image.tmdb.org/t/p/' + (size || 'w1280') + path : ''; },
 
     /** Night at the location: from sunset to sunrise (the last forecast; without one, 6:00 and 18:00). */
