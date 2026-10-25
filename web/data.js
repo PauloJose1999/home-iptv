@@ -273,6 +273,8 @@ var Data = (function () {
    * what's kept is old (6 h), in another language, or the TV's apps changed.
    */
   function catalog(kind, update) {
+    // An Xtream account in config.properties shows the provider's own movies and series instead of TMDB.
+    if (window.VOD && VOD.enabled) { VOD.catalog(kind, update); return; }
     var c = catalogs[kind] || stored('catalog.' + kind), stamp = appsStamp(), t = Date.now();
     if (!KEY) {
       c = TV.name === 'browser' ? sampleCatalog(kind) : {rows: [], loading: false, error: 'no key'};
@@ -392,7 +394,11 @@ var Data = (function () {
     catalog: catalog,
     whereToWatch: whereToWatch,
     showcase: showcase,
-    image: function (path, size) { return path ? 'https://image.tmdb.org/t/p/' + (size || 'w1280') + path : ''; },
+    image: function (path, size) {
+      if (!path) return '';
+      if (/^https?:\/\//i.test(path)) return path;   // Xtream posters/backdrops are full URLs
+      return 'https://image.tmdb.org/t/p/' + (size || 'w1280') + path;
+    },
 
     /** Night at the location: from sunset to sunrise (the last forecast; without one, 6:00 and 18:00). */
     isNight: function (at) {

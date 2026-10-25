@@ -59,6 +59,7 @@
     ['nfl', /nfl/, /^nfl/i, ['#013369', '#00163D']],
     ['globoplay', /globoplay/, /globoplay/i, ['#FF8A1F', '#FF2D5A']],
     ['jellyfin', /jellyfin/i, /jellyfin/i, ['#AA5CC3', '#00A4DC']],
+    ['iptv', /^com\.lennylxx\.iptv$/, /iptv/i, ['#241E52', '#000000']],
     ['spotify', /spotify/, /spotify/i, ['#1DB954', '#0F7A36']]
   ];
   // Apps shown at once: 8 (today's smallest tiles, 178 wide); the shelf scrolls for the rest.
@@ -782,13 +783,17 @@
     }, 400);
   }
 
-  /** OK on a title: opens the app it's on. */
+  /** OK on a title: opens the IPTV player at that exact movie or series (deep link with its Xtream id). */
   function openTitle(p) {
     if (!p) return;
-    Data.whereToWatch(p, function (app) {
-      if (app) launcher(app.id, app.title)();
-      else toast(trf("{title} isn't on this TV's apps.", {title: p.title}));
-    });
+    var kind = p.kind === 'movie' ? 'movie' : 'series';
+    var extra = {};
+    if (p.streamId) extra.id = p.streamId;
+    else if (p.seriesId) extra.id = p.seriesId;
+    if (p.categoryId) extra.categoryId = p.categoryId;
+    if (p.poster) extra.poster = p.poster;
+    if (p.containerExtension) extra.ext = p.containerExtension;
+    openInIptv(kind, p.title, extra);
   }
 
   var bgUrl = null, bgFront = 'bgA';
@@ -1441,6 +1446,21 @@
 
   // MARK: - Opening things
 
+  /** The IPTV player app the home deep-links into (lennylxx/webos-iptv-player); '' keeps the old behavior. */
+  function iptvAppId() { return (window.CONFIG && CONFIG.iptvApp) || ''; }
+
+  /** Opens the IPTV player at a channel, movie or series; extra fields (id, categoryId, poster, ext) make the movie/series deep link exact. */
+  function openInIptv(kind, value, extra) {
+    var id = iptvAppId();
+    if (!id) return false;
+    var dl = {kind: kind, value: value};
+    if (extra) for (var k in extra) if (extra.hasOwnProperty(k)) dl[k] = extra[k];
+    TV.launch(id, {deepLink: dl}, function (ok) {
+      if (!ok) toast(trf("Couldn't open {app}.", {app: 'IPTV Player'}));
+    });
+    return true;
+  }
+
   function launcher(id, name) {
     return function () {
       TV.launch(id, null, function (ok) {
@@ -1472,7 +1492,7 @@
         var p = cards[st.card];
         if (p && p.live) {
           var ch = p.channel;
-          if (ch && ch.iptv) { stopPlayer(); IPTV.playChannel(ch.iptv); }
+          if (ch && ch.iptv) { stopPlayer(); openInIptv('channel', ch.name); }
           else if (ch) TV.openChannel(ch, function (ok) { if (!ok) toast(trf("Couldn't open {app}.", {app: ch.name})); });
           else { var tv = liveTV(); if (tv) launcher(tv.id, tr('Live TV'))(); }
           return;
