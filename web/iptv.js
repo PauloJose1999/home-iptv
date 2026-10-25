@@ -45,7 +45,7 @@ var IPTV = (function () {
   function request(url, done) {
     var x = new XMLHttpRequest(), over = false;
     x.open('GET', url, true);
-    x.timeout = 20000;
+    x.timeout = 15000;
     x.onreadystatechange = function () {
       if (x.readyState !== 4 || over) return;
       over = true;
@@ -119,7 +119,14 @@ var IPTV = (function () {
       }
       if (done) done();
     }
-    if (accounts.length > 1) {
+    function fromM3u() {
+      request(cfg.m3u || 'iptv-brasil.m3u', function (err, text) {
+        if (err) { finish(err); return; }
+        var channels = parseM3u(text);
+        finish(channels.length ? null : 'the list is empty', channels);
+      });
+    }
+    if (accounts.length) {
       var merged = [], seenName = {}, pending = accounts.length;
       for (var a = 0; a < accounts.length; a++) (function (acc) {
         xtream(acc, function (err, chs) {
@@ -127,17 +134,14 @@ var IPTV = (function () {
             var key = plain(chs[k].name);
             if (!seenName[key]) { seenName[key] = true; merged.push(chs[k]); }
           }
-          if (--pending === 0) finish(merged.length ? null : 'no channel from any account', merged);
+          if (--pending === 0) {
+            if (merged.length) finish(null, merged);
+            else fromM3u();   // the accounts failed: the free Brazilian channels instead
+          }
         });
       })(accounts[a]);
-    } else if (accounts.length === 1) {
-      xtream(accounts[0], finish);
     } else {
-      request(m3u, function (err, text) {
-        if (err) { finish(err); return; }
-        var channels = parseM3u(text);
-        finish(channels.length ? null : 'the list is empty', channels);
-      });
+      fromM3u();
     }
   }
 
