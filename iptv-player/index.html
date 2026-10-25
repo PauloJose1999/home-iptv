@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0">
+  <title>webOS IPTV Player</title>
+  <script>
+    // Anti-FOUC (Flash of Unstyled Content): apply the saved theme before first paint.
+    // StorageService JSON-encodes values, so the stored id is a quoted string.
+    try { var t = JSON.parse(localStorage.getItem('iptv_theme')); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+    try { var s = JSON.parse(localStorage.getItem('iptv_text_size')); if (s) document.documentElement.dataset.textSize = s; } catch (e) {}
+    try { var a = JSON.parse(localStorage.getItem('iptv_animation_mode')); if (a) document.documentElement.dataset.animation = a; } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/legacy-webos-base.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/channel-list.css">
+  <link rel="stylesheet" href="css/live-preview.css">
+  <link rel="stylesheet" href="css/player.css">
+  <link rel="stylesheet" href="css/epg.css">
+  <link rel="stylesheet" href="css/settings.css">
+  <link rel="stylesheet" href="css/reminder-manager.css">
+  <link rel="stylesheet" href="css/tab-bar.css">
+  <link rel="stylesheet" href="css/search.css">
+  <link rel="stylesheet" href="css/catalog-view.css">
+  <link rel="stylesheet" href="css/account-switcher.css">
+  <link rel="stylesheet" href="css/parental-controls.css">
+  <link rel="stylesheet" href="css/live-category-picker.css">
+  <link rel="stylesheet" href="css/legacy-webos-overrides.css">
+</head>
+<body>
+  <video id="video-player" autoplay></video>
+
+  <div id="view-loading" class="view">
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <div id="loading-text" class="loading-text">Loading…</div>
+    </div>
+  </div>
+
+  <div id="view-channels" class="view hidden">
+    <div id="channel-browser"></div>
+    <aside id="live-preview" class="hidden"></aside>
+  </div>
+
+  <div id="view-player" class="view hidden">
+    <div id="player-sidebar" class="player-sidebar hidden"></div>
+    <div id="player-menu" class="player-menu hidden"></div>
+    <div id="player-osd" class="player-osd hidden"></div>
+    <div id="subtitle-search" class="hidden"></div>
+    <div id="subtitle-offset" class="hidden"></div>
+  </div>
+
+  <div id="view-epg" class="view hidden"></div>
+
+  <div id="view-settings" class="view hidden"></div>
+  <div id="view-parental-controls" class="view hidden"></div>
+  <div id="view-reminders" class="view hidden"></div>
+
+  <div id="view-movies" class="view hidden"></div>
+  <div id="view-series" class="view hidden"></div>
+  <div id="view-search" class="view hidden"></div>
+
+  <!-- preview-libs -->
+  <script src="js/app.js"></script>
+</body>
+</html>

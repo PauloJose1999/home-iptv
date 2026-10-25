@@ -1,0 +1,171 @@
+// Genre-icon matching for channel groups. Group titles are short, noisy and
+// multilingual, so we normalize (lowercase + strip diacritics), tokenize on
+// word boundaries (keeping non-Latin scripts intact), then match each rule's
+// keywords against the title: an alphabetic word as a token PREFIX (catches
+// plurals/inflections/translations and avoids substring false-positives like
+// "sport" in "passport"); a phrase, symbol ("nat geo", "18+"), or CJK/Arabic
+// keyword as a substring (CJK has no word boundaries; Arabic glues on "ال").
+// Rules are in priority order — first match wins, so list specific genres
+// first. Author keywords lowercase + accent-free (Latin) or in native script
+// (non-Latin); adding a language is a one-line edit to GROUP_ICON_RULES below.
+//
+// Icons are Twemoji artwork (https://github.com/jdecked/twemoji), licensed
+// under CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/); assets live
+// in assets/group-icons/ and assets/icons/.
+
+import {
+  containsArabicOrHan,
+  isLetterNumberWord,
+  splitLetterNumberPlusTokens,
+  stripDiacritics,
+} from '../utils/unicode-text';
+
+const GROUP_ICON_DIR = 'assets/group-icons';
+
+interface IconRule {
+  icon: string;
+  keywords: string[];
+}
+
+interface Keyword {
+  text: string;
+  prefix: boolean;
+}
+
+const ADULT_ICON = 'no_one_under_eighteen';
+
+const GROUP_ICON_RULES: IconRule[] = [
+  {
+    icon: 'teddy_bear',
+    keywords: ['kid', 'child', 'cartoon', 'toon', 'infantil', 'junior', 'baby', 'babies', 'nick', 'disney', 'enfant', 'kinder', 'zeichentrick', 'kika', 'bambini', 'cocuk', 'nino', 'ninos', 'dibujos', 'caricatura', 'desenho', 'детск', 'дети', 'اطفال', '儿童', '少儿', '卡通', '动画', '动漫'],
+  },
+  {
+    icon: 'soccer_ball',
+    keywords: ['sport', 'spor', 'deport', 'esport', 'futbol', 'futebol', 'baloncesto', 'ciclismo', 'foot', 'football', 'soccer', 'calcio', 'fussball', 'fußball', 'bundesliga', 'voetbal', 'pilka', 'nba', 'nfl', 'nhl', 'mlb', 'ufc', 'boxing', 'boxe', 'golf', 'tennis', 'tenis', 'cricket', 'rugby', 'racing', 'motogp', 'formula', 'espn', 'bein', 'dazn', 'eurosport', 'спорт', 'футбол', 'رياض', '体育', '运动', '足球', '篮球'],
+  },
+  {
+    icon: 'gaming',
+    keywords: ['gaming', 'gamer', 'games', 'game', 'twitch', 'videojuego', 'juego', 'spiele', 'العاب', '游戏', '电竞'],
+  },
+  {
+    icon: 'newspaper',
+    keywords: ['news', 'notici', 'notizie', 'nachricht', 'actualit', 'haber', 'nieuws', 'wiadomosc', 'journal', 'breaking', 'cnn', 'bbc', 'msnbc', 'euronews', 'cnbc', 'aljazeera', 'новост', 'أخبار', 'al jazeera', 'sky news', 'fox news', '新闻', '资讯'],
+  },
+  {
+    icon: 'musical_note',
+    keywords: ['music', 'musica', 'musique', 'musik', 'muzyka', 'muzik', 'mtv', 'vevo', 'hits', 'radio', 'song', 'concert', 'concierto', 'konzert', 'karaoke', 'музык', 'موسيق', '音乐'],
+  },
+  {
+    icon: 'cooking',
+    keywords: ['cook', 'food', 'kitchen', 'recipe', 'chef', 'cocina', 'gastro', 'culinar', 'cuisine', 'kochen', 'طبخ', 'طعام', '美食', '烹饪', '料理'],
+  },
+  {
+    icon: 'shopping',
+    keywords: ['shop', 'teleshop', 'qvc', 'compra', 'tienda', 'einkauf', 'achat', 'تسوق', '购物'],
+  },
+  {
+    icon: ADULT_ICON,
+    keywords: ['adult', 'adulte', 'xxx', 'porn', 'erotic', 'erotik', 'взросл', 'yetiskin', 'erwachsen', 'brazzers', 'playboy', 'للكبار', 'بالغ', '+18', '18+', '21+', '成人'],
+  },
+  {
+    icon: 'world_map',
+    keywords: ['document', 'docu', 'dokument', 'discovery', 'histor', 'histoire', 'geschichte', 'science', 'cienc', 'wissen', 'nature', 'natur', 'tier', 'animal', 'planet', 'travel', 'viaje', 'voyage', 'reise', 'educa', 'wild', 'ocean', 'наук', 'документаль', 'истори', 'وثائق', 'nat geo', 'national geographic', 'bbc earth', '纪录', '探索', '自然', '历史', '科学', '地理'],
+  },
+  {
+    icon: 'church',
+    keywords: ['relig', 'church', 'gospel', 'islam', 'christ', 'cristian', 'quran', 'koran', 'bible', 'biblia', 'spiritual', 'catholic', 'catolic', 'iglesia', 'igreja', 'eglise', 'kirche', 'kilise', 'jesus', 'allah', 'mosque', 'mezquita', 'hindu', 'buddh', 'ислам', 'религ', 'православ', 'قرآن', 'ديني', 'اسلام', 'مسيحي', '宗教', '基督', '佛教', '伊斯兰'],
+  },
+  {
+    icon: 'clapper_board',
+    keywords: ['movie', 'film', 'cinema', 'cine', 'pelicula', 'kino', 'sinema', 'vod', 'افلام', 'فيلم', 'кино', 'фильм', '电影', '影院'],
+  },
+  {
+    icon: 'television',
+    keywords: ['series', 'serie', 'serial', 'show', 'shows', 'sitcom', 'episod', 'dizi', 'novela', 'сериал', 'مسلسل', '电视剧', '连续剧', '剧集'],
+  },
+  {
+    icon: 'entertainment',
+    keywords: ['entertain', 'entreten', 'unterhaltung', 'divertiss', 'variety', 'variedad', 'general', 'comedy', 'comedi', 'ترفيه', 'منوعات', '娱乐', '综艺'],
+  },
+];
+
+// Normalize for matching: strip combining diacritics ("Fútbol" -> "futbol"),
+// unify Arabic alef/hamza/teh-marbuta/alef-maksura variants (so "الأطفال"
+// folds toward "اطفال"), and lowercase.
+function fold(value: string): string {
+  // Printable ASCII has nothing to fold but case; most catalog names are.
+  if (/^[\x20-\x7e]*$/.test(value)) return value.toLowerCase();
+  return stripDiacritics(value.normalize('NFD')) // accents + Arabic tashkeel/hamza/madda
+    .replace(/[آأإٱ]/gu, 'ا')        // آأإٱ -> ا
+    .replace(/ى/gu, 'ي')             // ى -> ي
+    .replace(/ة/gu, 'ه')             // ة -> ه
+    .toLowerCase();
+}
+
+// Split into word tokens on anything that isn't a letter, digit or '+'.
+// Explicit ranges keep Latin/Cyrillic/Arabic/CJK letters intact; '+' preserves
+// markers like "18+". Unicode punctuation and whitespace remain separators.
+function tokenize(folded: string): string[] {
+  return splitLetterNumberPlusTokens(folded);
+}
+
+// Fold and classify keywords once so rules can be authored with or without
+// accents. Alphabetic words (Latin/Cyrillic...) match as a token prefix
+// (catches inflections, avoids substring false-positives like "sport" in
+// "passport"). Phrases ("nat geo"), symbols ("18+"), CJK and Arabic match as a
+// substring: CJK has no word boundaries, and Arabic glues the definite
+// article/clitics ("ال") onto the front of words.
+const RULES: Array<{ icon: string; keywords: Keyword[] }> = GROUP_ICON_RULES.map(rule => ({
+  icon: rule.icon,
+  keywords: rule.keywords.map(fold).map(text => ({
+    text,
+    prefix: isLetterNumberWord(text) && !containsArabicOrHan(text),
+  })),
+}));
+
+const ADULT_KEYWORDS = RULES.find(rule => rule.icon === ADULT_ICON)?.keywords ?? [];
+
+function keywordHits(keyword: Keyword, folded: string, tokens: string[]): boolean {
+  if (keyword.prefix) return tokens.some(token => token.startsWith(keyword.text));
+  return folded.includes(keyword.text);
+}
+
+/**
+ * Map a group title to an icon file name (without extension), or null
+ * when nothing matches (the caller falls back to a generic glyph).
+ */
+export function matchGroupIcon(group: string): string | null {
+  const folded = fold(group);
+  const tokens = tokenize(folded);
+  for (const rule of RULES) {
+    if (rule.keywords.some(keyword => keywordHits(keyword, folded, tokens))) {
+      return rule.icon;
+    }
+  }
+  return null;
+}
+
+// Adult only, ignoring rule priority, so "Kids XXX" still counts.
+export function isAdultGroupName(group: string): boolean {
+  const folded = fold(group);
+  const tokens = tokenize(folded);
+  return ADULT_KEYWORDS.some(keyword => keywordHits(keyword, folded, tokens));
+}
+
+function iconImg(name: string): string {
+  return `<img class="group-logo" src="${GROUP_ICON_DIR}/${name}.svg" alt="">`;
+}
+
+/**
+ * Render the group-list icon as an HTML string: a matched `<img>`
+ * pointing at its asset path, the dedicated All/Favorites icons, or a generic
+ * play-triangle icon for unmatched groups. (Inserted via the caller's `raw()`
+ * helper.)
+ */
+export function groupIcon(group: string, builtin?: 'all' | 'favorites' | 'recently-watched'): string {
+  if (builtin === 'all') return iconImg('all');
+  if (builtin === 'favorites') return iconImg('star');
+  if (builtin === 'recently-watched') return iconImg('three_oclock');
+  const icon = matchGroupIcon(group);
+  return icon ? iconImg(icon) : '&#9654;'; // fallback for unmatched groups
+}

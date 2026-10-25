@@ -1,0 +1,311 @@
+/* Search results: a query box over Channels / Programs / Movies / Series.
+   The poster rails reuse the shared catalog tile/poster visuals; these are the
+   search-only bits (the query box and the M3U vertical channel list). */
+.search-view {
+  width: 1920px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 40px 80px 60px;
+  overflow-y: auto;
+}
+/* Rails bleed to both screen edges, posters resting on the left keyline;
+   other results keep the view's margins. */
+.search-view:not(.search-lists) .catalog-rail-track {
+  margin-left: -80px;
+  margin-right: -80px;
+  padding-left: 80px;
+}
+.search-view:not(.search-lists) .catalog-rail-track::-webkit-scrollbar-track { margin-left: 80px; }
+.search-bar { margin-bottom: 32px; }
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px 28px;
+  font-size: 34px;
+  color: var(--text-primary);
+  background: var(--catalog-surface);
+  border: 3px solid var(--catalog-control);
+  border-radius: 12px;
+  outline: none;
+}
+.search-input.focused { border-color: var(--accent, #3ea6ff); }
+.search-results { display: block; }
+.search-empty { margin-top: 40px; }
+
+.search-virtual-section { margin-bottom: 28px; }
+
+/* The section height comes from the virtual spacer (sized inline to the full
+   list), capped here — a short result set must not reserve a full-height box. */
+.search-virtual-scroll {
+  position: relative;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-anchor: none;
+}
+
+/* M3U-only results are one or two vertical lists that own the whole view, so
+   they share its height and bottom padding instead of stopping at the cap
+   above: a lone Channels list fills the screen, and with Programs alongside
+   it the two shrink in proportion to their contents. */
+.search-view.search-lists { padding-bottom: 0; }
+.search-lists .search-results {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.search-lists .search-virtual-section {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+.search-lists .search-virtual-section:last-child { margin-bottom: 0; }
+.search-lists .search-virtual-scroll {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+.search-lists-mixed .search-channels {
+  flex-shrink: 0;
+  max-height: 462px;
+}
+.search-lists-mixed .search-channels .search-virtual-scroll {
+  max-height: 420px;
+}
+.search-virtual-list-spacer,
+.search-virtual-rail-spacer {
+  position: relative;
+}
+.search-virtual-list-cell {
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+}
+/* Rail cells are absolutely positioned, so the spacer carries the row height:
+   poster tile (330 + 10 margin + 31 name line) by default, and the shorter
+   landscape channel tile (124 logo) for the channel rail. */
+.search-virtual-rail-spacer {
+  flex: 0 0 auto;
+  height: 371px;
+}
+.search-channel-rail .search-virtual-rail-spacer { height: 165px; }
+.search-virtual-rail-cell {
+  position: absolute;
+  top: 0;
+  width: 220px;
+}
+
+/* Channel results carry 16:9-ish logos, not portrait posters — use a landscape
+   box and contain the logo so it isn't cropped. */
+.search-channel-tile .catalog-poster-wrap { height: 124px; }
+.search-channel-tile .catalog-poster { object-fit: contain; }
+
+/* M3U-only Search: a vertical list of channel rows (Xtream uses the poster
+   rails above). */
+.search-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.search-channels { margin-bottom: 28px; }
+.search-channel-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 20px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.search-channel-row.focused {
+  background: var(--bg-tertiary);
+  border-color: var(--focus-ring);
+}
+.search-row-logo {
+  width: 84px;
+  height: 52px;
+  object-fit: contain;
+  flex: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+.search-row-logo-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.search-row-name {
+  font-size: 30px;
+  color: var(--text-primary);
+}
+
+.search-programs { margin: 0 0 28px; }
+.search-program-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.search-program-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 72px;
+  padding: 12px 20px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--catalog-surface);
+  cursor: pointer;
+}
+.search-program-row.focused {
+  border-color: var(--focus-ring);
+  background: var(--bg-tertiary);
+}
+.search-program-time {
+  width: 150px;
+  flex: none;
+  font-size: 21px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+.search-program-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.search-program-title {
+  overflow: hidden;
+  font-size: 28px;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-program-channel {
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 21px;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-program-action {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 20px;
+  color: var(--text-primary);
+  background: var(--catalog-control);
+}
+.search-program-row.state-live .search-program-action {
+  color: #fff;
+  background: var(--accent);
+}
+
+/* Recent searches: a translucent panel hung from the tab bar's empty search
+   box over a dimmed view. The scrim stops below the bar, which stays live.
+   Margins instead of flex `gap` so wrapped rows keep their spacing on
+   gap-less engines; legacy-webos-overrides.css makes the panel opaque where
+   backdrop-filter is missing. */
+.search-history-scrim {
+  position: fixed;
+  top: 96px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 61;
+  background: rgba(0, 0, 0, 0.45);
+}
+.search-history-panel {
+  position: fixed;
+  z-index: 62;
+  box-sizing: border-box;
+  min-width: calc(600px * var(--font-scale));
+  max-width: 1200px;
+  padding: 20px 24px 12px;
+  background: rgb(var(--catalog-hero-scrim-rgb) / 0.82);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+/* Fades in once the search box has slid open (a display toggle restarts it). */
+.search-history-dropdown--menu .search-history-panel {
+  display: none;
+}
+/* Under the tab bar, so the account menu hanging from it stays on top. */
+.search-history-dropdown--menu .search-history-scrim {
+  z-index: 59;
+}
+.search-history-scrim,
+.search-history-panel {
+  animation: search-history-in 150ms ease-out;
+}
+@keyframes search-history-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.search-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.search-history-title {
+  margin: 0 24px 0 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.search-history-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-history-tile,
+.search-history-clear {
+  max-width: 100%;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+.search-history-tile {
+  height: 56px;
+  margin: 0 12px 12px 0;
+  padding: 0 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 52px;
+  font-size: 24px;
+  /* Mid-grey veil: lifts a tile off dark panels and sinks it into light
+     ones, where the panel's own tones sit too close together. */
+  background: rgba(128, 128, 128, 0.2);
+  color: var(--text-primary);
+}
+.search-history-clear {
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: 48px;
+  padding: 0 16px;
+  margin-right: -16px;
+  font-size: 22px;
+  color: var(--text-secondary);
+}
+.search-history-clear svg {
+  width: calc(26px * var(--font-scale));
+  height: calc(26px * var(--font-scale));
+  flex: none;
+  margin-right: 8px;
+}
+.search-history-clear.focused {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger) !important;
+  box-shadow:
+    0 0 0 3px rgb(var(--danger-rgb) / 0.24),
+    0 0 20px rgb(var(--danger-rgb) / 0.35);
+}

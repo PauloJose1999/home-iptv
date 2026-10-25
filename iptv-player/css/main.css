@@ -1,0 +1,505 @@
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-tertiary: #1a1a2e;
+  --bg-card: #16213e;
+  --text-primary: #e8e8e8;
+  --text-secondary: #a0a0b0;
+  --text-muted: #666680;
+  --scrollbar-thumb: #666680;
+  --accent: #00d4ff;
+  --accent-dim: #0088aa;
+  --accent-rgb: 0 212 255;
+  --accent-glow: rgb(var(--accent-rgb) / 0.3);
+  --channel-health-healthy: #63d89b;
+  --channel-health-suspect: #f3c969;
+  --channel-health-unavailable: #ef7b7b;
+  --danger: #ff4757;
+  --danger-rgb: 255 71 87;
+  --success: #2ed573;
+  --warning: #ffa502;
+  --warning-rgb: 255 165 2;
+  --remote-key-red: #e74c3c;
+  --remote-key-green: #2ecc71;
+  --remote-key-yellow: #f1c40f;
+  --remote-key-blue: #3498db;
+  --border: #2a2a3e;
+  --catalog-surface: #14161c;
+  --catalog-control: #23262f;
+  --catalog-focus: #5b8cff;
+  --catalog-focus-rgb: 91 140 255;
+  --catalog-hero-scrim-rgb: 10 10 15;
+  --catalog-sort-selected-bg: #007e9e;
+  --focus-ring: var(--accent);
+  --radius: 8px;
+  --transition: 0.2s ease;
+  --font-scale: 1;
+}
+
+.channel-health-status {
+  color: var(--text-muted);
+}
+
+.channel-health-status.healthy {
+  color: var(--channel-health-healthy);
+}
+
+.channel-health-status.suspect {
+  color: var(--channel-health-suspect);
+}
+
+.channel-health-status.unavailable {
+  color: var(--channel-health-unavailable);
+}
+
+.channel-health-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--danger);
+  box-shadow: 0 0 12px rgba(255, 71, 87, 0.55);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.live-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  animation: liveBadgeDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes liveBadgeDotPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* App-wide font size. The ids are percentages (see TEXT_SIZES in
+   src/config/themes.ts); 100 uses the default multiplier above. */
+[data-text-size="80"] { --font-scale: 0.8; }
+[data-text-size="90"] { --font-scale: 0.9; }
+[data-text-size="110"] { --font-scale: 1.1; }
+[data-text-size="120"] { --font-scale: 1.2; }
+[data-text-size="130"] { --font-scale: 1.3; }
+[data-text-size="140"] { --font-scale: 1.4; }
+[data-text-size="150"] { --font-scale: 1.5; }
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html[data-animation="essential"] .tab-bar-search-input,
+html[data-animation="essential"] .channel-scroll-thumb,
+html[data-animation="essential"] .epg-mapping-list,
+html[data-animation="essential"] .channel-health-progress-fill,
+html[data-animation="essential"] .osd-progress-bar {
+  transition-duration: 0.001ms !important;
+}
+
+/* Measured on the webOS 4 emulator: list focus transitions roughly halve
+   main-thread and raster time when disabled outright. */
+html[data-animation="essential"] .channel-item,
+html[data-animation="essential"] .player-sidebar .sidebar-ch-item {
+  transition: none !important;
+}
+
+html[data-animation="essential"] .playing-indicator {
+  animation: none;
+}
+
+/* The full-screen scrim's fade drops frames on the webOS 4 emulator. */
+html[data-animation="essential"] .search-history-scrim,
+html[data-animation="essential"] .search-history-panel {
+  animation: none;
+}
+
+html[data-animation="full"] .playlist-tabs,
+html[data-animation="full"] .group-list,
+html[data-animation="full"] .channel-main,
+html[data-animation="full"] .settings-scroll,
+html[data-animation="full"] .dropdown-menu,
+html[data-animation="full"] .catalog-view,
+html[data-animation="full"] .catalog-rails,
+html[data-animation="full"] .catalog-rail-track,
+html[data-animation="full"] .search-view,
+html[data-animation="full"] .search-virtual-scroll,
+html[data-animation="full"] .reminder-manager-view,
+html[data-animation="full"] .group-picker,
+html[data-animation="full"] .epg-date-list,
+html[data-animation="full"] .parental-options-pane,
+html[data-animation="full"] .sidebar-tabs,
+html[data-animation="full"] .menu-items,
+html[data-animation="full"] .subs-list {
+  scroll-behavior: smooth;
+}
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  font-family: -apple-system, 'LG Smart UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 24px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+.view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+h2 {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+h3 {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 24px;
+}
+
+.loading-spinner {
+  width: 64px;
+  height: 64px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28px;
+  color: var(--text-secondary);
+}
+
+/* Buttons */
+button:not(:disabled):not(.account-avatar):not(.toggle-option):not(.source-toggle):not(.epg-reminder-entry):not(.parental-row):not(.live-category-row) {
+  transform-origin: center;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease,
+    border-color var(--transition),
+    box-shadow var(--transition),
+    background var(--transition),
+    color var(--transition);
+}
+
+button:not(:disabled):not(.account-avatar):not(.toggle-option):not(.source-toggle):not(.epg-reminder-entry):not(.parental-row):not(.live-category-row):not(.search-icon):not(.catalog-remove-mark):hover,
+button:not(:disabled):not(.account-avatar):not(.toggle-option):not(.source-toggle):not(.epg-reminder-entry):not(.parental-row):not(.live-category-row):not(.search-icon):not(.catalog-remove-mark).focused {
+  transform: scale(1.03);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  font-size: 22px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: white;
+}
+
+.btn-danger {
+  background: rgb(var(--danger-rgb) / 0.2);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-large {
+  padding: 14px 40px;
+  font-size: 26px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 14px 32px;
+  border-radius: var(--radius);
+  font-size: 24px;
+  border: 1px solid var(--border);
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Direct channel entry: the digits typed so far, echoed until they tune. */
+.number-entry {
+  position: fixed;
+  top: 108px;
+  right: 64px;
+  padding: 20px 26px 16px;
+  /* Same surface as the player OSD (palette in player.css), which it shares the
+     screen with; `[data-overlay]` swaps both to frosted at once. */
+  background: rgba(30, 30, 50, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 0 18px var(--accent-glow);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-12px) scale(0.94);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.number-entry.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.number-entry-digits {
+  display: block;
+  white-space: nowrap;
+}
+
+.number-entry-digit {
+  display: inline-block;
+  min-width: 42px;
+  padding: 4px 0;
+  color: var(--text-primary);
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 18px var(--accent-glow);
+  animation: number-entry-pop 0.22s ease-out;
+}
+
+/* Runs down as the entry debounce does, so the wait before it tunes is visible. */
+.number-entry-countdown {
+  display: block;
+  overflow: hidden;
+  height: 4px;
+  margin-top: 14px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.number-entry-countdown-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  animation: number-entry-countdown linear forwards;
+}
+
+/* Transform only: animating opacity left the glyph painted faded once it ended. */
+@keyframes number-entry-pop {
+  from {
+    transform: translateY(6px) scale(0.6);
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes number-entry-countdown {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-muted);
+  font-size: 28px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+#video-player {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  z-index: 1;
+  background: black;
+  object-fit: contain;
+  display: none;
+}
+
+#video-player.active {
+  display: block;
+}
+
+/* Program-reminder & catch-up resume prompts — overlay modals */
+.reminder-prompt,
+.catchup-resume-prompt,
+.confirmation-prompt,
+.parental-pin-prompt {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+}
+.reminder-prompt.hidden,
+.catchup-resume-prompt.hidden,
+.confirmation-prompt.hidden,
+.parental-pin-prompt.hidden {
+  display: none;
+}
+
+.reminder-dialog,
+.catchup-resume-dialog,
+.confirmation-dialog,
+.parental-pin-dialog {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 48px;
+  max-width: 720px;
+  text-align: center;
+}
+
+.reminder-message,
+.catchup-resume-message,
+.confirmation-message {
+  color: var(--text-primary);
+  font-size: 30px;
+  margin: 0 0 32px;
+}
+
+.reminder-buttons,
+.catchup-resume-buttons,
+.confirmation-buttons {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+}
+
+.reminder-btn,
+.catchup-resume-btn,
+.confirmation-btn {
+  min-width: 160px;
+  padding: 14px 32px;
+  font-size: 26px;
+  color: var(--text-primary);
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.reminder-btn.focused,
+.catchup-resume-btn.focused,
+.confirmation-btn.focused {
+  border-color: var(--focus-ring);
+  background: var(--accent-dim);
+  color: #fff;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.confirmation-title {
+  margin: 0 0 16px;
+  font-size: 34px;
+}
+
+.confirmation-btn.danger {
+  color: var(--danger);
+}
+
+/* EPG reminder bell badge — dim on any future program (affordance), accent once set */
+.epg-bell-glyph {
+  width: 22px;
+  height: 22px;
+  vertical-align: -3px;
+}
+.epg-prog-title .epg-bell-glyph { margin-left: 8px; }
+.epg-bell-glyph.unset { color: var(--text-muted); opacity: 0.5; }
+.epg-bell-glyph.set {
+  color: var(--warning);
+  filter: drop-shadow(0 0 4px rgb(var(--warning-rgb) / 0.5));
+}
