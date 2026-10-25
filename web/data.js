@@ -45,7 +45,17 @@ var Prefs = (function () {
     theme: function () { return pick('theme', 'auto'); },
     weather: function () { return pick('weather', true); },
     shelf: function () { return pick('shelf', null); },
-    set: function (name, value) { v[name] = value; save(); this.version++; }
+    /** Apps kept off the shelf (still in All Apps). */
+    shelfHidden: function () { return pick('shelfHidden', []); },
+    /** The three channels of TV aberta, by name; null: config.properties' live_channels. */
+    liveChannels: function () { return pick('liveChannels', null); },
+    /** The focused channel card plays with sound. */
+    cardSound: function () { return pick('cardSound', true); },
+    /** Minutes without a key before the screensaver; 0: never. */
+    saverMinutes: function () { return pick('saverMinutes', 5); },
+    set: function (name, value) { v[name] = value; save(); this.version++; },
+    /** Back to how the launcher came: every setting made on the TV is forgotten. */
+    reset: function () { v = {}; save(); this.version++; }
   };
 })();
 

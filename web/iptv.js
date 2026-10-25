@@ -347,6 +347,8 @@ var IPTV = (function () {
     isOpen: function () { return st.open; },
     load: load,
     lookup: lookup,
+    /** Every channel of the list (after load). */
+    channels: function () { return list; },
     playChannel: playChannel,
     parseM3u: parseM3u
   };

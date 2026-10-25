@@ -41,6 +41,10 @@ person's, stay only in that file (git ignores it), are never printed and never c
 - Movies and Shows tabs: a Netflix-like catalog (light by day, dark at night, the focused title large on top, rows below). `Data.catalog`
   fetches a tab's rows from TMDB only when the tab is opened (one request per row, one after the other), only titles
   on the TV's streaming apps, kept 6 hours; only photos near the focus load (w300), the large one when focus rests.
+- Home Settings (`settingRows`): each row has an `about` shown under the list. Prefs set on the TV win over
+  config.properties (`liveChannels`, `shelf` order, `shelfHidden`, `cardSound`, `saverMinutes`); `Prefs.reset()` forgets
+  them. The picker (language, a card's channel) draws only the rows on screen. The Shelf editor is a grid: OK › Move
+  lifts the app and the arrows move it (Back undoes), or the pointer holds and drags it; saved only when dropped.
 - `web/iptv.js`: the IPTV list (M3U or Xtream, from `config.properties`; by default `web/iptv-brasil.m3u`, the Free-TV
   Brazilian channels) and its full-screen player; it takes the remote's keys while open.
 - Text: `tr('…')`, `trf('{n} min', {n: 3})`, `plural('plural|…', n)`, `formatDate('format|h:mm', at)`, from

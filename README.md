@@ -16,6 +16,9 @@ numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/
   [Free-TV](https://github.com/Free-TV/IPTV)) ou a sua lista M3U ou Xtream, tocados em tela cheia sem abrir outro app
   (↓ na barra › IPTV). Canais do YouTube abrem no app do YouTube.
 - **Gaveta (↓):** entradas HDMI, atalhos, clima, ajustes.
+- **Ajustes do Início:** os canais de cada cartão, o som dos canais, a prateleira, o tema, a proteção de tela, o
+  idioma, o clima e restaurar o padrão, cada um com uma explicação. Na **Prateleira** você pega um app (OK › Mover) e
+  leva com as setas, ou segura e arrasta com o ponteiro do Magic Remote; também dá para esconder apps que não usa.
 - **Claro de dia, escuro à noite**, e uma proteção de tela com as fotos das sugestões.
 
 ## Instalar
