@@ -772,7 +772,13 @@
     if (p.service) el('span', 'svc', meta, p.service);
     el('div', 'story', info, p.overview);
     heroTimer = setTimeout(function () {
-      if (heroFor !== p || !p.backdrop) return;
+      if (heroFor !== p) return;
+      // The IMDb rating, first on the line, once the focus rests here (one request, then kept).
+      Data.imdbRating(p, function (rating) {
+        if (heroFor !== p || !rating) return;
+        meta.insertBefore(el('span', 'imdb', null, 'IMDb ' + rating), meta.firstChild);
+      });
+      if (!p.backdrop) return;
       var url = Data.image(p.backdrop, 'w1280'), img = new Image();
       img.onload = function () {
         if (heroFor !== p) return;

@@ -352,6 +352,39 @@ var Data = (function () {
     });
   }
 
+  // MARK: - IMDb rating (OMDb, with the person's free key from config.properties): only the title the focus rests on
+  // asks, and the answer is kept a week, so a tab never sends a request per title.
+
+  var OMDB = (CONFIG.omdbKey || '').trim(), imdbCache = stored('imdb') || {};
+
+  function omdb(query, done) {
+    get('https://www.omdbapi.com/?apikey=' + encodeURIComponent(OMDB) + '&' + query, {}, function (err, o) {
+      done(!err && o && o.imdbRating && o.imdbRating !== 'N/A' ? o.imdbRating : '');
+    });
+  }
+
+  /** A title's IMDb rating ("7.8"): done(rating or null). TMDB's titles by their IMDb id; the provider's by name. */
+  function imdbRating(p, done) {
+    if (!OMDB || !p) { done(null); return; }
+    var k = p.kind + ':' + p.id, hit = imdbCache[k];
+    if (hit && Date.now() - hit.at < 7 * 86400000 && Date.now() >= hit.at) { done(hit.rating || null); return; }
+    function keep(rating) {
+      if (Object.keys(imdbCache).length > 300) imdbCache = {};
+      imdbCache[k] = {rating: rating, at: Date.now()};
+      store('imdb', imdbCache);
+      done(rating || null);
+    }
+    if (p.streamId || p.seriesId) {
+      omdb('t=' + encodeURIComponent(p.title) + (p.year ? '&y=' + p.year : '') + '&type=' + (p.kind === 'movie' ? 'movie' : 'series'), keep);
+      return;
+    }
+    if (!KEY) { done(null); return; }
+    tmdb('/' + p.kind + '/' + p.id + '/external_ids', function (err, ids) {
+      if (err || !ids || !ids.imdb_id) { keep(''); return; }
+      omdb('i=' + encodeURIComponent(ids.imdb_id), keep);
+    });
+  }
+
   /** The app on this TV a title is on: done(app or null). Known for the rows of one app; else TMDB is asked. */
   function whereToWatch(p, done) {
     if (p.app && appFor(p.app)) { done(appFor(p.app)); return; }
@@ -392,6 +425,7 @@ var Data = (function () {
     get weather() { return weather; },
     catalog: catalog,
     whereToWatch: whereToWatch,
+    imdbRating: imdbRating,
     showcase: showcase,
     image: function (path, size) {
       if (!path) return '';

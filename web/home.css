@@ -841,6 +841,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background: #E50914;
   vertical-align: 2px;
 }
+/* The IMDb rating, in IMDb's yellow. */
+#hero .imdb {
+  display: inline-block;
+  margin-right: 18px;
+  padding: 3px 12px;
+  border-radius: 8px;
+  font-size: 23px;
+  font-weight: 900;
+  color: #000;
+  background: #F5C518;
+  vertical-align: 2px;
+}
 #hero .story { margin-top: 18px; height: 114px; overflow: hidden; font-size: 27px; line-height: 38px; color: #334155; }
 .night #hero .story { color: rgba(255, 255, 255, 0.78); }
 

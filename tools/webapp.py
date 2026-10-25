@@ -13,7 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import translate  # noqa: E402  (the catalogues and the keys the web app uses)
 
-GENERIC = {'tmdbKey': '', 'tmdbRegion': '', 'latitude': '', 'longitude': '', 'city': '', 'language': 'auto',
+GENERIC = {'tmdbKey': '', 'omdbKey': '', 'tmdbRegion': '', 'latitude': '', 'longitude': '', 'city': '', 'language': 'auto',
            'temperature': 'auto', 'hideAnimation': False, 'hideApps': [],
            'liveChannels': ['Globo', 'Record News', 'Band'], 'ssapKey': '',
            'iptvApp': 'com.lennylxx.iptv',
@@ -51,6 +51,7 @@ def read_config(path):
 
     return {
         'tmdbKey': values.get('tmdb_key', ''),
+        'omdbKey': values.get('omdb_key', ''),
         'tmdbRegion': values.get('tmdb_region', 'US') or 'US',
         'latitude': number('latitude', '40.7128'),
         'longitude': number('longitude', '-74.0060'),
