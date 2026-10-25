@@ -314,18 +314,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .card.live.playing .mark { opacity: 0; }
 .card.live.focus .shade { box-shadow: inset 0 0 0 3px #A855F7; }
 
-/* The antenna's picture (home.js, placePlayer): under the card it plays in, which shows through. */
-#player {
+/* Each card's picture (home.js, placePlayer): under the card it plays in, which shows through. */
+.cardplayer {
   position: absolute;
   border-radius: 24px;
   overflow: hidden;
   background: #000;
   object-fit: cover;
-  -webkit-transition: left 0.25s, top 0.25s, width 0.25s, height 0.25s;
-  transition: left 0.25s, top 0.25s, width 0.25s, height 0.25s;
 }
 /* In a computer's browser, a stand-in for the picture. */
-#player.sample {
+.cardplayer.sample {
   background: -webkit-linear-gradient(-30deg, #1E3A8A, #0F172A 40%, #312E81 70%, #0F172A);
   background: linear-gradient(120deg, #1E3A8A, #0F172A 40%, #312E81 70%, #0F172A);
   background-size: 300% 300%;

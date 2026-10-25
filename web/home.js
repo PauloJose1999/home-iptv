@@ -299,7 +299,7 @@
     if (langHint) langHint.textContent = (st.lang + 1) + ' / ' + languageChoices().length + '  ·  ' + tr('OK picks, Back cancels.');
     setClass(body, 'drawer-open', st.zone === Z.DRAWER);
     if (st.tab === 0 && cards[0] && cards[0].live) placePlayer();
-    else if (player.video) stopPlayer();
+    else if (player.slots.length) stopPlayer();
   }
 
   function focusRows(sheet, index, on) {
@@ -500,16 +500,15 @@
     return [r[0], r[1], r[2], n === 2 && i === 1 ? 560 : r[3]];
   }
 
-  // MARK: - The player: the focused channel card plays, picture and sound, and only that one
+  // MARK: - The players: every channel card plays at once, silent; the focused one has the sound
   //
   // Each card plays its own channel: from the internet when the IPTV list has it (Record News, TV Cultura… a stream per
-  // channel, so moving to another card changes picture and sound), else from the antenna. The TV has one tuner, and
-  // switching it from here takes the TV out of this app, so the antenna plays only on the card of the channel the TV is
-  // on; the other antenna cards show the channel's logo (OK opens them full screen). With no card focused (the shelf,
-  // the top, the drawer), the last focused card, or else the first one that can, keeps playing without sound, so the
-  // home screen always shows TV.
+  // card), else from the antenna. The TV has one tuner, and switching it from here takes the TV out of this app, so the
+  // antenna plays only on one card, the one of the channel the TV is on; the other antenna cards show the channel's
+  // logo (OK opens them full screen). A stream that fails leaves its card on the logo.
 
-  var player = {video: null, key: '', ok: false, timer: 0, current: null, currentAt: 0, learned: false};
+  // slots[i]: card i's player {video, key, ok, timer}; failed: the keys that didn't play (not tried again here).
+  var player = {slots: [], failed: {}, current: null, currentAt: 0, learned: false};
 
   /** What a card plays: {kind: 'net', url} | {kind: 'tv'} | null. */
   function sourceFor(card) {
@@ -540,24 +539,30 @@
         v.src = src.url;
       }
     }
-    v.id = 'player';
+    v.className += ' cardplayer';
     return v;
   }
 
-  /** Stops the picture and the sound, and lets go of the tuner (the TV's Live TV app needs it). */
-  function stopPlayer() {
-    clearTimeout(player.timer);
-    if (player.video) {
-      try { player.video.pause(); } catch (e) {}
-      try { player.video.removeAttribute('src'); player.video.load(); } catch (e) {}
-      if (player.video.parentNode) player.video.parentNode.removeChild(player.video);
+  /** Stops card i's picture and sound (and lets go of the tuner, when it was the antenna). */
+  function stopSlot(i) {
+    var s = player.slots[i];
+    if (!s) return;
+    clearTimeout(s.timer);
+    if (s.video) {
+      try { s.video.pause(); } catch (e) {}
+      try { s.video.removeAttribute('src'); s.video.load(); } catch (e) {}
+      if (s.video.parentNode) s.video.parentNode.removeChild(s.video);
     }
-    player.video = null;
-    player.key = '';
-    player.ok = false;
+    player.slots[i] = null;
+    setClass($('cards').children[i], 'playing', false);
+  }
+
+  /** Stops every card, and lets go of the tuner (the TV's Live TV app needs it). */
+  function stopPlayer() {
+    for (var i = 0; i < player.slots.length; i++) stopSlot(i);
+    player.slots = [];
+    player.failed = {};
     player.learned = false;
-    var nodes = $('cards').children;
-    for (var i = 0; i < nodes.length; i++) setClass(nodes[i], 'playing', false);
   }
 
   /** Which channel the antenna is on (asked again after a while: the person may have changed it on the TV). */
@@ -570,63 +575,76 @@
     });
   }
 
-  /** The card that plays without sound while none is focused: the last focused one, else the first that can play. */
-  function previewCard() {
-    if (sourceFor(cards[st.card])) return st.card;
-    for (var i = 0; i < cards.length; i++) if (sourceFor(cards[i])) return i;
-    return st.card;
-  }
-
-  /** Plays the focused card's channel in it, with sound; with no card focused, one card plays silent. */
+  /** Every card plays its channel, silent; the focused card has the sound. */
   function placePlayer() {
     if (st.tab !== 0 || saverOn || sheetOpen() || IPTV.isOpen()) { stopPlayer(); return; }
     checkCurrent();
-    var focused = st.zone === Z.CARDS;
-    var at = focused ? st.card : previewCard(), src = sourceFor(cards[at]);
-    var key = src ? src.kind + ':' + (src.url || '') + ':' + at : '';
-    // The same channel goes on playing when the focus comes or goes: only its sound changes.
-    if (player.video && key === player.key) player.video.muted = !focused;
-    if (key !== player.key) {
-      stopPlayer();
-      if (!src) return;
-      player.key = key;
-      // A moment before starting, so going across the cards doesn't start (and hear) each one.
-      player.timer = setTimeout(function () {
-        if (player.key !== key) return;
-        var v = makeVideo(src);
-        v.muted = st.zone !== Z.CARDS;
-        var r = liveRect(at, cards.length);
-        v.style.left = r[0] + 'px';
-        v.style.top = r[1] + 'px';
-        v.style.width = r[2] + 'px';
-        v.style.height = r[3] + 'px';
-        $('top').insertBefore(v, $('cards'));
-        player.video = v;
-        function works() {
-          if (player.video !== v || player.ok) return;
-          player.ok = true;
-          setClass($('cards').children[at], 'playing', true);
-          if (src.kind === 'tv') {
-            // Now the TV tells which channel the antenna is on: another card's channel isn't played here.
-            setTimeout(function () {
-              if (player.video !== v) return;
-              TV.currentChannel(function (cur) {
-                if (player.video !== v || !cur) return;
-                player.current = cur.id;
-                player.currentAt = Date.now();
-                var mine = cards[at] && cards[at].channel;
-                if (mine && mine.id !== cur.id) { stopPlayer(); player.key = key; }
-                else if (!player.learned) { player.learned = true; learnProgram(); }
-              });
-            }, 1500);
-          }
-        }
-        if (src.kind === 'sample') { works(); return; }
-        v.addEventListener('playing', works);
-        v.addEventListener('loadeddata', works);
-        v.addEventListener('error', function () { if (player.video === v) stopPlayer(); player.key = key; }, true);
-      }, 500);
+    var tuner = false, delay = 0, order = [], i;
+    // The focused (or last focused) card starts first; the others follow a moment apart, so they don't all load at once.
+    order.push(st.card);
+    for (i = 0; i < cards.length; i++) if (i !== st.card) order.push(i);
+    for (i = cards.length; i < player.slots.length; i++) stopSlot(i);
+    for (var o = 0; o < order.length; o++) {
+      var at = order[o], src = sourceFor(cards[at]);
+      if (src && src.kind === 'tv') { if (tuner) src = null; else tuner = true; }   // one tuner: one antenna card
+      var key = src ? cards[at].id + ':' + src.kind + ':' + (src.url || '') : '';
+      if (player.failed[key]) key = '';
+      var slot = player.slots[at];
+      if (slot && slot.key === key) {
+        // The same channel goes on playing when the focus comes or goes: only its sound changes.
+        if (slot.video) slot.video.muted = !(st.zone === Z.CARDS && st.card === at);
+        if (slot.ok) setClass($('cards').children[at], 'playing', true);   // the cards may have been drawn again
+        continue;
+      }
+      stopSlot(at);
+      if (!key) continue;
+      delay += 400;
+      startSlot(at, src, key, delay);
     }
+  }
+
+  function startSlot(at, src, key, delay) {
+    var slot = {video: null, key: key, ok: false, timer: 0};
+    player.slots[at] = slot;
+    slot.timer = setTimeout(function () {
+      if (player.slots[at] !== slot) return;
+      var v = makeVideo(src);
+      v.muted = !(st.zone === Z.CARDS && st.card === at);
+      var r = liveRect(at, cards.length);
+      v.style.left = r[0] + 'px';
+      v.style.top = r[1] + 'px';
+      v.style.width = r[2] + 'px';
+      v.style.height = r[3] + 'px';
+      $('top').insertBefore(v, $('cards'));
+      slot.video = v;
+      function works() {
+        if (player.slots[at] !== slot || slot.ok) return;
+        slot.ok = true;
+        setClass($('cards').children[at], 'playing', true);
+        if (src.kind === 'tv') {
+          // Now the TV tells which channel the antenna is on: another card's channel isn't played here.
+          setTimeout(function () {
+            if (player.slots[at] !== slot) return;
+            TV.currentChannel(function (cur) {
+              if (player.slots[at] !== slot || !cur) return;
+              player.current = cur.id;
+              player.currentAt = Date.now();
+              var mine = cards[at] && cards[at].channel;
+              if (mine && mine.id !== cur.id) { stopSlot(at); placePlayer(); }   // the tuner's card takes it
+              else if (!player.learned) { player.learned = true; learnProgram(); }
+            });
+          }, 1500);
+        }
+      }
+      if (src.kind === 'sample') { works(); return; }
+      v.addEventListener('playing', works);
+      v.addEventListener('loadeddata', works);
+      v.addEventListener('error', function () {
+        if (player.slots[at] !== slot) return;
+        player.failed[key] = true;
+        stopSlot(at);
+      }, true);
+    }, delay);
   }
 
   /** What's on the tuned channel, now that it's playing: the TV tells it for that one only. */

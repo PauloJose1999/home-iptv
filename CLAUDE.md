@@ -34,10 +34,10 @@ person's, stay only in that file (git ignores it), are never printed and never c
   `tv/getChannelProgramInfo` returns an empty list on Brazilian open TV, so each channel's program is kept from when it
   was tuned (`guide` in localStorage); `tv/openChannel` switches the tuner but brings the TV's Live TV app to the front
   (and a hidden app's timers stop, so it can't come back by itself).
-- `web/home.js`: the screen. The TV aberta cards play the focused card's channel: its IPTV stream when the list has
-  it, else the antenna (`<video>` with `service/webos-broadcast`), only on the card of the channel the tuner is on.
-  With no card focused, the last focused card (or the first that can play) keeps playing muted; cards without a
-  picture show the channel's logo from the IPTV list.
+- `web/home.js`: the screen. The TV aberta cards all play at once, a `<video>` each, muted but the focused one: its
+  IPTV stream when the list has it, else the antenna (`<video>` with `service/webos-broadcast`), only on the card of
+  the channel the tuner is on (one tuner: one antenna card). Cards without a picture show the channel's logo from the
+  IPTV list.
 - `web/iptv.js`: the IPTV list (M3U or Xtream, from `config.properties`; by default `web/iptv-brasil.m3u`, the Free-TV
   Brazilian channels) and its full-screen player; it takes the remote's keys while open.
 - Text: `tr('…')`, `trf('{n} min', {n: 3})`, `plural('plural|…', n)`, `formatDate('format|h:mm', at)`, from
