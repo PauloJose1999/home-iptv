@@ -21,6 +21,14 @@ numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/
   leva com as setas, ou segura e arrasta com o ponteiro do Magic Remote; também dá para esconder apps que não usa.
 - **Claro de dia, escuro à noite**, e uma proteção de tela com as fotos das sugestões.
 
+## Player IPTV
+
+Com o [webOS IPTV Player](https://github.com/lennylxx/webos-iptv-player) (Apache-2.0, em [`iptv-player/`](iptv-player))
+na TV, os filmes e séries das abas abrem nele e **começam a tocar direto** (ele acha o título pelo nome na sua conta
+Xtream), e os canais da TV aberta e a gaveta › IPTV também abrem nele. Para filmes e séries ele precisa de uma conta
+Xtream de um provedor de IPTV (Configurações do player). Sem o player na TV, tudo funciona como antes. Para instalar:
+`python3 webos/install.py 192.168.0.123 iptv-player/com.lennylxx.iptv_1.17.0_all.ipk` (depois de gerar o pacote).
+
 ## Instalar
 
 Precisa de uma TV LG (webOS 3 ou mais novo) e de um computador na mesma rede, com Python 3.

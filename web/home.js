@@ -784,25 +784,22 @@
   }
 
   /**
-   * OK on a title. One of the IPTV provider's (Xtream VOD): the IPTV player at that exact movie or series, when it's on
-   * the TV. One of TMDB's: the streaming app it's on (Netflix, Prime Video…).
+   * OK on a title: the IPTV player, when it's on the TV, finds it in the IPTV account and plays a movie at once (a
+   * series opens on its episodes); its name and year say which, or the provider's id for Xtream VOD rows. Without the
+   * player: the streaming app a TMDB title is on (Netflix, Prime Video…).
    */
   function openTitle(p) {
     if (!p) return;
-    if (!p.streamId && !p.seriesId) {
-      Data.whereToWatch(p, function (app) {
-        if (app) launcher(app.id, app.title)();
-        else toast(trf("{title} isn't on this TV's apps.", {title: p.title}));
-      });
-      return;
-    }
-    var extra = {id: p.streamId || p.seriesId};
-    if (p.categoryId) extra.categoryId = p.categoryId;
-    if (p.poster) extra.poster = p.poster;
-    if (p.containerExtension) extra.ext = p.containerExtension;
-    if (!openInIptv(p.kind === 'movie' ? 'movie' : 'series', p.title, extra)) {
-      toast(tr('Install the IPTV Player on the TV to watch this title.'));
-    }
+    var extra = {};
+    if (p.streamId || p.seriesId) extra.id = p.streamId || p.seriesId;
+    if (p.year) extra.year = p.year;
+    if (p.original && p.original !== p.title) extra.altTitle = p.original;
+    if (openInIptv(p.kind === 'movie' ? 'movie' : 'series', p.title, extra)) return;
+    if (extra.id) { toast(tr('Install the IPTV Player on the TV to watch this title.')); return; }
+    Data.whereToWatch(p, function (app) {
+      if (app) launcher(app.id, app.title)();
+      else toast(trf("{title} isn't on this TV's apps.", {title: p.title}));
+    });
   }
 
   var bgUrl = null, bgFront = 'bgA';
@@ -921,7 +918,14 @@
       drawerItems.push({label: x.label || tr('Live TV'), symbol: x.symbol, off: !x.connected, run: launcher(x.id, x.label)});
     }
     drawerInputs = drawerItems.length;
-    if (IPTV.enabled) drawerItems.push({label: tr('IPTV'), symbol: 'live_tv', run: function () { closeDrawer(); IPTV.open(); }});
+    // IPTV: the IPTV player when it's on the TV, else the list inside the launcher.
+    if (IPTV.enabled || iptvApp()) {
+      drawerItems.push({label: tr('IPTV'), symbol: 'live_tv', run: function () {
+        closeDrawer();
+        if (iptvApp()) launcher(iptvApp(), tr('IPTV'))();
+        else IPTV.open();
+      }});
+    }
     drawerItems.push({label: tr('All Apps'), symbol: 'apps', run: openApps});
     drawerItems.push({label: tr('Home Settings'), symbol: 'settings', run: openSettings});
     drawerItems.push({label: tr('TV Settings'), symbol: 'tv_settings', run: tvSettings});
@@ -1460,6 +1464,7 @@
    * com.lennylxx.iptv), only when it's installed on the TV; else ''.
    */
   function iptvApp() {
+    if (window.VOD_DEMO) return 'com.lennylxx.iptv';   // demo: pretend the player is installed on the TV
     var id = (window.CONFIG && CONFIG.iptvApp) || '';
     for (var i = 0; id && i < apps.length; i++) if (apps[i].id === id) return id;
     return '';
@@ -1472,10 +1477,11 @@
   function openInIptv(kind, value, extra) {
     var id = iptvApp();
     if (!id) return false;
-    var dl = {kind: kind, value: value};
+    var dl = {kind: kind, title: value};
     if (extra) for (var k in extra) if (extra.hasOwnProperty(k)) dl[k] = extra[k];
     TV.launch(id, {deepLink: dl}, function (ok) {
       if (!ok) toast(trf("Couldn't open {app}.", {app: 'IPTV Player'}));
+      else if (window.VOD_DEMO) toast('▶ Player IPTV: ' + value + ' (' + kind + (dl.id ? ', id ' + dl.id : '') + ')');
     });
     return true;
   }
@@ -1512,7 +1518,11 @@
         if (p && p.live) {
           var ch = p.channel;
           // The IPTV player when it's on the TV, else the player inside the launcher.
-          if (ch && ch.iptv) { stopPlayer(); if (!openInIptv('channel', ch.name)) IPTV.playChannel(ch.iptv); }
+          if (ch && ch.iptv) {
+            stopPlayer();
+            // The stream goes along: the IPTV player plays it even when none of its playlists has the channel.
+            if (!openInIptv('channel', ch.name, {url: ch.iptv.url, logo: ch.iptv.logo || ''})) IPTV.playChannel(ch.iptv);
+          }
           else if (ch) TV.openChannel(ch, function (ok) { if (!ok) toast(trf("Couldn't open {app}.", {app: ch.name})); });
           else { var tv = liveTV(); if (tv) launcher(tv.id, tr('Live TV'))(); }
           return;

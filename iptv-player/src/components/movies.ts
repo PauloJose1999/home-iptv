@@ -183,6 +183,14 @@ export class Movies extends CatalogView<VodCategory, VodItem> {
     if (this.mode === 'detail' && this.currentVod === vod) this.renderDetail();
   }
 
+  // A launcher's deep link: the movie's detail, then straight into playback
+  // (from where it was left, if it was started before).
+  async playItem(account: PlaylistEntry, vod: VodItem, onDetailBack: () => void): Promise<void> {
+    await this.openItem(account, vod, onDetailBack);
+    if (this.currentVod !== vod) return;
+    this.play(!!StorageService.getResume(account.id, 'vod', vod.streamId));
+  }
+
   private play(resume: boolean): void {
     const vod = this.currentVod;
     const a = this.account;

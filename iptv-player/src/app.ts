@@ -33,7 +33,8 @@ import { SearchHistoryDropdown } from './components/search-history-dropdown';
 import { showToast } from './components/toast';
 import { showNumberEntry, hideNumberEntry } from './components/number-entry';
 import { ReminderService } from './services/reminder-service';
-import { parseDeepLink, matchChannel, type DeepLink } from './services/deep-link';
+import { parseDeepLink, matchTitle, type DeepLink } from './services/deep-link';
+import { loadAllVodStreams, loadAllSeries } from './services/xtream-catalog';
 import { ReminderPrompt } from './components/reminder-prompt';
 import { ReminderManager } from './components/reminder-manager';
 import { ParentalControls } from './components/parental-controls';
@@ -61,8 +62,6 @@ import type {
   ChannelScope,
   EpgSource,
   PlaylistEntry,
-  SeriesItem,
-  VodItem,
 } from './types';
 import { getLocale, initLocale, resolveLocale, setLocale, t, tp } from './i18n';
 
@@ -1487,96 +1486,63 @@ class App {
       return;
     }
     const concealed = ReminderService.resolveConcealedLaunchChannel(raw);
-    if (concealed) this.playConcealedReminder(concealed.key, concealed.channel);
-    const dl = parseDeepLink(raw);
-    if (dl) this.handleDeepLink(dl);
+    if (concealed) {
+      this.playConcealedReminder(concealed.key, concealed.channel);
+      return;
+    }
+    const link = parseDeepLink(raw);
+    if (link) void this.openDeepLink(link);
   }
 
-  // A home-screen deep link: a channel plays right away; a movie, series, or a
-  // channel that wasn't found falls back to Search, which covers channels, VOD
-  // movies and series in one place (the launcher only knows the title).
-  private handleDeepLink(dl: DeepLink): void {
-    if (dl.kind === 'channel') {
-      const channel = matchChannel(dl.value);
-      if (channel) {
-        const index = PlaylistService.channels.indexOf(channel);
-        if (index >= 0) {
-          log.info('Deep link — playing channel', `name=${dl.value}`, `index=${index}`);
-          this.playChannel(index);
+  // A launcher on the TV opened a movie, series, or channel here by name.
+  private async openDeepLink(link: DeepLink): Promise<void> {
+    log.info('Deep link', 'event=deeplink.open', `kind=${link.kind}`);
+    if (link.kind === 'channel') {
+      const channel = matchTitle(PlaylistService.channels, link);
+      const index = channel ? PlaylistService.channels.indexOf(channel) : -1;
+      if (index >= 0) this.playChannel(index);
+      else if (link.url) this.playLinkedStream(link.url, link.title, link.logo ?? '');
+      else showToast(t('deepLink.notFound', { title: link.title }));
+      return;
+    }
+    const account = this.activeXtreamAccount();
+    if (!account) {
+      showToast(t('deepLink.noAccount'));
+      return;
+    }
+    const section = link.kind === 'movie' ? 'movies' : 'series';
+    showToast(t('deepLink.searching', { title: link.title }));
+    try {
+      if (link.kind === 'movie') {
+        const vod = matchTitle(await loadAllVodStreams(account), link, v => v.streamId, link.id);
+        if (vod) {
+          this.showView('movies');
+          await this.movies.playItem(account, vod, () => void this.exitApp());
+          return;
+        }
+      } else {
+        const series = matchTitle(await loadAllSeries(account), link, s => s.seriesId, link.id);
+        if (series) {
+          this.showView('series');
+          await this.series.openItem(account, series, () => void this.exitApp());
           return;
         }
       }
+    } catch (err) {
+      log.error('Deep link failed', 'event=deeplink.failed', `kind=${link.kind}`, err);
     }
-    const account = this.activeXtreamAccount();
-    if (account && dl.id) {
-      if (dl.kind === 'movie') {
-        this.openMovieById(account, dl);
-        return;
-      }
-      if (dl.kind === 'series') {
-        this.openSeriesById(account, dl);
-        return;
-      }
-    }
-    log.info('Deep link — opening search', `kind=${dl.kind}`, `value=${dl.value}`);
-    this.openDeepLinkSearch(dl.value);
+    showToast(t('deepLink.notFound', { title: link.title }));
+    this.switchSection(section);
   }
 
-  private openMovieById(account: PlaylistEntry, dl: DeepLink): void {
-    const vod: VodItem = {
-      accountId: account.id,
-      streamId: dl.id as string,
-      name: dl.value,
-      poster: dl.poster ?? '',
-      rating: '',
-      categoryId: dl.categoryId ?? '',
-      containerExtension: dl.ext ?? 'mp4',
-    };
-    log.info('Deep link — opening movie', `streamId=${dl.id}`, `name=${dl.value}`);
-    this.tabBar.blur();
-    this.showView('movies');
-    this.movies.openItem(account, vod, () => this.goLive())
-      .catch((err) => log.error(
-        'Deep-link movie open failed',
-        'event=deepLink.movie.open.failed',
-        'operation=movie_detail',
-        err,
-      ));
-  }
-
-  private openSeriesById(account: PlaylistEntry, dl: DeepLink): void {
-    const series: SeriesItem = {
-      accountId: account.id,
-      seriesId: dl.id as string,
-      name: dl.value,
-      poster: dl.poster ?? '',
-      rating: '',
-      categoryId: dl.categoryId ?? '',
-    };
-    log.info('Deep link — opening series', `seriesId=${dl.id}`, `name=${dl.value}`);
-    this.tabBar.blur();
-    this.showView('series');
-    this.series.openItem(account, series, () => this.goLive())
-      .catch((err) => log.error(
-        'Deep-link series open failed',
-        'event=deepLink.series.open.failed',
-        'operation=series_detail',
-        err,
-      ));
-  }
-
-  private openDeepLinkSearch(query: string): void {
-    const account = this.activeXtreamAccount();
-    this.lastSearchQuery = query;
-    this.showView('search');
-    this.search.open(account)
-      .then(() => this.search.setQuery(query))
-      .catch((err) => log.error(
-        'Deep-link search open failed',
-        'event=deepLink.search.open.failed',
-        'operation=search',
-        err,
-      ));
+  // A launcher's channel that no playlist here has: its stream, as a one-off
+  // (a live stream has no duration, so nothing lands in Continue Watching).
+  // Back returns to the launcher, where it came from.
+  private playLinkedStream(url: string, title: string, poster: string): void {
+    this.player.playVod({
+      url, title, poster, accountId: '', itemId: `deeplink:${url}`, kind: 'vod',
+      resumeSecs: 0, subtitles: [], onBack: () => void this.exitApp(),
+    });
   }
 
   // The PIN prompt keeps the hidden channel's name out, as the notification did.

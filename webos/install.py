@@ -3,6 +3,7 @@
 
     python3 webos/install.py 192.168.1.50              # install or update, then open it
     python3 webos/install.py 192.168.1.50 --uninstall  # remove it
+    python3 webos/install.py 192.168.1.50 iptv-player/com.lennylxx.iptv_1.17.0_all.ipk   # another app's package
 
 Before the first install, on the TV: install "Developer Mode" from the LG Content Store, sign in with a free LG
 developer account (webostv.developer.lge.com), turn on Dev Mode Status (the TV restarts), then turn on Key Server.
@@ -85,6 +86,11 @@ def main():
     if not args or not re.match(r'^\d{1,3}(\.\d{1,3}){3}$', args[0]):
         sys.exit(__doc__)
     ip = args[0]
+    # Another app's package (the IPTV player): its id is the start of the file name, as ares-package names it.
+    global IPK, APP_ID
+    if len(args) > 1:
+        IPK = os.path.abspath(args[1])
+        APP_ID = os.path.basename(IPK).split('_')[0]
     if not shutil.which('ssh') or not shutil.which('ssh-keygen'):
         sys.exit('OpenSSH (ssh and ssh-keygen) is needed.')
     key = fetch_key(ip)
@@ -108,8 +114,12 @@ def main():
     if '"state":"installed"' not in out:
         sys.exit('The TV didn\'t finish installing. It said:\n' + out.strip())
     ssh(ip, key, 'rm -f ' + TEMP)
+    # An update keeps the old copy suspended in memory: close it, so the launch loads the new one.
+    luna(ip, key, 'luna://com.webos.applicationManager/close', {'id': APP_ID})
     luna(ip, key, 'luna://com.webos.applicationManager/launch', {'id': APP_ID})
     print('Installed and open on the TV.')
+    if len(args) > 1:
+        return
     print('Tip: while Free My TV is open, hold a number key on the remote to open it with that key from anywhere.')
     print('Developer Mode lasts about 40 days: open the Developer Mode app now and then and press EXTEND.')
 

@@ -47,6 +47,12 @@ person's, stay only in that file (git ignores it), are never printed and never c
   config.properties (`liveChannels`, `shelf` order, `shelfHidden`, `cardSound`, `saverMinutes`); `Prefs.reset()` forgets
   them. The picker (language, a card's channel) draws only the rows on screen. The Shelf editor is a grid: OK › Move
   lifts the app and the arrows move it (Back undoes), or the pointer holds and drags it; saved only when dropped.
+- IPTV player (`iptv-player/`, lennylxx/webos-iptv-player, app `com.lennylxx.iptv`, `iptv_app`): when it's installed,
+  the Movies/Shows titles, the IPTV channel cards and drawer › IPTV open in it by deep link (`openInIptv`): launch params
+  `{deepLink: {kind: movie|series|channel, title, year?, altTitle?, id?, url?, logo?}}`. It finds a movie by name in its
+  Xtream account and plays it (`iptv-player/src/services/deep-link.ts`); a channel no playlist of its has plays from
+  `url`; Back returns here. Without it, the launcher's own player and the streaming apps, as before. Build it in
+  `iptv-player/` (`npm run build`, the service, `ares-package`) and install with `webos/install.py <IP> <ipk>`.
 - `web/iptv.js`: the IPTV list (M3U or Xtream, from `config.properties`; by default `web/iptv-brasil.m3u`, the Free-TV
   Brazilian channels) and its full-screen player; it takes the remote's keys while open.
 - Text: `tr('…')`, `trf('{n} min', {n: 3})`, `plural('plural|…', n)`, `formatDate('format|h:mm', at)`, from

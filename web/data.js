@@ -248,6 +248,7 @@ var Data = (function () {
     var date = kind === 'movie' ? o.release_date : o.first_air_date;
     return {
       id: o.id, kind: kind, title: kind === 'movie' ? o.title : o.name, backdrop: o.backdrop_path,
+      original: kind === 'movie' ? o.original_title : o.original_name,
       overview: o.overview || '', year: date ? date.slice(0, 4) : '', rating: o.vote_average || 0,
       genres: o.genre_ids || [], app: app ? app[1] : null, service: app ? app[4] : ''
     };
