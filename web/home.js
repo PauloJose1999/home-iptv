@@ -783,17 +783,26 @@
     }, 400);
   }
 
-  /** OK on a title: opens the IPTV player at that exact movie or series (deep link with its Xtream id). */
+  /**
+   * OK on a title. One of the IPTV provider's (Xtream VOD): the IPTV player at that exact movie or series, when it's on
+   * the TV. One of TMDB's: the streaming app it's on (Netflix, Prime Video…).
+   */
   function openTitle(p) {
     if (!p) return;
-    var kind = p.kind === 'movie' ? 'movie' : 'series';
-    var extra = {};
-    if (p.streamId) extra.id = p.streamId;
-    else if (p.seriesId) extra.id = p.seriesId;
+    if (!p.streamId && !p.seriesId) {
+      Data.whereToWatch(p, function (app) {
+        if (app) launcher(app.id, app.title)();
+        else toast(trf("{title} isn't on this TV's apps.", {title: p.title}));
+      });
+      return;
+    }
+    var extra = {id: p.streamId || p.seriesId};
     if (p.categoryId) extra.categoryId = p.categoryId;
     if (p.poster) extra.poster = p.poster;
     if (p.containerExtension) extra.ext = p.containerExtension;
-    openInIptv(kind, p.title, extra);
+    if (!openInIptv(p.kind === 'movie' ? 'movie' : 'series', p.title, extra)) {
+      toast(tr('Install the IPTV Player on the TV to watch this title.'));
+    }
   }
 
   var bgUrl = null, bgFront = 'bgA';
@@ -1446,12 +1455,22 @@
 
   // MARK: - Opening things
 
-  /** The IPTV player app the home deep-links into (lennylxx/webos-iptv-player); '' keeps the old behavior. */
-  function iptvAppId() { return (window.CONFIG && CONFIG.iptvApp) || ''; }
+  /**
+   * The IPTV player the home deep-links into (iptv_app in config.properties, e.g. lennylxx/webos-iptv-player's
+   * com.lennylxx.iptv), only when it's installed on the TV; else ''.
+   */
+  function iptvApp() {
+    var id = (window.CONFIG && CONFIG.iptvApp) || '';
+    for (var i = 0; id && i < apps.length; i++) if (apps[i].id === id) return id;
+    return '';
+  }
 
-  /** Opens the IPTV player at a channel, movie or series; extra fields (id, categoryId, poster, ext) make the movie/series deep link exact. */
+  /**
+   * Opens the IPTV player at a channel, movie or series; extra fields (id, categoryId, poster, ext) make the movie or
+   * series deep link exact. False when there's no IPTV player on the TV (the caller does what it did before).
+   */
   function openInIptv(kind, value, extra) {
-    var id = iptvAppId();
+    var id = iptvApp();
     if (!id) return false;
     var dl = {kind: kind, value: value};
     if (extra) for (var k in extra) if (extra.hasOwnProperty(k)) dl[k] = extra[k];
@@ -1492,7 +1511,8 @@
         var p = cards[st.card];
         if (p && p.live) {
           var ch = p.channel;
-          if (ch && ch.iptv) { stopPlayer(); openInIptv('channel', ch.name); }
+          // The IPTV player when it's on the TV, else the player inside the launcher.
+          if (ch && ch.iptv) { stopPlayer(); if (!openInIptv('channel', ch.name)) IPTV.playChannel(ch.iptv); }
           else if (ch) TV.openChannel(ch, function (ok) { if (!ok) toast(trf("Couldn't open {app}.", {app: ch.name})); });
           else { var tv = liveTV(); if (tv) launcher(tv.id, tr('Live TV'))(); }
           return;

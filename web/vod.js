@@ -53,7 +53,7 @@ var VOD = (function () {
     catalogs[kind] = fresh;
     if (prev && prev.rows.length) { prev.update = update; update(prev); }   // old rows until the new ones come
     else update(fresh);
-    fetch(kind, function (err, rows) {
+    load(kind, function (err, rows) {
       fresh.loading = false;
       fresh.rows = rows.length ? rows : fresh.rows;
       if (err && !fresh.rows.length) fresh.error = err.message;
@@ -61,7 +61,7 @@ var VOD = (function () {
     });
   }
 
-  function fetch(kind, done) {
+  function load(kind, done) {
     var catsAction = kind === 'movie' ? 'get_vod_categories' : 'get_series_categories';
     var streamsAction = kind === 'movie' ? 'get_vod_streams' : 'get_series';
     api(catsAction, function (err, cats) {
