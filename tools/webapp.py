@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
@@ -106,6 +107,11 @@ def preview(app, out_dir):
     """Leaves the app's files in out_dir, to open index.html in a browser."""
     if os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
+    # A browser keeps the last preview's scripts and styles: each build's index.html asks for its own (?v=build time).
+    stamp = str(int(time.time()))
+    page = app['index.html'].decode('utf-8')
+    page = re.sub(r'((?:src|href)="[\w.-]+\.(?:js|css))"', r'\1?v=' + stamp + '"', page)
+    app = dict(app, **{'index.html': page.encode('utf-8')})
     for path, content in app.items():
         target = os.path.join(out_dir, path)
         os.makedirs(os.path.dirname(target), exist_ok=True)

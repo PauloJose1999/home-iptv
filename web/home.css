@@ -82,6 +82,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .drawer-open #home { -webkit-transform: translateY(-560px); transform: translateY(-560px); }
 #top { -webkit-transition: opacity 0.2s; transition: opacity 0.2s; }
+/* The top spans the screen: only what's on it takes the pointer, so the Movies and Shows rows under it can be clicked. */
+#top { pointer-events: none; }
+#top > * { pointer-events: auto; }
 .drawer-open #top { opacity: 0; }
 #drawer { -webkit-transform: translateY(560px); transform: translateY(560px); opacity: 0; }
 .drawer-open #drawer { -webkit-transform: none; transform: none; opacity: 1; }
