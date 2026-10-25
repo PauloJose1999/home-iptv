@@ -34,6 +34,7 @@ import { showToast } from './components/toast';
 import { showNumberEntry, hideNumberEntry } from './components/number-entry';
 import { ReminderService } from './services/reminder-service';
 import { parseDeepLink, matchTitle, type DeepLink } from './services/deep-link';
+import { LauncherReport } from './services/launcher-report';
 import { loadAllVodStreams, loadAllSeries } from './services/xtream-catalog';
 import { ReminderPrompt } from './components/reminder-prompt';
 import { ReminderManager } from './components/reminder-manager';
@@ -62,6 +63,7 @@ import type {
   ChannelScope,
   EpgSource,
   PlaylistEntry,
+  SeriesItem,
 } from './types';
 import { getLocale, initLocale, resolveLocale, setLocale, t, tp } from './i18n';
 
@@ -1527,8 +1529,16 @@ class App {
       } else {
         const series = matchTitle(await loadAllSeries(account), link, s => s.seriesId, link.id);
         if (series) {
+          const back = () => this.returnToLauncher(link, account, series);
           this.showView('series');
-          await this.series.openItem(account, series, () => void this.exitApp());
+          if (link.season && link.episode) {
+            const req = await this.series.episodeRequest(
+              account, series, link.season, link.episode, link.resume === true, back);
+            if (req) this.player.playVod({ ...req, onBack: back });
+            else showToast(t('deepLink.notFound', { title: `${link.title} T${link.season} E${link.episode}` }));
+            return;
+          }
+          await this.series.openItem(account, series, back);
           return;
         }
       }
@@ -1537,6 +1547,21 @@ class App {
     }
     showToast(t('deepLink.notFound', { title: link.title }));
     this.switchSection(section);
+  }
+
+  // Back from a launcher's series: the launcher comes back with the series'
+  // episode progress in its launch params (it can't read this app's storage),
+  // then this app closes.
+  private returnToLauncher(link: DeepLink, account: PlaylistEntry, series: SeriesItem): void {
+    if (link.from && isLunaAvailable()) {
+      const progress = LauncherReport.take(
+        series.seriesId, link.title, link.tmdbId, StorageService.getResumeList(account.id));
+      lunaRequest('luna://com.webos.applicationManager/launch', {
+        parameters: { id: link.from, params: { progress } },
+        onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),
+      });
+    }
+    void this.exitApp();
   }
 
   // A launcher's channel that no playlist here has: its stream, as a one-off

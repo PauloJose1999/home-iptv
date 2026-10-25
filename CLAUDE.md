@@ -51,6 +51,11 @@ person's, stay only in that file (git ignores it), are never printed and never c
   which calls `openTitle` as before; cast in round photos; similar titles), a cast member opens theirs (filmography:
   movies, shows, other work). `Data.titleDetails`/`personDetails`: one TMDB request each (`append_to_response`), kept
   3 days in `fmtv.details` (40 pages); only photos near the focus load.
+- Series: the page's first button is `nextEpisode` (Continue S·E where it was left, else the next one; S1·E1 never
+  watched; Watch again after the last), plus Episodes (`renderEpisodes`: seasons on top, a row per episode with a
+  purple bar). The deep link carries `tmdbId`, `season`, `episode`, `resume` and `from`; Back in the player relaunches
+  this app with `{progress: {tmdbId, title, episodes: [...]}}` (`takeLaunchParams` → `Data.recordProgress`,
+  `fmtv.progress`): apps can't read each other's storage, and the player's service stops in the background.
 - IPTV player (`iptv-player/`, lennylxx/webos-iptv-player, app `com.lennylxx.iptv`, `iptv_app`): when it's installed,
   the Movies/Shows titles, the IPTV channel cards and drawer › IPTV open in it by deep link (`openInIptv`): launch params
   `{deepLink: {kind: movie|series|channel, title, year?, altTitle?, id?, url?, logo?}}`. It finds a movie by name in its

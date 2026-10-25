@@ -31,6 +31,13 @@ describe('parseDeepLink', () => {
       .toEqual({ kind: 'channel', title: 'ch1' });
   });
 
+  it('reads a series episode to play, the launcher id and the app to go back to', () => {
+    expect(parseDeepLink({ deepLink: { kind: 'series', title: 'Alpha', tmdbId: 42, season: 2, episode: 5, resume: true, from: 'app.one' } }))
+      .toEqual({ kind: 'series', title: 'Alpha', tmdbId: '42', season: 2, episode: 5, resume: true, from: 'app.one' });
+    expect(parseDeepLink({ deepLink: { kind: 'series', title: 'Alpha', season: 0, episode: 1, from: 'bad id!' } }))
+      .toEqual({ kind: 'series', title: 'Alpha' });
+  });
+
   it('drops a year that is not one', () => {
     expect(parseDeepLink({ deepLink: { kind: 'movie', title: 'Alpha', year: 'soon' } })).toEqual({ kind: 'movie', title: 'Alpha' });
   });

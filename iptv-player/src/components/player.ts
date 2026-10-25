@@ -21,6 +21,7 @@ import { show, hide } from '../utils/dom';
 import { channelKey } from '../utils/channel';
 import { dvrWindow, dvrState, type DvrWindow } from '../utils/dvr';
 import { PlaylistService } from '../services/playlist-service';
+import { LauncherReport } from '../services/launcher-report';
 import { ParentalControlService, liveParentalRequest } from '../services/parental-control';
 import { EpgService } from '../services/epg-service';
 import { StorageService } from '../services/storage-service';
@@ -696,6 +697,7 @@ export class Player {
     if (!v || !el) return;
     const dur = Number.isFinite(el.duration) ? el.duration : 0;
     if (dur <= 0) return; // metadata not loaded yet — currentTime is 0/unknown; don't clobber the stored point
+    LauncherReport.record(v, this.pendingSeekTarget ?? (el.currentTime || 0), dur, false);
     StorageService.setResume({
       accountId: v.accountId, kind: v.kind, itemId: v.itemId,
       name: v.title, poster: v.poster, ext: extFromUrl(v.url),
@@ -827,6 +829,8 @@ export class Player {
     if (this.vod) {
       const v = this.vod;
       this.vod = null; // before stop(), so it doesn't re-save a resume point for a finished movie
+      const dur = this.videoEl && Number.isFinite(this.videoEl.duration) ? this.videoEl.duration : 0;
+      LauncherReport.record(v, dur, dur, true);
       StorageService.clearResume(v.accountId, v.kind, v.itemId);
       if (v.kind === 'vod') {
         StorageService.removeWatchlist(v.accountId, 'vod', v.itemId);

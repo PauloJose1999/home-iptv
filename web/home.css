@@ -1093,3 +1093,88 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .ditem .drole { margin-top: 4px; font-size: 20px; font-weight: 500; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .night .ditem .dname { color: #FFF; }
 .night .ditem .drole { color: rgba(255, 255, 255, 0.6); }
+
+/* MARK: - Series: how far Continue is, and the episodes page (seasons on top, a row per episode, purple progress) */
+
+.dprog { width: 360px; height: 6px; margin-top: 14px; border-radius: 3px; background: rgba(15, 23, 42, 0.12); overflow: hidden; }
+.night .dprog { background: rgba(255, 255, 255, 0.18); }
+.dprog .fill, .epbar .fill { height: 100%; border-radius: 3px; background: #8B5CF6; }
+.dleft { margin-top: 8px; font-size: 22px; font-weight: 600; color: #64748B; }
+.night .dleft { color: rgba(255, 255, 255, 0.6); }
+.eptitle { position: absolute; left: 80px; top: 70px; font-size: 52px; font-weight: 900; letter-spacing: -0.02em; color: #0F172A; white-space: nowrap; }
+.night .eptitle { color: #FFF; }
+.epseasons { position: absolute; left: 80px; top: 150px; width: 1760px; height: 80px; padding-top: 10px; overflow: hidden; }
+.eppills {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  white-space: nowrap;
+  -webkit-transition: -webkit-transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.eppill {
+  display: inline-block;
+  height: 56px;
+  padding: 0 28px;
+  margin-right: 12px;
+  border-radius: 28px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 56px;
+  color: #475569;
+  background: rgba(15, 23, 42, 0.06);
+  -webkit-transition: -webkit-transform 0.18s, background-color 0.15s;
+  transition: transform 0.18s, background-color 0.15s;
+}
+.night .eppill { color: rgba(255, 255, 255, 0.75); background: rgba(255, 255, 255, 0.08); }
+.eppill.on, .night .eppill.on { color: #5B21B6; background: #EDE9FE; }
+.eppill.focus, .night .eppill.focus { color: #FFF; background: #7C3AED; -webkit-transform: scale(1.06); transform: scale(1.06); }
+.epview { position: absolute; left: 80px; top: 250px; width: 1760px; height: 830px; overflow: hidden; }
+.eplist {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 1760px;
+  -webkit-transition: -webkit-transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.eprow { position: absolute; left: 0; width: 1700px; height: 176px; padding: 8px; border-radius: 18px; }
+.eprow.focus { background: rgba(124, 58, 237, 0.12); box-shadow: inset 0 0 0 3px #A855F7; }
+.epstill {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 284px;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #DADDE3;
+  background-size: cover;
+  background-position: center;
+}
+.night .epstill { background-color: #1E2433; }
+.epcheck {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 40px;
+  text-align: center;
+  color: #FFF;
+  background: #7C3AED;
+}
+.epbody { position: absolute; left: 320px; top: 14px; right: 20px; color: #0F172A; }
+.night .epbody { color: #FFF; }
+.epname { font-size: 30px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.epmeta { margin-top: 6px; font-size: 22px; font-weight: 600; color: #64748B; }
+.night .epmeta { color: rgba(255, 255, 255, 0.6); }
+.epstory { margin-top: 8px; max-height: 64px; overflow: hidden; font-size: 22px; line-height: 32px; color: #334155; }
+.night .epstory { color: rgba(255, 255, 255, 0.75); }
+.epbar { position: absolute; left: 0; right: 0; top: 148px; height: 6px; border-radius: 3px; background: rgba(15, 23, 42, 0.12); overflow: hidden; }
+.night .epbar { background: rgba(255, 255, 255, 0.18); }
+/* Watched: a little faded, the purple bar full and a check on the still. */
+.eprow.done .epbody, .eprow.done .epstill { opacity: 0.6; }

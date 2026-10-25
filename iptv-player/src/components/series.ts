@@ -1,4 +1,4 @@
-import type { Action, PlaylistEntry, SeriesCategory, SeriesItem, SeriesInfo, Episode, ResumeEntry, ResumeKind, VodQueueItem, WatchlistEntry } from '../types';
+import type { Action, PlaylistEntry, SeriesCategory, SeriesItem, SeriesInfo, Episode, ResumeEntry, ResumeKind, VodPlayback, VodQueueItem, WatchlistEntry } from '../types';
 import { html, raw, Safe } from '../utils/dom';
 import { morph } from '../utils/morph';
 import { StorageService } from '../services/storage-service';
@@ -219,6 +219,27 @@ export class Series extends CatalogView<SeriesCategory, SeriesItem> {
       (all, season) => all.concat(info.episodesBySeason[season] ?? []), []);
     const index = episodes.findIndex((ep) => ep.id === episodeId);
     return index < 0 ? [] : episodes.slice(index + 1).map((ep) => this.episodePlayback(series, ep));
+  }
+
+  // A launcher's deep link to one episode: the series' detail (Back's landing
+  // spot), then that episode's playback request, from where it was left when
+  // `resume` (else from the start), with the rest of the series queued.
+  async episodeRequest(
+    account: PlaylistEntry, series: SeriesItem, season: number, episode: number, resume: boolean,
+    onDetailBack: () => void,
+  ): Promise<Omit<VodPlayback, 'onBack'> | null> {
+    await this.openItem(account, series, onDetailBack);
+    const info = this.currentInfo;
+    if (this.currentSeries !== series || !info) return null;
+    const ep = (info.episodesBySeason[season] ?? []).find((e) => e.episode === episode);
+    if (!ep) return null;
+    this.selectSeason(season);
+    const saved = resume ? StorageService.getResume(account.id, 'episode', ep.id) : null;
+    return {
+      ...this.episodePlayback(series, ep),
+      resumeSecs: saved ? saved.position : 0,
+      episodeQueue: this.episodesAfter(ep.id, series),
+    };
   }
 
   private playEpisode(episodeId: string): void {

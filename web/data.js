@@ -362,13 +362,16 @@ var Data = (function () {
   var SELF_GENRES = [10767, 10763, 10764];
   var details = stored('details') || {};   // 'movie:1' | 'tv:2' | 'person:3' -> {at, lang, data}
 
+  var DETAIL_VERSION = 2;   // raised when a page keeps more (2: a show's seasons)
+
   function cachedDetail(k) {
     var hit = details[k], t = Date.now();
-    return hit && hit.lang === I18N.lang && t - hit.at < DETAIL_DAYS * 86400000 && t >= hit.at ? hit.data : null;
+    return hit && hit.v === DETAIL_VERSION && hit.lang === I18N.lang && t - hit.at < DETAIL_DAYS * 86400000 && t >= hit.at
+        ? hit.data : null;
   }
 
   function keepDetail(k, data) {
-    details[k] = {at: Date.now(), lang: I18N.lang, data: data};
+    details[k] = {at: Date.now(), lang: I18N.lang, v: DETAIL_VERSION, data: data};
     var keys = Object.keys(details);
     if (keys.length > DETAIL_MAX) {
       keys.sort(function (a, b) { return details[a].at - details[b].at; });
@@ -424,6 +427,9 @@ var Data = (function () {
       b.genreNames = (o.genres || []).map(function (g) { return genre(g.name); });
       b.runtime = kind === 'movie' ? o.runtime || 0 : (o.episode_run_time && o.episode_run_time[0]) || 0;
       b.seasons = o.number_of_seasons || 0;
+      // A show's seasons, without the specials (season 0): number, episodes, name.
+      b.seasonList = (o.seasons || []).filter(function (s) { return s.season_number >= 1 && s.episode_count > 0; })
+          .map(function (s) { return {n: s.season_number, count: s.episode_count, name: s.name || ''}; });
       b.directors = (kind === 'movie' ? crew.filter(function (c) { return c.job === 'Director'; }) : o.created_by || [])
           .map(function (c) { return c.name; }).slice(0, 3);
       b.cast = (credits.cast || []).slice(0, CAST_MAX).map(function (c) {
@@ -445,6 +451,53 @@ var Data = (function () {
         finish();
       });
     });
+  }
+
+  /** A season's episodes (number, title, story, still, minutes, air date): done(err, list). */
+  function seasonDetails(tvId, n, done) {
+    var k = 'season:' + tvId + ':' + n, hit = cachedDetail(k);
+    if (hit) { done(null, hit); return; }
+    if (!KEY) { done(new Error('no key')); return; }
+    tmdb('/tv/' + tvId + '/season/' + n + '?language=' + lang(), function (err, o) {
+      if (err || !o || !o.episodes) { done(err || new Error('TMDB returned nothing')); return; }
+      var list = o.episodes.map(function (e) {
+        return {n: e.episode_number, title: e.name || '', overview: e.overview || '', still: e.still_path || '',
+          runtime: e.runtime || 0, air: e.air_date || ''};
+      });
+      keepDetail(k, list);
+      done(null, list);
+    });
+  }
+
+  // MARK: - Series progress: where each show was left, as the IPTV player reports it when Back returns here (apps
+  // can't read each other's storage). By TMDB id: {title, at, eps: {'season:episode': {p, d, done}}}, the 50 last.
+
+  var PROGRESS_MAX = 50;
+  var progressAll = stored('progress') || {};
+
+  /** The player's report ({tmdbId, title, episodes: [{season, episode, position, duration, done}]}), kept. */
+  function recordProgress(report) {
+    if (!report || !report.tmdbId || !report.episodes) return;
+    var show = progressAll[report.tmdbId] || {title: report.title || '', eps: {}};
+    for (var i = 0; i < report.episodes.length; i++) {
+      var e = report.episodes[i];
+      if (!(e.season >= 1 && e.episode >= 1)) continue;
+      show.eps[e.season + ':' + e.episode] = {p: e.position || 0, d: e.duration || 0, done: !!e.done};
+    }
+    show.at = Date.now();
+    progressAll[report.tmdbId] = show;
+    var keys = Object.keys(progressAll);
+    if (keys.length > PROGRESS_MAX) {
+      keys.sort(function (a, b) { return progressAll[a].at - progressAll[b].at; });
+      for (var j = 0; j < keys.length - PROGRESS_MAX; j++) delete progressAll[keys[j]];
+    }
+    store('progress', progressAll);
+  }
+
+  /** A show's progress: {eps: {'season:episode': {p, d, done}}}, or null when nothing was watched. */
+  function progressOf(tvId) {
+    var show = progressAll[tvId];
+    return show && Object.keys(show.eps).length ? show : null;
   }
 
   /** A person's credits of one kind, each title once (its roles together), the most relevant first. */
@@ -570,6 +623,9 @@ var Data = (function () {
     whereToWatch: whereToWatch,
     imdbRating: imdbRating,
     titleDetails: titleDetails,
+    seasonDetails: seasonDetails,
+    recordProgress: recordProgress,
+    progressOf: progressOf,
     personDetails: personDetails,
     showcase: showcase,
     image: function (path, size) {

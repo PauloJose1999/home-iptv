@@ -1,7 +1,8 @@
 // Another app on the TV (a home-screen launcher) opens a title or channel here by
-// name: launch params `{ deepLink: { kind, title, year?, altTitle?, id?, url?, logo? } }`.
-// A movie plays at once, a series opens on its episodes, a channel tunes (or,
-// missing from the playlists, plays from the stream URL the launcher sent).
+// name: launch params `{ deepLink: { kind, title, year?, altTitle?, id?, url?, logo?,
+// tmdbId?, season?, episode?, resume?, from? } }`. A movie plays at once; a series
+// opens on its episodes, or plays the one asked for; a channel plays from the stream
+// URL the launcher sent (else the playlist channel of that name).
 
 export type DeepLinkKind = 'movie' | 'series' | 'channel';
 
@@ -16,6 +17,14 @@ export interface DeepLink {
   /** A channel's stream, played when no playlist here has the channel. */
   url?: string;
   logo?: string;
+  /** The launcher's id for the title (TMDB), handed back with the series' progress. */
+  tmdbId?: string;
+  /** A series' episode to play at once; `resume` continues it from where it was left. */
+  season?: number;
+  episode?: number;
+  resume?: boolean;
+  /** The app to go back to with Back (the launcher's id), carrying the progress. */
+  from?: string;
 }
 
 const KINDS: readonly DeepLinkKind[] = ['movie', 'series', 'channel'];
@@ -48,6 +57,16 @@ export function parseDeepLink(raw: unknown): DeepLink | null {
   if (/^https?:\/\//i.test(url)) out.url = url;
   const logo = text(o.logo);
   if (/^https?:\/\//i.test(logo)) out.logo = logo;
+  const tmdbId = text(o.tmdbId);
+  if (tmdbId) out.tmdbId = tmdbId;
+  const season = Number(o.season), episode = Number(o.episode);
+  if (season >= 1 && episode >= 1) {
+    out.season = Math.floor(season);
+    out.episode = Math.floor(episode);
+    out.resume = o.resume === true;
+  }
+  const from = text(o.from);
+  if (/^[\w.-]+$/.test(from)) out.from = from;
   return out;
 }
 
@@ -55,7 +74,7 @@ export function parseDeepLink(raw: unknown): DeepLink | null {
 const TAGS = /\b(4k|uhd|fhd|hd|sd|hdr|dublado|legendado|dual audio|dub|leg|nacional)\b/g;
 
 export function normalizeTitle(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/^\s*[a-z]{2,3}\s*\|\s*/, '')
     .replace(/\[[^\]]*\]|\((19|20)\d\d\)/g, ' ')
     .replace(TAGS, ' ')

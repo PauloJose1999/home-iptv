@@ -833,6 +833,7 @@
       if (pages[pages.length - 1] === page) renderDetail();
     };
     if (page.type === 'person') Data.personDetails(page.id, answer);
+    else if (page.type === 'episodes') Data.seasonDetails(page.id, page.season, answer);
     else Data.titleDetails(page.kind, page.id, answer);
   }
 
@@ -850,7 +851,19 @@
   function detailRows(page) {
     var d = page.data, rows = [];
     if (page.type === 'title') {
-      rows.push({type: 'actions', items: [{label: tr('Watch')}]});
+      var t = d || page.item || {};
+      if (page.kind === 'tv') {
+        // A show: go on where it was left, or its episodes.
+        var next = page.next = nextEpisode(page);
+        rows.push({type: 'actions', items: [
+          {label: next.label, run: function () { watchEpisode(page, next.season, next.episode, next.resume); }},
+          {label: tr('Episodes'), run: function () { openEpisodes(page); }}
+        ]});
+      } else {
+        rows.push({type: 'actions', items: [{label: tr('Watch'), run: function () {
+          openTitle({kind: page.kind, id: page.id, title: t.title, year: t.year, original: t.original});
+        }}]});
+      }
       if (d && d.cast.length) rows.push({type: 'cast', title: tr('Cast'), items: d.cast});
       if (d && d.similar.length) rows.push({type: 'posters', title: page.kind === 'movie' ? tr('Similar movies') : tr('Similar shows'), items: d.similar});
       return rows;
@@ -886,6 +899,7 @@
 
   function renderDetail() {
     var page = pages[pages.length - 1], box = $('detail'), holder = box.lastChild;
+    if (page.type === 'episodes') { renderEpisodes(page); return; }
     var d = page.data, it = page.item || {}, person = page.type === 'person';
     holder.innerHTML = '';
     page.rows = detailRows(page);
@@ -950,6 +964,11 @@
         nodes.push(btn);
       }
       page.nodes[0] = nodes;
+      // Left in the middle: how far, in purple, and the minutes left.
+      if (page.next && page.next.resume && page.next.share) {
+        el('div', 'fill', el('div', 'dprog', info)).style.width = Math.round(page.next.share * 100) + '%';
+        el('div', 'dleft', info, trf('episode|{n} min left', {n: Math.max(1, Math.ceil(page.next.left / 60))}));
+      }
     }
     if (!d) el('div', 'dnote', info, page.error ? (person ? tr("Couldn't load this person's page.") : tr("Couldn't load more about this title.")) : tr('Loading…'));
 
@@ -986,6 +1005,7 @@
   function placeDetail() {
     var page = pages[pages.length - 1];
     if (!page || !page.rows) return;
+    if (page.type === 'episodes') { placeEpisodes(page); return; }
     var holder = $('detail').lastChild, focusRow = page.rows[page.row];
     // A row below the first one comes up to where the first one is; Watch and the first row keep the page still.
     var lift = focusRow && focusRow.top > page.firstTop ? focusRow.top - LIFT_TO : 0;
@@ -1021,16 +1041,192 @@
   function detailActivate() {
     var page = pages[pages.length - 1];
     if (!page || !page.rows.length) return;
+    if (page.type === 'episodes') { episodesActivate(page); return; }
     var row = page.rows[page.row], x = row.items[page.cols[page.row] || 0];
     if (!x) return;
     if (row.type === 'actions') {
-      var t = page.data || page.item || {};
-      openTitle({kind: page.kind, id: page.id, title: t.title, year: t.year, original: t.original});
+      x.run();
     } else if (row.type === 'cast') {
       openDetail({type: 'person', id: x.id, item: {name: x.name, profile: x.profile}});
     } else {
       openDetail({type: 'title', kind: x.kind, id: x.id, item: x});
     }
+  }
+
+  // MARK: - Series: Continue S·E, and the episodes page
+  //
+  // Where a show was left comes from the IPTV player: Back there brings this app back with the show's episode progress
+  // in the launch params (Data.recordProgress), as apps can't read each other's storage. Without it (no player, never
+  // watched), a show starts at S1·E1.
+
+  /** Where a show goes on: {season, episode, resume, left (seconds), share (0-1), label}. */
+  function nextEpisode(page) {
+    var seasons = (page.data && page.data.seasonList) || [], prog = Data.progressOf(page.id);
+    var first = seasons.length ? seasons[0].n : 1;
+    var start = {season: first, episode: 1, resume: false, label: trf('Watch S{s} · E{e}', {s: first, e: 1})};
+    if (!prog) return start;
+    // The furthest episode touched: continued when it was left in the middle, else the one after it.
+    var last = null, far = -1;
+    for (var k in prog.eps) {
+      if (!prog.eps.hasOwnProperty(k)) continue;
+      var se = k.split(':'), at = +se[0] * 10000 + +se[1];
+      if (at > far) { far = at; last = {season: +se[0], episode: +se[1], x: prog.eps[k]}; }
+    }
+    if (!last.x.done) {
+      return {season: last.season, episode: last.episode, resume: true, left: Math.max(0, last.x.d - last.x.p),
+        share: last.x.d ? Math.min(1, last.x.p / last.x.d) : 0,
+        label: trf('Continue S{s} · E{e}', {s: last.season, e: last.episode})};
+    }
+    var count = 0, i;
+    for (i = 0; i < seasons.length; i++) if (seasons[i].n === last.season) count = seasons[i].count;
+    if (last.episode < count || !seasons.length) {
+      return {season: last.season, episode: last.episode + 1, resume: false,
+        label: trf('Watch S{s} · E{e}', {s: last.season, e: last.episode + 1})};
+    }
+    for (i = 0; i < seasons.length; i++) {
+      if (seasons[i].n > last.season) {
+        return {season: seasons[i].n, episode: 1, resume: false, label: trf('Watch S{s} · E{e}', {s: seasons[i].n, e: 1})};
+      }
+    }
+    start.label = tr('Watch again');
+    return start;
+  }
+
+  /** An episode in the IPTV player (from where it was left when `resume`); without the player, the show as before. */
+  function watchEpisode(show, season, episode, resume) {
+    var t = show.data || show.item || {}, extra = {tmdbId: String(show.id), season: season, episode: episode, resume: resume};
+    if (t.year) extra.year = t.year;
+    if (t.original && t.original !== t.title) extra.altTitle = t.original;
+    if (!openInIptv('series', t.title, extra)) openTitle({kind: 'tv', id: show.id, title: t.title, year: t.year, original: t.original});
+  }
+
+  /** A season all watched (as far as the player told). */
+  function seasonDone(prog, season) {
+    if (!prog || !season.count) return false;
+    for (var e = 1; e <= season.count; e++) {
+      var x = prog.eps[season.n + ':' + e];
+      if (!x || !x.done) return false;
+    }
+    return true;
+  }
+
+  function openEpisodes(show) {
+    var next = nextEpisode(show), t = show.data || show.item || {};
+    openDetail({type: 'episodes', kind: 'tv', id: show.id, item: {title: t.title, backdrop: t.backdrop}, show: show,
+      seasons: (show.data && show.data.seasonList) || [], season: next.season, target: next, aim: true});
+  }
+
+  var EP_ROW = 200;
+
+  /** The episodes page: the seasons on top, then a row per episode (still, title, minutes, story, progress). */
+  function renderEpisodes(page) {
+    var box = $('detail'), holder = box.lastChild, prog = Data.progressOf(page.id), target = page.target;
+    holder.innerHTML = '';
+    page.nodes = [];
+    page.rows = [{type: 'seasons', items: page.seasons}];
+    el('div', 'eptitle', holder, page.item.title || '');
+    var pills = page.pills = el('div', 'eppills', el('div', 'epseasons', holder)), pnodes = [];
+    for (var s = 0; s < page.seasons.length; s++) {
+      var season = page.seasons[s];
+      var pill = el('div', 'eppill' + (season.n === page.season ? ' on' : ''), pills,
+          trf('Season {n}', {n: season.n}) + (seasonDone(prog, season) ? '  ✓' : ''));
+      if (season.n === page.season && page.cols[0] === undefined) page.cols[0] = s;
+      hover(pill, Z.DETAIL, s);
+      pnodes.push(pill);
+    }
+    page.nodes[0] = pnodes;
+    // The episodes scroll inside their own window, under the title and the seasons.
+    var list = page.list = el('div', 'eplist', el('div', 'epview', holder));
+    if (!page.data) {
+      el('div', 'dnote', list, page.error ? tr("Couldn't load the episodes.") : tr('Loading…'));
+      page.row = 0;
+      updateFocus();
+      return;
+    }
+    for (var i = 0; i < page.data.length; i++) {
+      var ep = page.data[i], x = prog && prog.eps[page.season + ':' + ep.n], r = i + 1;
+      page.rows.push({type: 'episode', items: [ep]});
+      var row = el('div', 'eprow' + (x && x.done ? ' done' : ''), list);
+      row.style.top = i * EP_ROW + 'px';
+      var still = el('div', 'epstill', row);
+      if (!ep.still) el('div', 'initials', still, String(ep.n));
+      if (x && x.done) el('div', 'epcheck', still, '✓');
+      var bodyNode = el('div', 'epbody', row), meta = [];
+      el('div', 'epname', bodyNode, ep.n + '. ' + ep.title);
+      if (ep.runtime) meta.push(trf('runtime|{n} min', {n: ep.runtime}));
+      if (x && x.done) meta.push(tr('Watched'));
+      else if (x && x.d) meta.push(trf('episode|{n} min left', {n: Math.max(1, Math.ceil((x.d - x.p) / 60))}));
+      if (meta.length) el('div', 'epmeta', bodyNode, meta.join('  ·  '));
+      if (ep.overview) el('div', 'epstory', bodyNode, ep.overview);
+      if (x) el('div', 'fill', el('div', 'epbar', bodyNode)).style.width = (x.done ? 100 : Math.round(100 * x.p / Math.max(1, x.d))) + '%';
+      hover(row, Z.DETAIL, r * 1000);
+      page.nodes[r] = [row];
+      // The focus starts on the episode where the show goes on.
+      if (page.aim && target && target.season === page.season && target.episode === ep.n) page.row = r;
+    }
+    if (page.aim) { page.aim = false; if (!page.row && page.rows.length > 1) page.row = 1; }
+    page.row = Math.max(0, Math.min(page.row, page.rows.length - 1));
+    updateFocus();
+  }
+
+  /** The focus, the list's scroll (the focused episode stays in view) and the stills near it. */
+  function placeEpisodes(page) {
+    for (var r = 0; r < page.rows.length; r++) {
+      var nodes = page.nodes[r] || [], col = page.cols[r] || 0;
+      for (var i = 0; i < nodes.length; i++) setClass(nodes[i], 'focus', st.zone === Z.DETAIL && r === page.row && i === col);
+    }
+    // The seasons slide sideways so the focused one (or the one shown) stays on screen.
+    var pill = page.nodes[0][page.cols[0] || 0];
+    if (pill && page.pills) {
+      var shift = Math.max(0, pill.offsetLeft - 1100);
+      page.pills.style.webkitTransform = page.pills.style.transform = 'translateX(' + (-shift) + 'px)';
+    }
+    if (!page.list) return;
+    var first = Math.max(0, page.row - 2);
+    page.list.style.webkitTransform = page.list.style.transform = 'translateY(' + (-first * EP_ROW) + 'px)';
+    for (var e = 1; e < page.rows.length; e++) {
+      var node = page.nodes[e][0], ep = page.rows[e].items[0];
+      if (!node.loaded && e >= first && e <= first + 5) {
+        node.loaded = true;
+        if (ep.still) node.firstChild.style.backgroundImage = 'url(' + Data.image(ep.still, 'w300') + ')';
+      }
+    }
+  }
+
+  /** OK on a season shows its episodes; on an episode, plays it (from where it was left, if it's the one to go on). */
+  function episodesActivate(page) {
+    var col = page.cols[page.row] || 0;
+    if (page.row === 0) {
+      var season = page.seasons[col];
+      if (!season || season.n === page.season) return;
+      page.season = season.n;
+      page.data = null;
+      page.error = false;
+      page.row = 0;
+      renderDetail();
+      Data.seasonDetails(page.id, season.n, function (err, list) {
+        if (page.season !== season.n) return;
+        page.data = list || null;
+        page.error = !!err;
+        if (pages[pages.length - 1] === page) renderDetail();
+      });
+      return;
+    }
+    var ep = page.rows[page.row].items[0], t = page.target;
+    watchEpisode(page.show, page.season, ep.n, !!(t && t.resume && t.season === page.season && t.episode === ep.n));
+  }
+
+  /** The IPTV player's report, when it brings this app back: kept, and the page on screen shows it. */
+  function takeLaunchParams(params) {
+    if (typeof params === 'string') { try { params = JSON.parse(params); } catch (e) { params = null; } }
+    if (!params || !params.progress) return false;
+    Data.recordProgress(params.progress);
+    if (pages.length) {
+      var top = pages[pages.length - 1];
+      if (top.type === 'episodes') top.target = nextEpisode(top.show);
+      renderDetail();
+    }
+    return true;
   }
 
   var bgUrl = null, bgFront = 'bgA';
@@ -1726,7 +1922,9 @@
   function openInIptv(kind, value, extra) {
     var id = iptvApp();
     if (!id) return false;
-    var dl = {kind: kind, title: value};
+    // from: this app, which the player brings back with Back (with a show's progress).
+    var self = window.PalmSystem && window.PalmSystem.identifier ? window.PalmSystem.identifier.split(' ')[0] : 'io.freemytv';
+    var dl = {kind: kind, title: value, from: self};
     if (extra) for (var k in extra) if (extra.hasOwnProperty(k)) dl[k] = extra[k];
     TV.launch(id, {deepLink: dl}, function (ok) {
       if (!ok) toast(trf("Couldn't open {app}.", {app: 'IPTV Player'}));
@@ -2090,9 +2288,11 @@
     checkNight();
   });
 
-  function reopened() {
+  function reopened(e) {
     // LG: with handlesRelaunch the app has to come to the front itself, or opening it again while it runs shows nothing.
     if (window.PalmSystem && window.PalmSystem.activate) window.PalmSystem.activate();
+    // Back from the IPTV player: its report, and the page it was opened from stays.
+    if (takeLaunchParams((e && e.detail) || (window.PalmSystem && window.PalmSystem.launchParams))) return;
     reset();
     loadApps(function () { renderShelf(); renderDrawer(); Data.refresh(); });
   }
@@ -2111,6 +2311,7 @@
   });
 
   I18N.set(Prefs.language());
+  if (window.PalmSystem) takeLaunchParams(window.PalmSystem.launchParams);   // opened by the IPTV player, with a report
   checkNight();   // now, from the last forecast: not after the TV lists its apps, with the day look until then
   // LG's screensaver waits only when ours will show: not under a sheet (ours waits there), and not without photos.
   TV.holdScreenSaver(function () { return IPTV.isOpen() || (Prefs.saverMinutes() > 0 && !sheetOpen() && saverPhotos().length > 0); });
