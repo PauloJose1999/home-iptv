@@ -17,7 +17,7 @@ GENERIC = {'tmdbKey': '', 'tmdbRegion': '', 'latitude': '', 'longitude': '', 'ci
            'temperature': 'auto', 'hideAnimation': False, 'hideApps': [],
            'liveChannels': ['Globo', 'Record News', 'Band'], 'ssapKey': '',
            'iptvApp': 'com.lennylxx.iptv',
-           'iptv': {'m3u': '', 'server': '', 'user': '', 'pass': '', 'accounts': []}}
+           'iptv': {'m3u': '', 'server': '', 'user': '', 'pass': ''}}
 
 
 def config_from_args(args):
@@ -28,24 +28,6 @@ def config_from_args(args):
     if '--config' in args:
         path = os.path.abspath(args[args.index('--config') + 1])
     return read_config(path)
-
-
-def iptv(values):
-    """The IPTV settings: the first account (backward compat) plus every account, comma-separated in
-    iptv_server / iptv_user / iptv_pass."""
-    servers = [s.strip().rstrip('/') for s in values.get('iptv_server', '').split(',') if s.strip()]
-    users = [u.strip() for u in values.get('iptv_user', '').split(',') if u.strip()]
-    passes = [p.strip() for p in values.get('iptv_pass', '').split(',') if p.strip()]
-    accounts = []
-    for i in range(max(len(servers), len(users), len(passes))):
-        s = servers[i] if i < len(servers) else ''
-        u = users[i] if i < len(users) else ''
-        p = passes[i] if i < len(passes) else ''
-        if s and u and p:
-            accounts.append({'server': s, 'user': u, 'pass': p})
-    first = accounts[0] if accounts else {'server': '', 'user': '', 'pass': ''}
-    return {'m3u': values.get('iptv_m3u', ''), 'server': first['server'], 'user': first['user'],
-            'pass': first['pass'], 'accounts': accounts}
 
 
 def read_config(path):
@@ -80,7 +62,8 @@ def read_config(path):
         'liveChannels': [s.strip() for s in values.get('live_channels', 'Globo,Record News,Band').split(',') if s.strip()],
         'ssapKey': values.get('ssap_key', ''),
         'iptvApp': values.get('iptv_app', 'com.lennylxx.iptv'),
-        'iptv': iptv(values),
+        'iptv': {'m3u': values.get('iptv_m3u', ''), 'server': values.get('iptv_server', ''),
+                 'user': values.get('iptv_user', ''), 'pass': values.get('iptv_pass', '')},
     }
 
 

@@ -14,9 +14,6 @@ var IPTV = (function () {
   var server = (cfg.server || '').replace(/\/+$/, '');
   var m3u = cfg.m3u || (server ? '' : 'iptv-brasil.m3u');
   var enabled = !!(m3u || (server && cfg.user && cfg.pass));
-  // Several Xtream accounts merge into one channel list (deduped by name).
-  var accounts = (cfg.accounts && cfg.accounts.length) ? cfg.accounts
-      : (server && cfg.user && cfg.pass ? [{server: server, user: cfg.user, pass: cfg.pass}] : []);
 
   var COLS = 4;
   var list = [], groups = [], loading = false, loaded = false, failed = '';
@@ -74,9 +71,8 @@ var IPTV = (function () {
     return out;
   }
 
-  function xtream(acc, done) {
-    var s = (acc.server || '').replace(/\/+$/, '');
-    var base = s + '/player_api.php?username=' + encodeURIComponent(acc.user) + '&password=' + encodeURIComponent(acc.pass);
+  function xtream(done) {
+    var base = server + '/player_api.php?username=' + encodeURIComponent(cfg.user) + '&password=' + encodeURIComponent(cfg.pass);
     request(base + '&action=get_live_categories', function (err, text) {
       var names = {};
       if (!err) {
@@ -92,9 +88,9 @@ var IPTV = (function () {
         if (!streams || !streams.length) { done('the list is empty'); return; }
         var out = [];
         for (var j = 0; j < streams.length; j++) {
-          var st = streams[j];
-          out.push({name: st.name || '', logo: st.stream_icon || '', group: names[st.category_id] || '—',
-            url: s + '/live/' + encodeURIComponent(acc.user) + '/' + encodeURIComponent(acc.pass) + '/' + st.stream_id + '.m3u8'});
+          var s = streams[j];
+          out.push({name: s.name || '', logo: s.stream_icon || '', group: names[s.category_id] || '—',
+            url: server + '/live/' + encodeURIComponent(cfg.user) + '/' + encodeURIComponent(cfg.pass) + '/' + s.stream_id + '.m3u8'});
         }
         done(null, out);
       });
@@ -119,26 +115,12 @@ var IPTV = (function () {
       }
       if (done) done();
     }
-    if (accounts.length > 1) {
-      var merged = [], seenName = {}, pending = accounts.length;
-      for (var a = 0; a < accounts.length; a++) (function (acc) {
-        xtream(acc, function (err, chs) {
-          if (!err) for (var k = 0; k < chs.length; k++) {
-            var key = plain(chs[k].name);
-            if (!seenName[key]) { seenName[key] = true; merged.push(chs[k]); }
-          }
-          if (--pending === 0) finish(merged.length ? null : 'no channel from any account', merged);
-        });
-      })(accounts[a]);
-    } else if (accounts.length === 1) {
-      xtream(accounts[0], finish);
-    } else {
-      request(m3u, function (err, text) {
-        if (err) { finish(err); return; }
-        var channels = parseM3u(text);
-        finish(channels.length ? null : 'the list is empty', channels);
-      });
-    }
+    if (server) xtream(finish);
+    else request(m3u, function (err, text) {
+      if (err) { finish(err); return; }
+      var channels = parseM3u(text);
+      finish(channels.length ? null : 'the list is empty', channels);
+    });
   }
 
   function inGroup() {
