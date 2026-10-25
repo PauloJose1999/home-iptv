@@ -23,7 +23,7 @@ var VOD = (function () {
   function get(url, done) {
     var x = new XMLHttpRequest(), over = false;
     x.open('GET', url, true);
-    x.timeout = 15000;
+    x.timeout = 20000;
     x.onreadystatechange = function () {
       if (x.readyState !== 4 || over) return;
       over = true;
@@ -39,6 +39,15 @@ var VOD = (function () {
   function api(acc, action, done) {
     get((acc.server || '').replace(/\/+$/, '') + '/player_api.php?username=' + encodeURIComponent(acc.user)
         + '&password=' + encodeURIComponent(acc.pass) + '&action=' + action, done);
+  }
+
+  /** Runs fn on each item one after the other, then done(). */
+  function each(list, fn, done) {
+    var i = 0;
+    (function next() {
+      if (i >= list.length) { done(); return; }
+      fn(list[i++], next);
+    })();
   }
 
   /** The tab's catalog: {rows: [{title, items}], at, loading, error, update}, like Data.catalog. */
@@ -86,27 +95,18 @@ var VOD = (function () {
     var streamsAction = kind === 'movie' ? 'get_vod_streams' : 'get_series';
     api(acc, catsAction, function (err, cats) {
       if (err) { done(err, []); return; }
-      // One request for every title, then group by category: several accounts stay fast.
-      api(acc, streamsAction, function (e2, all) {
-        if (e2) { done(e2, []); return; }
-        var byCat = {}, order = [];
-        for (var i = 0; all && i < all.length; i++) {
-          var cid = String(all[i].category_id);
-          if (!byCat[cid]) { byCat[cid] = []; order.push(cid); }
-          if (byCat[cid].length < MAX_ITEMS) byCat[cid].push(all[i]);
-        }
-        var names = {};
-        for (var j = 0; cats && j < cats.length; j++) names[cats[j].category_id] = cats[j].category_name;
-        var rows = [];
-        for (var k = 0; k < order.length && rows.length < MAX_ROWS; k++) {
-          var list = byCat[order[k]];
-          if (!list || !list.length) continue;
+      var rows = [];
+      var wanted = (cats || []).slice(0, MAX_ROWS);
+      each(wanted, function (cat, next) {
+        api(acc, streamsAction + '&category_id=' + encodeURIComponent(cat.category_id), function (e2, list) {
           var items = [];
-          for (var m = 0; m < list.length; m++) items.push(item(kind, list[m], names[order[k]] || '—', acc));
-          if (items.length) rows.push({title: names[order[k]] || '—', items: items});
-        }
-        done(rows.length ? null : new Error('the provider returned no titles'), rows);
-      });
+          for (var i = 0; !e2 && list && i < list.length && i < MAX_ITEMS; i++) {
+            items.push(item(kind, list[i], cat.category_name, acc));
+          }
+          if (items.length) rows.push({title: cat.category_name, items: items});
+          next();
+        });
+      }, function () { done(rows.length ? null : new Error('the provider returned no titles'), rows); });
     });
   }
 
