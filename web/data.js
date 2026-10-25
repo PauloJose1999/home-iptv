@@ -293,10 +293,14 @@ var Data = (function () {
         + (CONFIG.hideAnimation ? '&without_genres=' + ANIMATION : '');
     tmdb('/watch/providers/' + kind + '?language=' + lang() + '&watch_region=' + REGION, function (err, res) {
       if (err) { done(err); return; }
-      var mine = [], ids = [];
+      // One row per app: TMDB lists some services twice ("Netflix" and "Netflix Standard with Ads"), both ids go in it.
+      var mine = [], ids = [], byApp = {};
       for (var i = 0; res.results && i < res.results.length; i++) {
-        var s = service(res.results[i].provider_name, res.results[i].provider_id);
-        if (s && appFor(s[1])) { mine.push([res.results[i].provider_id, s]); ids.push(res.results[i].provider_id); }
+        var id = res.results[i].provider_id, s = service(res.results[i].provider_name, id);
+        if (!s || !appFor(s[1])) continue;
+        ids.push(id);
+        if (byApp[s[1]]) byApp[s[1]][0] += '|' + id;
+        else { byApp[s[1]] = [String(id), s]; mine.push(byApp[s[1]]); }
       }
       if (!ids.length) { done(new Error("none of the TV's streaming apps are on TMDB")); return; }
       var all = '&with_watch_providers=' + encodeURIComponent(ids.join('|'));
@@ -304,7 +308,7 @@ var Data = (function () {
       // [title, query, the app every title of the row is on]
       var plan = [[tr('Popular on your apps'), 'sort_by=popularity.desc' + all, null]];
       for (var m = 0; m < mine.length; m++) {
-        plan.push([trf('On {app}', {app: mine[m][1][4]}), 'sort_by=popularity.desc&with_watch_providers=' + mine[m][0], mine[m][1]]);
+        plan.push([trf('On {app}', {app: mine[m][1][4]}), 'sort_by=popularity.desc&with_watch_providers=' + encodeURIComponent(mine[m][0]), mine[m][1]]);
       }
       plan.push([tr('New releases'), 'sort_by=popularity.desc&' + dated + '.gte=' + day(-180) + '&' + dated + '.lte=' + day(0) + all, null]);
       plan.push([tr('Top rated'), 'sort_by=vote_average.desc&vote_count.gte=' + (kind === 'movie' ? 1000 : 300) + all, null]);
