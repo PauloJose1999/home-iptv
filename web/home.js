@@ -1273,6 +1273,11 @@
     updateFocus();
   }
 
+  // A click (mouse, Magic Remote) on the dim around Home Settings or one of its pickers closes them, nothing picked.
+  ['settings', 'langpick'].forEach(function (id) {
+    $(id).addEventListener('click', function (e) { if (e.target === $(id)) closeSheets(); });
+  });
+
   // MARK: - Home Settings: under the list, what the focused row does; OK or the arrows change it
 
   /** The three channels of TV aberta, by name: set on the TV, else config.properties' live_channels. */
