@@ -238,6 +238,8 @@ var TV = (function () {
     one();
   }
 
+  var appsWaiting = null;   // the callers of TV.apps while a listing runs
+
   function knownApps(done) {
     var found = [], left = KNOWN.length, sent = false;
     function finish() {
@@ -418,12 +420,22 @@ var TV = (function () {
   return {
     name: webos ? 'webos' : 'browser',
 
-    /** Installed apps, as the TV's launcher lists them: [{id, title, icon, color}]. */
+    /**
+     * Installed apps, as the TV's launcher lists them: [{id, title, icon, color}]. One listing at a time, shared by
+     * whoever asks meanwhile: a second listLaunchPoints gives new icon addresses and ends the first one's.
+     */
     apps: function (done) {
       if (!webos) {
         done(SAMPLE.map(function (s) { return {id: s[0], title: s[1], icon: '', color: s[2]}; }));
         return;
       }
+      if (appsWaiting) { appsWaiting.push(done); return; }
+      appsWaiting = [done];
+      var waiting = appsWaiting;
+      done = function (out) {
+        appsWaiting = null;
+        for (var w = 0; w < waiting.length; w++) waiting[w](out);
+      };
       function list(res) {
         var out = [];
         var points = res && res.launchPoints ? res.launchPoints : [];
