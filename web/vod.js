@@ -14,6 +14,9 @@ var VOD = (function () {
   var cfg = (window.CONFIG && CONFIG.iptv) || {};
   var server = (cfg.server || '').replace(/\/+$/, '');
   var enabled = !!(server && cfg.user && cfg.pass) || VOD_DEMO;
+  // Several Xtream accounts merge by category name.
+  var accounts = (cfg.accounts && cfg.accounts.length) ? cfg.accounts
+      : (server && cfg.user && cfg.pass ? [{server: server, user: cfg.user, pass: cfg.pass}] : []);
   var catalogs = {};          // kind ('movie' | 'tv') -> catalog
   var MAX_ROWS = 12, MAX_ITEMS = 30;
 
@@ -33,9 +36,9 @@ var VOD = (function () {
     x.send();
   }
 
-  function api(action, done) {
-    get(server + '/player_api.php?username=' + encodeURIComponent(cfg.user)
-        + '&password=' + encodeURIComponent(cfg.pass) + '&action=' + action, done);
+  function api(acc, action, done) {
+    get((acc.server || '').replace(/\/+$/, '') + '/player_api.php?username=' + encodeURIComponent(acc.user)
+        + '&password=' + encodeURIComponent(acc.pass) + '&action=' + action, done);
   }
 
   /** Runs fn on each item one after the other, then done(). */
@@ -66,17 +69,39 @@ var VOD = (function () {
   }
 
   function load(kind, done) {
+    if (accounts.length > 1) {
+      var merged = [], byTitle = {}, pending = accounts.length;
+      for (var a = 0; a < accounts.length; a++) (function (acc) {
+        loadAccount(acc, kind, function (err, rows) {
+          if (!err) for (var r = 0; r < rows.length; r++) {
+            var row = rows[r];
+            var target = byTitle[row.title];
+            if (!target) { target = byTitle[row.title] = {title: row.title, items: []}; merged.push(target); }
+            var seen = {};
+            for (var i = 0; i < target.items.length; i++) seen[target.items[i].id] = true;
+            for (var j = 0; j < row.items.length; j++) if (!seen[row.items[j].id]) target.items.push(row.items[j]);
+          }
+          if (--pending === 0) done(merged.length ? null : new Error('no titles'), merged);
+        });
+      })(accounts[a]);
+      return;
+    }
+    if (accounts.length === 1) { loadAccount(accounts[0], kind, done); return; }
+    done(new Error('no Xtream account'), []);
+  }
+
+  function loadAccount(acc, kind, done) {
     var catsAction = kind === 'movie' ? 'get_vod_categories' : 'get_series_categories';
     var streamsAction = kind === 'movie' ? 'get_vod_streams' : 'get_series';
-    api(catsAction, function (err, cats) {
+    api(acc, catsAction, function (err, cats) {
       if (err) { done(err, []); return; }
       var rows = [];
       var wanted = (cats || []).slice(0, MAX_ROWS);
       each(wanted, function (cat, next) {
-        api(streamsAction + '&category_id=' + encodeURIComponent(cat.category_id), function (e2, list) {
+        api(acc, streamsAction + '&category_id=' + encodeURIComponent(cat.category_id), function (e2, list) {
           var items = [];
           for (var i = 0; !e2 && list && i < list.length && i < MAX_ITEMS; i++) {
-            items.push(item(kind, list[i], cat.category_name));
+            items.push(item(kind, list[i], cat.category_name, acc));
           }
           if (items.length) rows.push({title: cat.category_name, items: items});
           next();
@@ -85,7 +110,8 @@ var VOD = (function () {
     });
   }
 
-  function item(kind, s, categoryName) {
+  function item(kind, s, categoryName, acc) {
+    var account = (acc && acc.server) || '';
     if (kind === 'movie') {
       return {
         id: 'vod' + s.stream_id, kind: 'movie', title: s.name,
@@ -93,7 +119,7 @@ var VOD = (function () {
         overview: '', year: '', rating: parseFloat(s.rating) || 0,
         genres: [categoryName], service: 'IPTV',
         streamId: String(s.stream_id), categoryId: String(s.category_id),
-        containerExtension: s.container_extension || 'mp4'
+        containerExtension: s.container_extension || 'mp4', account: account
       };
     }
     return {
@@ -101,7 +127,7 @@ var VOD = (function () {
       backdrop: s.cover || '', poster: s.cover || '',
       overview: s.plot || '', year: (s.releaseDate || '').slice(0, 4),
       rating: parseFloat(s.rating) || 0, genres: [categoryName], service: 'IPTV',
-      seriesId: String(s.series_id), categoryId: String(s.category_id)
+      seriesId: String(s.series_id), categoryId: String(s.category_id), account: account
     };
   }
 

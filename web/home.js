@@ -794,6 +794,7 @@
     if (p.streamId || p.seriesId) extra.id = p.streamId || p.seriesId;
     if (p.year) extra.year = p.year;
     if (p.original && p.original !== p.title) extra.altTitle = p.original;
+    if (p.account) extra.server = p.account;
     if (openInIptv(p.kind === 'movie' ? 'movie' : 'series', p.title, extra)) return;
     if (extra.id) { toast(tr('Install the IPTV Player on the TV to watch this title.')); return; }
     Data.whereToWatch(p, function (app) {
