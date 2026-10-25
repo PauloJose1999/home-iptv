@@ -11,6 +11,9 @@ numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/
   lista IPTV tem o canal, senão pela antena. OK abre o canal em tela cheia.
 - **Filmes e Séries:** como na Netflix: o título em foco grande no topo e fileiras (em alta, por app, lançamentos,
   mais bem avaliados, gêneros), só dos apps que você tem na TV (TMDB). Só carrega quando você abre a aba.
+- **Página de cada filme e série:** cartaz, nota (do IMDb também, com a chave grátis do OMDb), sinopse, direção,
+  **Assistir**, o elenco em fotos redondas e os filmes semelhantes. OK num artista abre a página dele, com biografia e
+  os filmes e séries em que aparece; cada título leva à página dele, e Voltar volta ao ponto de onde você saiu.
 - **Barra de apps:** todos os apps da TV, rolando com as setas.
 - **IPTV dentro do launcher:** os canais gratuitos e oficiais do Brasil (lista
   [Free-TV](https://github.com/Free-TV/IPTV)) ou a sua lista M3U ou Xtream, tocados em tela cheia sem abrir outro app
