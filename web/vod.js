@@ -70,12 +70,15 @@ var VOD = (function () {
     var streamsAction = kind === 'movie' ? 'get_vod_streams' : 'get_series';
     api(catsAction, function (err, cats) {
       if (err) { done(err, []); return; }
+      // A refused account answers with an object ({user_info: {auth: 0}}), not the list of categories.
+      if (Object.prototype.toString.call(cats) !== '[object Array]') { done(new Error('the provider refused the account'), []); return; }
       var rows = [];
-      var wanted = (cats || []).slice(0, MAX_ROWS);
+      var wanted = cats.slice(0, MAX_ROWS);
       each(wanted, function (cat, next) {
         api(streamsAction + '&category_id=' + encodeURIComponent(cat.category_id), function (e2, list) {
           var items = [];
-          for (var i = 0; !e2 && list && i < list.length && i < MAX_ITEMS; i++) {
+          var ok = !e2 && Object.prototype.toString.call(list) === '[object Array]';
+          for (var i = 0; ok && i < list.length && i < MAX_ITEMS; i++) {
             items.push(item(kind, list[i], cat.category_name));
           }
           if (items.length) rows.push({title: cat.category_name, items: items});
