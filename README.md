@@ -29,6 +29,13 @@ Xtream), e os canais da TV aberta e a gaveta › IPTV também abrem nele. Para f
 Xtream de um provedor de IPTV (Configurações do player). Sem o player na TV, tudo funciona como antes. Para instalar:
 `python3 webos/install.py 192.168.0.123 iptv-player/com.lennylxx.iptv_1.17.0_all.ipk` (depois de gerar o pacote).
 
+### Conta de teste
+
+Para testar sem uma conta de verdade: `python3 tools/xtream_test_server.py` liga um provedor de teste neste computador
+(usa a chave do TMDB do `config.properties`). Ele tem os filmes e séries que o launcher mostra, com capa, sinopse,
+nota, elenco, diretor e IMDb, e todos tocam um vídeo de teste livre (Big Buck Bunny). No Player IPTV: Xtream,
+servidor `http://<IP deste computador>:8099`, usuário `teste`, senha `teste`.
+
 ## Instalar
 
 Precisa de uma TV LG (webOS 3 ou mais novo) e de um computador na mesma rede, com Python 3.
