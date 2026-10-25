@@ -1523,6 +1523,10 @@
             // The stream goes along: the IPTV player plays it even when none of its playlists has the channel.
             if (!openInIptv('channel', ch.name, {url: ch.iptv.url, logo: ch.iptv.logo || ''})) IPTV.playChannel(ch.iptv);
           }
+          // An antenna channel the IPTV list also has (TV Cultura, Record News…): its stream in the IPTV player, when
+          // it's on the TV; else LG's Live TV on that channel.
+          else if (ch && ch.stream && !/youtube\.com|youtu\.be/.test(ch.stream) &&
+              openInIptv('channel', channelName(ch.name), {url: ch.stream, logo: ch.logo || ''})) stopPlayer();
           else if (ch) TV.openChannel(ch, function (ok) { if (!ok) toast(trf("Couldn't open {app}.", {app: ch.name})); });
           else { var tv = liveTV(); if (tv) launcher(tv.id, tr('Live TV'))(); }
           return;
