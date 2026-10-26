@@ -184,7 +184,9 @@ var TV = (function () {
     ['globoplaywebos', 'Globoplay'], ['spotify-beehive', 'Spotify', 'icons/spotify.svg'],
     ['tv.twitch.tv.starshot.lg', 'Twitch', '', '#9146FF'], ['cdp-30', 'Plex', '', '#E5A00D'],
     ['org.jellyfin.webos', 'Jellyfin', 'icons/jellyfin.svg'], ['com.crunchyroll.webapp', 'Crunchyroll', '', '#F47521'],
-    ['com.webos.app.browser', 'Web Browser', '', '#3A7BD5']
+    ['com.webos.app.browser', 'Web Browser', '', '#3A7BD5'],
+    // The IPTV player (iptv_app): the cards and Movies/Shows reach it even when only these known apps are listed.
+    ['com.lennylxx.iptv', 'Player IPTV', '', '#241E52']
   ];
 
   // The remote control API gives each icon an address that only works while that connection is open (a new one each

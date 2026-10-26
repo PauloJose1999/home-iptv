@@ -24,6 +24,26 @@ numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/
   leva com as setas, ou segura e arrasta com o ponteiro do Magic Remote; também dá para esconder apps que não usa.
 - **Claro de dia, escuro à noite**, e uma proteção de tela com as fotos das sugestões.
 
+## Trakt.tv
+
+Conecte sua conta do [Trakt](https://trakt.tv) em **Ajustes do Início › Trakt.tv**: a TV mostra um código, você abre
+trakt.tv/activate no celular e digita. Daí em diante:
+
+- os episódios que você viu em outros aparelhos aparecem como vistos nas séries (✓; a barra roxa continua vindo só do
+  Player IPTV, que é quem sabe onde você parou), e o botão da série vai para o episódio certo;
+- cada episódio ou filme que o Player IPTV **termina** entra no seu histórico do Trakt (abrir ou parar no meio não
+  conta), sem duplicar, e o que não deu para enviar sem internet vai depois;
+- **Minha lista** (a watchlist do Trakt) aparece no alto de Filmes e Séries, e cada página tem o botão de pôr e tirar.
+
+Para ligar: crie um app seu em [app.trakt.tv/settings/apps/api/new](https://app.trakt.tv/settings/apps/api/new)
+(Redirect URI `urn:ietf:wg:oauth:2.0:oob`) e cole **só o Client ID** em `trakt_client_id` no `config.properties`. O
+Client Secret não é usado: o login pela TV não precisa dele, e o Trakt pede para nunca pô-lo num app.
+
+O que fica na TV: o token de acesso (vale 7 dias e é renovado sozinho), o que veio do Trakt (episódios e filmes vistos,
+a lista) e a fila de envios, no armazenamento do launcher, que **não é criptografado** (o webOS não oferece um cofre a
+apps do Developer Mode). **Desconectar** revoga o token no Trakt e apaga tudo isso; o histórico desta TV continua. Para
+testar sem conta: `python3 tools/trakt_test_server.py` (um Trakt de teste; veja o começo do arquivo).
+
 ## Player IPTV
 
 Com o [webOS IPTV Player](https://github.com/lennylxx/webos-iptv-player) (Apache-2.0, em [`iptv-player/`](iptv-player))

@@ -56,6 +56,14 @@ person's, stay only in that file (git ignores it), are never printed and never c
   purple bar). The deep link carries `tmdbId`, `season`, `episode`, `resume` and `from`; Back in the player relaunches
   this app with `{progress: {tmdbId, title, episodes: [...]}}` (`takeLaunchParams` → `Data.recordProgress`,
   `fmtv.progress`): apps can't read each other's storage, and the player's service stops in the background.
+- Trakt (`web/trakt.js`, `Trakt`): device-code sign-in with the client id only (`trakt_client_id`; Trakt deprecated
+  the secret, never ship it); tokens, Trakt's data and a send queue in localStorage (`fmtv.trakt*`, not encrypted).
+  `sync` reads `/sync/last_activities`, then only what changed (watched shows/movies, the watchlist page by page); one
+  request at a time, POSTs 1/s, 429 waits Retry-After. Only plays the player saw end go to `/sync/history`, with the
+  end time (`endedAt` in the player's report): Trakt doesn't refuse duplicates, so a key per item and end, and a lost
+  answer is checked by re-reading the history first. `episodeStates` (home.js) merges the player's progress (the only
+  source of a purple bar) with Trakt's watched episodes (✓ only). My list: `catalogRows`, the detail button.
+  `tools/trakt_test_server.py` mimics the API (device codes, refresh, pagination, 429, a lost answer).
 - IPTV player (`iptv-player/`, lennylxx/webos-iptv-player, app `com.lennylxx.iptv`, `iptv_app`): when it's installed,
   the Movies/Shows titles, the IPTV channel cards and drawer › IPTV open in it by deep link (`openInIptv`): launch params
   `{deepLink: {kind: movie|series|channel, title, year?, altTitle?, id?, url?, logo?}}`. It finds a movie by name in its
