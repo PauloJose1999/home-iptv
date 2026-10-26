@@ -133,6 +133,8 @@ export const ZH_CN_MESSAGES = {
   'deepLink.searching': '正在查找 {title}…',
   'deepLink.notFound': '此账户中没有 {title}。',
   'deepLink.noAccount': '请在设置中添加 Xtream 账户以播放电影和剧集。',
+  'deepLink.channelAmbiguous': '匹配到多个频道，请在启动器中选择一个。',
+  'deepLink.channelFallback': '列表中未找到此频道。正在打开直接流，可能无法切换频道。',
   'catalog.noSeries': '此账号没有可用的剧集。',
   'catalog.noSeriesCategory': '此分类暂无剧集。',
   'catalog.cast': '演员',

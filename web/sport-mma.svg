@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1360 765">
+  <!-- The Sports hero's fights art: the octagon in perspective, with its fence, and a pair of gloves. -->
+  <polygon points="1196,474 1023,577 777,577 604,474 604,326 777,223 1023,223 1196,326" fill="#FFF" fill-opacity="0.1"/>
+  <g fill="none" stroke="#FFF" stroke-opacity="0.6" stroke-width="7" stroke-linejoin="round">
+    <polygon points="1196,474 1023,577 777,577 604,474 604,326 777,223 1023,223 1196,326"/>
+    <polygon points="1196,314 1023,417 777,417 604,314 604,166 777,63 1023,63 1196,166" stroke-width="5"/>
+    <path d="M1196 474 V314 M1023 577 V417 M777 577 V417 M604 474 V314 M604 326 V166 M777 223 V63 M1023 223 V63 M1196 326 V166" stroke-width="9"/>
+  </g>
+  <g fill="none" stroke="#FFF" stroke-opacity="0.18" stroke-width="3">
+    <path d="M604 334 L777 437 M604 374 L777 477 M604 414 L777 517 M777 437 L1023 437 M777 477 L1023 477 M777 517 L1023 517 M1023 437 L1196 334 M1023 477 L1196 374 M1023 517 L1196 414"/>
+  </g>
+  <ellipse cx="900" cy="560" rx="200" ry="22" fill="#000" fill-opacity="0.25"/>
+  <g transform="translate(800 450) rotate(-10)">
+    <rect x="-46" y="40" width="92" height="70" rx="14" fill="#F8FAFC"/>
+    <rect x="-46" y="60" width="92" height="14" fill="#B91C1C"/>
+    <path d="M-60 40 C -80 -40, -50 -100, 10 -100 C 70 -100, 80 -40, 66 10 C 60 40, 40 50, -60 40 Z" fill="#DC2626"/>
+    <path d="M-62 10 C -96 0, -96 -40, -62 -44" fill="#DC2626" stroke="#7F1D1D" stroke-width="4"/>
+    <path d="M-30 -70 C 0 -84, 40 -80, 56 -56" fill="none" stroke="#FFF" stroke-opacity="0.35" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(1000 450) rotate(10) scale(-1 1)">
+    <rect x="-46" y="40" width="92" height="70" rx="14" fill="#F8FAFC"/>
+    <rect x="-46" y="60" width="92" height="14" fill="#1D4ED8"/>
+    <path d="M-60 40 C -80 -40, -50 -100, 10 -100 C 70 -100, 80 -40, 66 10 C 60 40, 40 50, -60 40 Z" fill="#2563EB"/>
+    <path d="M-62 10 C -96 0, -96 -40, -62 -44" fill="#2563EB" stroke="#1E3A8A" stroke-width="4"/>
+    <path d="M-30 -70 C 0 -84, 40 -80, 56 -56" fill="none" stroke="#FFF" stroke-opacity="0.35" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -49,5 +49,8 @@ PY
 
 # Antenna names come from two webOS APIs and may differ by HD suffix, case, punctuation or Portuguese accents.
 node tools/test_channel_names.js
+node tools/test_sports.js
+node tools/test_m3u_guide.js
+python3 tools/test_sports_control.py
 
 echo "All checks passed."

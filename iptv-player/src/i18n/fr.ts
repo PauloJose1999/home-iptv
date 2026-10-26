@@ -138,6 +138,8 @@ export const FR_MESSAGES = {
   'deepLink.searching': 'Recherche de {title}…',
   'deepLink.notFound': '{title} ne figure pas dans ce compte.',
   'deepLink.noAccount': 'Ajoutez un compte Xtream dans les Réglages pour lire des films et des séries.',
+  'deepLink.channelAmbiguous': 'Plusieurs chaînes correspondent. Choisissez-en une dans le launcher.',
+  'deepLink.channelFallback': 'Cette chaîne est absente de la liste. Le flux direct va s’ouvrir ; le changement de chaîne peut être indisponible.',
   'catalog.noSeries': 'Aucune série disponible pour ce compte.',
   'catalog.noSeriesCategory': 'Aucune série dans cette catégorie.',
   'catalog.cast': 'Distribution',

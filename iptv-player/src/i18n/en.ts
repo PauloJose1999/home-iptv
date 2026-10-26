@@ -140,6 +140,8 @@ export const EN_MESSAGES = {
   'deepLink.searching': 'Finding {title}…',
   'deepLink.notFound': '{title} is not in this account.',
   'deepLink.noAccount': 'Add an Xtream account in Settings to play movies and series.',
+  'deepLink.channelAmbiguous': 'More than one channel matches. Choose one in the launcher.',
+  'deepLink.channelFallback': 'This channel was not found in the list. Opening its direct stream; channel switching may be unavailable.',
   'catalog.noSeries': 'No series are available for this account.',
   'catalog.noSeriesCategory': 'No series in this category.',
   'catalog.cast': 'Cast',

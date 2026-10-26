@@ -148,6 +148,8 @@ export const UK_MESSAGES = {
   'deepLink.searching': 'Пошук: {title}…',
   'deepLink.notFound': '{title} немає в цьому обліковому записі.',
   'deepLink.noAccount': 'Додайте обліковий запис Xtream у налаштуваннях, щоб дивитися фільми й серіали.',
+  'deepLink.channelAmbiguous': 'Знайдено кілька відповідних каналів. Виберіть один у лаунчері.',
+  'deepLink.channelFallback': 'Канал не знайдено у списку. Відкривається прямий потік; перемикання каналів може бути недоступним.',
   'catalog.noSeries': 'Для цього облікового запису немає доступних серіалів.',
   'catalog.noSeriesCategory': 'У цій категорії немає серіалів.',
   'catalog.cast': 'У ролях',

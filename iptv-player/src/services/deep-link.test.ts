@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchTitle, normalizeTitle, opensWithoutChannels, parseDeepLink } from './deep-link';
+import { matchChannel, matchTitle, normalizeTitle, opensWithoutChannels, parseDeepLink } from './deep-link';
 
 describe('parseDeepLink', () => {
   it('reads a cold-launch JSON string', () => {
@@ -31,6 +31,13 @@ describe('parseDeepLink', () => {
       .toEqual({ kind: 'channel', title: 'ch1' });
   });
 
+  it('keeps the stable source and stream identity for a channel', () => {
+    expect(parseDeepLink({ deepLink: { kind: 'channel', title: 'ESPN 2', sourceId: 'playlist-1',
+      sourceType: 'xtream', streamId: 22, channelUrl: 'https://host/live/22.m3u8' } }))
+      .toEqual({ kind: 'channel', title: 'ESPN 2', sourceId: 'playlist-1', sourceType: 'xtream', streamId: '22',
+        channelUrl: 'https://host/live/22.m3u8' });
+  });
+
   it('reads a series episode to play, the launcher id and the app to go back to', () => {
     expect(parseDeepLink({ deepLink: { kind: 'series', title: 'Alpha', tmdbId: 42, season: 2, episode: 5, resume: true, from: 'app.one' } }))
       .toEqual({ kind: 'series', title: 'Alpha', tmdbId: '42', season: 2, episode: 5, resume: true, from: 'app.one' });
@@ -40,6 +47,40 @@ describe('parseDeepLink', () => {
 
   it('drops a year that is not one', () => {
     expect(parseDeepLink({ deepLink: { kind: 'movie', title: 'Alpha', year: 'soon' } })).toEqual({ kind: 'movie', title: 'Alpha' });
+  });
+});
+
+describe('matchChannel', () => {
+  const channels = [
+    { name: 'ESPN FHD', url: 'https://host/10.m3u8', playlistIds: ['account-a'], xtreamStreamId: '10' },
+    { name: 'ESPN 2 HD', url: 'https://host/11.m3u8', playlistIds: ['account-a'], xtreamStreamId: '11' },
+    { name: 'ESPN', url: 'https://other/10.m3u8', playlistIds: ['account-b'], xtreamStreamId: '10' },
+    { name: 'TV Cultura HD', url: 'https://m3u/cultura.m3u8?token=x', playlistIds: ['m3u-a'] },
+  ];
+
+  it('uses the account and Xtream stream_id, not a similar name or another account', () => {
+    const result = matchChannel(channels, { kind: 'channel', title: 'ESPN', sourceType: 'xtream',
+      sourceId: 'account-a', streamId: '11' });
+    expect(result.channel?.name).toBe('ESPN 2 HD');
+    expect(result.via).toBe('identity');
+  });
+
+  it('does not fall back to a same-name channel if a stable identity is missing', () => {
+    const result = matchChannel(channels, { kind: 'channel', title: 'ESPN', sourceType: 'xtream',
+      sourceId: 'account-a', streamId: '404' });
+    expect(result).toEqual({ channel: null, ambiguous: false, via: '' });
+  });
+
+  it('uses the M3U playlist and exact address, preserving signed URLs', () => {
+    const result = matchChannel(channels, { kind: 'channel', title: 'Cultura', sourceType: 'm3u',
+      sourceId: 'm3u-a', channelUrl: 'https://m3u/cultura.m3u8?token=x' });
+    expect(result.channel?.name).toBe('TV Cultura HD');
+  });
+
+  it('matches a legacy channel name only when it is unique', () => {
+    expect(matchChannel(channels, { kind: 'channel', title: 'TV Cultura' }).channel?.name).toBe('TV Cultura HD');
+    const duplicate = channels.concat({ ...channels[0], url: 'https://duplicate/10.m3u8' });
+    expect(matchChannel(duplicate, { kind: 'channel', title: 'ESPN' })).toMatchObject({ channel: null, ambiguous: true });
   });
 });
 

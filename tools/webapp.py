@@ -18,6 +18,8 @@ GENERIC = {'tmdbKey': '', 'omdbKey': '', 'tmdbRegion': '', 'latitude': '', 'long
            'temperature': 'auto', 'hideAnimation': False, 'hideApps': [],
            'liveChannels': ['Globo', 'Record News', 'Band'], 'ssapKey': '',
            'iptvApp': 'com.lennylxx.iptv',
+           'sportsCatalogUrl': 'https://raw.githubusercontent.com/PauloJose1999/lg-tv-launcher/main/assets/sports/broadcasts.json',
+           'sportsEpgUrl': 'https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/epg.xml',
            'trakt': {'id': '', 'api': '', 'redirect': 'http://localhost'}}
 
 
@@ -64,6 +66,8 @@ def read_config(path):
         'liveChannels': [s.strip() for s in values.get('live_channels', 'Globo,Record News,Band').split(',') if s.strip()],
         'ssapKey': values.get('ssap_key', ''),
         'iptvApp': values.get('iptv_app', 'com.lennylxx.iptv'),
+        'sportsCatalogUrl': values.get('sports_catalog_url', 'https://raw.githubusercontent.com/PauloJose1999/lg-tv-launcher/main/assets/sports/broadcasts.json'),
+        'sportsEpgUrl': values.get('sports_epg_url', 'https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/epg.xml'),
         'trakt': {'id': values.get('trakt_client_id', ''), 'api': values.get('trakt_api', ''),
                   'redirect': values.get('trakt_redirect_uri', '') or 'http://localhost'},
     }

@@ -1,0 +1,188 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-10-26T11:23:12.323Z",
+  "events": {
+    "soccer/esp.1:401882828": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Disney+",
+        "Prime Video"
+      ],
+      "competition": "La Liga",
+      "title": "Sevilla x Osasuna",
+      "start": 1793044800000,
+      "validatedAt": "2026-10-26T11:18:12.165Z",
+      "expiresAt": "2026-10-27T00:00:00.000Z"
+    },
+    "soccer/bra.2:401860405": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "ESPN",
+        "Disney+"
+      ],
+      "competition": "Brasileirão Série B",
+      "title": "América-MG x Cuiabá",
+      "start": 1793053800000,
+      "validatedAt": "2026-10-26T11:18:13.829Z",
+      "expiresAt": "2026-10-27T02:30:00.000Z"
+    },
+    "soccer/bra.1:401841279": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Premiere",
+        "Globoplay"
+      ],
+      "competition": "Brasileirão Série A",
+      "title": "Coritiba x Grêmio",
+      "start": 1793053800000,
+      "validatedAt": "2026-10-26T11:18:12.917Z",
+      "expiresAt": "2026-10-27T02:30:00.000Z"
+    },
+    "soccer/bra.1:401841286": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "SporTV",
+        "Premiere"
+      ],
+      "competition": "Brasileirão Série A",
+      "title": "Flamengo x Atlético-MG",
+      "start": 1793055600000,
+      "validatedAt": "2026-10-26T11:18:51.038Z",
+      "expiresAt": "2026-10-27T03:00:00.000Z"
+    },
+    "basketball/nba:401909868": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Hornets x Wizards",
+      "start": 1793055600000,
+      "validatedAt": "2026-10-26T11:19:45.071Z",
+      "expiresAt": "2026-10-27T03:00:00.000Z"
+    },
+    "basketball/nba:401909869": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Cavaliers x Timberwolves",
+      "start": 1793055600000,
+      "validatedAt": "2026-10-26T11:21:11.513Z",
+      "expiresAt": "2026-10-27T03:00:00.000Z"
+    },
+    "soccer/bra.2:401860411": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "ESPN",
+        "Disney+"
+      ],
+      "competition": "Brasileirão Série B",
+      "title": "Juventude x Náutico",
+      "start": 1793057400000,
+      "validatedAt": "2026-10-26T11:22:01.698Z",
+      "expiresAt": "2026-10-27T03:30:00.000Z"
+    },
+    "basketball/nba:401909870": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Celtics x Bulls",
+      "start": 1793057400000,
+      "validatedAt": "2026-10-26T11:22:29.803Z",
+      "expiresAt": "2026-10-27T03:30:00.000Z"
+    },
+    "basketball/nba:401909876": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Nuggets x Warriors",
+      "start": 1793066400000,
+      "validatedAt": "2026-10-26T11:22:51.251Z",
+      "expiresAt": "2026-10-27T06:00:00.000Z"
+    },
+    "basketball/nba:401909872": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Bucks x Pacers",
+      "start": 1793059200000,
+      "validatedAt": "2026-10-26T11:23:04.571Z",
+      "expiresAt": "2026-10-27T04:00:00.000Z"
+    },
+    "basketball/nba:401909874": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Rockets x Hawks",
+      "start": 1793061000000,
+      "validatedAt": "2026-10-26T11:23:07.684Z",
+      "expiresAt": "2026-10-27T04:30:00.000Z"
+    },
+    "basketball/nba:401909873": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Thunder x Suns",
+      "start": 1793059200000,
+      "validatedAt": "2026-10-26T11:23:08.883Z",
+      "expiresAt": "2026-10-27T04:00:00.000Z"
+    },
+    "basketball/nba:401909875": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Jazz x Grizzlies",
+      "start": 1793062800000,
+      "validatedAt": "2026-10-26T11:23:10.539Z",
+      "expiresAt": "2026-10-27T05:00:00.000Z"
+    },
+    "basketball/nba:401909871": {
+      "status": "confirmed",
+      "region": "BR",
+      "broadcasters": [
+        "Amazon Prime Video",
+        "NBA League Pass"
+      ],
+      "competition": "NBA",
+      "title": "Heat x Mavericks",
+      "start": 1793057400000,
+      "validatedAt": "2026-10-26T11:23:12.323Z",
+      "expiresAt": "2026-10-27T03:30:00.000Z"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 /*
  * The home screen for LG TVs (webOS):
- *  - top: the tabs (TV aberta, Movies, Shows); the clock and icon-only glass buttons at the right (Live TV, HDMI
+ *  - top: the tabs (TV aberta, Sports, Movies, Shows); the clock and icon-only glass buttons at the right (Live TV, HDMI
  *    Inputs, Settings);
  *  - three picks for this hour in the selected tab; the background is the first one's photo, blurred and almost white;
  *  - the glass shelf with the apps; ↓ opens the drawer (inputs, shortcuts, weather); ↑ or Back closes it;
@@ -18,6 +18,29 @@
     if (text !== undefined) e.textContent = text;
     if (parent) parent.appendChild(e);
     return e;
+  }
+
+  /**
+   * A story cut to its box (a fixed or max height, overflow hidden) at the end of the last sentence that fits, not in
+   * the middle of a line. When not even the first sentence fits, it ends at a word with "…". Needs the node on screen.
+   */
+  function fitText(node) {
+    var full = node.textContent, box = node.clientHeight;
+    if (!full || !box || node.scrollHeight <= box + 1) return;
+    var sentences = full.match(/[^.!?…]+[.!?…]+["'”»)]*\s*/g) || [], text = '';
+    for (var i = 0; i < sentences.length; i++) {
+      node.textContent = text + sentences[i];
+      if (node.scrollHeight > box + 1) break;
+      text += sentences[i];
+    }
+    if (text) { node.textContent = text.replace(/\s+$/, ''); return; }
+    var words = full.split(' '), lo = 1, hi = words.length;
+    while (lo < hi) {
+      var mid = Math.ceil((lo + hi) / 2);
+      node.textContent = words.slice(0, mid).join(' ') + '…';
+      if (node.scrollHeight > box + 1) hi = mid - 1; else lo = mid;
+    }
+    node.textContent = words.slice(0, lo).join(' ').replace(/[,;:\s]+$/, '') + '…';
   }
 
   function sym(name, parent, size) {
@@ -270,11 +293,13 @@
 
   // MARK: - Focus
 
-  var Z = {TOP: 'top', CARDS: 'cards', CATALOG: 'catalog', DETAIL: 'detail', TRAKT: 'trakt', SHELF: 'shelf', DRAWER: 'drawer', APPS: 'apps', SETTINGS: 'settings', EDIT: 'edit', LANG: 'lang'};
-  var st = {zone: Z.SHELF, top: 0, tab: 0, card: 0, crow: 0, ccol: [], trow: 0, shelf: 0, drawer: 0, grid: 0, row: 0, edit: 0, lang: 0};
+  var Z = {TOP: 'top', CARDS: 'cards', CATALOG: 'catalog', DETAIL: 'detail', TRAKT: 'trakt', SHELF: 'shelf', DRAWER: 'drawer', APPS: 'apps', SETTINGS: 'settings', EDIT: 'edit', LANG: 'lang', REMINDER: 'reminder'};
+  var st = {zone: Z.SHELF, top: 0, tab: 0, card: 0, crow: 0, ccol: [], trow: 0, shelf: 0, drawer: 0, grid: 0, row: 0, edit: 0, lang: 0, reminderAction: 0};
   var cards = [];
+  var reminderAlert = null;
+  var reminderReturnTab = 0, reminderReturnZone = Z.SHELF;
 
-  function sheetOpen() { return st.zone === Z.APPS || st.zone === Z.SETTINGS || st.zone === Z.EDIT || st.zone === Z.LANG || st.zone === Z.TRAKT; }
+  function sheetOpen() { return st.zone === Z.APPS || st.zone === Z.SETTINGS || st.zone === Z.EDIT || st.zone === Z.LANG || st.zone === Z.TRAKT || st.zone === Z.REMINDER; }
 
   function updateFocus() {
     var i, list;
@@ -287,7 +312,7 @@
       setClass(list[i], 'focus', st.zone === Z.TOP && st.top === i);
     }
     list = $('buttons').children;
-    for (i = 0; i < list.length; i++) setClass(list[i], 'focus', st.zone === Z.TOP && st.top === 3 + i);
+    for (i = 0; i < list.length; i++) setClass(list[i], 'focus', st.zone === Z.TOP && st.top === NTABS + i);
     list = $('cards').children;
     for (i = 0; i < list.length; i++) setClass(list[i], 'focus', st.zone === Z.CARDS && st.card === i);
     if (st.zone === Z.CARDS && cards[st.card] && cards[st.card].live) focusedCardId = cards[st.card].id;
@@ -302,6 +327,8 @@
     $('apps').lastChild.style.webkitTransform = $('apps').lastChild.style.transform = 'translateY(' + (-first * 239) + 'px)';
     focusRows($('settings'), st.row, st.zone === Z.SETTINGS);
     focusRows($('traktsheet'), st.trow, st.zone === Z.TRAKT);
+    list = $('sportsalert').querySelectorAll('.alert-action');
+    for (i = 0; i < list.length; i++) setClass(list[i], 'focus', st.zone === Z.REMINDER && st.reminderAction === i);
     if (settingsAbout && rowsNow[st.row]) settingsAbout.textContent = rowsNow[st.row].about || '';
     if (st.zone === Z.EDIT) placeEdit();
     if (st.zone === Z.LANG) renderPicker();
@@ -338,15 +365,16 @@
 
   // MARK: - Top: tabs and buttons
 
-  // The first tab is open TV (the channels, live); then the movies and the shows from the TV's apps.
-  var TAB_KIND = ['live', 'movie', 'tv'];
+  // The first tab is open TV (the channels, live); then today's games; then the movies and the shows from the TV's
+  // apps. The round buttons on the right come after the tabs in the focus order (st.top).
+  var TAB_KIND = ['live', 'sports', 'movie', 'tv'], NTABS = TAB_KIND.length;
 
   function renderTop() {
     $('title').textContent = '';
     var tabs = $('tabs');
     tabs.innerHTML = '';
-    var names = [tr('light|Live TV'), tr('Movies'), tr('Shows')];
-    for (var i = 0; i < 3; i++) {
+    var names = [tr('light|Live TV'), tr('Sports'), tr('Movies'), tr('Shows')];
+    for (var i = 0; i < NTABS; i++) {
       var t = el('button', 'tab', tabs, names[i]);
       hover(t, Z.TOP, i);
     }
@@ -358,7 +386,7 @@
       r.style.left = (1660 + 66 * b) + 'px';
       sym(defs[b][0], r);
       el('div', 'tip', r, defs[b][1]);
-      hover(r, Z.TOP, 3 + b);
+      hover(r, Z.TOP, NTABS + b);
     }
   }
 
@@ -750,6 +778,7 @@
   // rests on a title.
 
   var catalog = null, catalogKind = '', drawnFor = null, drawnKey = '', drawnRows = 0;
+  var sportReturnId = '';
   var ITEM_STEP = 360, ROW_H = 300, ROW_TOP = 620;
 
   function renderCatalog() {
@@ -765,11 +794,26 @@
       st.ccol = [];
       heroFor = null;
     }
-    Data.catalog(kind, function (c) {
-      if (catalogKind !== kind || st.tab === 0) return;
-      catalog = c;
-      drawCatalog();
-    });
+    if (kind === 'sports') {
+      Sports.today(function (games, failed) {
+        if (catalogKind !== kind) return;
+        catalog = sportsCatalog(games, failed, null);
+        restoreSportsFocus();
+        drawCatalog();
+        Sports.dailyEpg(function (epg) {
+          if (catalogKind !== kind || st.tab === 0) return;
+          catalog = sportsCatalog(games, failed, epg);
+          restoreSportsFocus();
+          drawCatalog();
+        });
+      });
+    } else {
+      Data.catalog(kind, function (c) {
+        if (catalogKind !== kind || st.tab === 0) return;
+        catalog = c;
+        drawCatalog();
+      });
+    }
     drawCatalog();
   }
 
@@ -780,7 +824,7 @@
   var myList = null, myListKey = '';
 
   function catalogRows() {
-    var rows = catalog ? catalog.rows : [], kind = TAB_KIND[st.tab], list = st.tab ? Trakt.watchlist(kind) : [];
+    var rows = catalog ? catalog.rows : [], kind = TAB_KIND[st.tab], list = kind === 'movie' || kind === 'tv' ? Trakt.watchlist(kind) : [];
     if (!list.length) { myList = null; return rows; }
     var key = kind + ':' + list.map(function (x) { return x.id; }).join(',');
     if (key !== myListKey) {
@@ -814,14 +858,23 @@
       for (var i = 0; i < rows[r].items.length; i++) {
         var node = el('div', 'item', strip);
         node.style.left = i * ITEM_STEP + 'px';
-        el('div', 'thumb', node);
-        el('div', 'label', node, rows[r].items[i].title);
+        if (rows[r].items[i].game) gameCard(node, rows[r].items[i].game);
+        else if (rows[r].items[i].epg) epgCard(node, rows[r].items[i].epg);
+        else if (rows[r].items[i].epgStatus) {
+          el('div', 'epg-empty', node, rows[r].items[i].title);
+        }
+        else {
+          el('div', 'thumb', node);
+          el('div', 'label', node, rows[r].items[i].title);
+        }
         hover(node, Z.CATALOG, r * 1000 + i);
       }
     }
     drawnRows = rows.length;
     st.crow = Math.max(0, Math.min(st.crow, rows.length - 1));
-    msg.textContent = rows.length ? '' : catalog && catalog.error === 'no key'
+    msg.textContent = rows.length ? '' : catalog && catalog.sports
+        ? (catalog.error ? tr("Couldn't load today's games.") : tr('No games today'))
+        : catalog && catalog.error === 'no key'
         ? tr('Add a free TMDB key to config.properties to see movies and shows here.')
         : catalog && catalog.error ? trf("Couldn't load the titles: {error}", {error: catalog.error}) : tr('Loading…');
     if (!rows.length && st.zone === Z.CATALOG) { st.zone = Z.TOP; st.top = st.tab; }
@@ -866,7 +919,15 @@
     var info = hero.querySelector('.info');
     info.innerHTML = '';
     setClass(hero.firstChild, 'on', false);
+    setClass(hero, 'sports', !!(p && p.game));
     if (!p) return;
+    if (p.game) { gameHero(hero, info, p.game); return; }
+    if (p.epg) { epgHero(hero, info, p.epg); return; }
+    if (p.epgStatus) {
+      el('div', 'gkicker', info, tr('BrazilTVEPG programming'));
+      el('div', 'htitle', info, p.title);
+      return;
+    }
     el('div', 'htitle', info, p.title);
     var meta = el('div', 'hmeta', info), parts = [];
     if (p.year) parts.push(p.year);
@@ -875,7 +936,7 @@
     for (var g = 0; names && g < p.genres.length && g < 2; g++) if (names[p.genres[g]]) parts.push(names[p.genres[g]]);
     el('span', '', meta, parts.join('  ·  '));
     if (p.service) el('span', 'svc', meta, p.service);
-    el('div', 'story', info, p.overview);
+    fitText(el('div', 'story', info, p.overview));
     heroTimer = setTimeout(function () {
       if (heroFor !== p) return;
       // The IMDb rating, first on the line, once the focus rests here (one request, then kept).
@@ -914,6 +975,367 @@
       });
     };
     if (!openInIptv(p.kind === 'movie' ? 'movie' : 'series', p.title, extra, elsewhere)) elsewhere();
+  }
+
+  // MARK: - Sports: today's games (Sports.today), as the catalog's rows: one row per sport
+  //
+  // The focused game is large on top (the teams' colors behind, the score); OK opens its channel in the IPTV player,
+  // found in the lists by the broadcaster. Scores come again every minute while the tab is open.
+
+  function sportName(sport) {
+    return sport === 'soccer' ? tr('Football') : sport === 'basketball' ? tr('Basketball')
+        : sport === 'racing' ? tr('Formula 1') : tr('Fights');
+  }
+
+  /** A row per sport: football first, then the one with the most games live; in a row, live games first, then by start. */
+  function sportsCatalog(games, failed, epg) {
+    var rows = [], bySport = {};
+    for (var i = 0; i < games.length; i++) {
+      var g = games[i], row = bySport[g.sport];
+      if (!row) {
+        row = bySport[g.sport] = {sport: g.sport, live: 0, items: []};
+        rows.push(row);
+      }
+      if (g.state === 'live') row.live++;
+      row.items.push({id: g.id, title: g.title, game: g});
+    }
+    rows.sort(function (a, b) {
+      return (b.sport === 'soccer') - (a.sport === 'soccer') || b.live - a.live || b.items.length - a.items.length;
+    });
+    for (var r = 0; r < rows.length; r++) {
+      var name = sportName(rows[r].sport);
+      rows[r].title = rows[r].live ? trf('{sport} · {n} live', {sport: name, n: rows[r].live}) : name;
+    }
+    var epgItems = [], epgTitle = tr('BrazilTVEPG programming');
+    if (epg && (epg.status === 'ok' || epg.status === 'stale')) {
+      if (epg.status === 'stale') {
+        var staleTitle = epg.generatedAt
+          ? trf('Guide may be outdated · updated {time}', {time: formatDate('format|d/M h:mm', epg.generatedAt)})
+          : tr('The BrazilTVEPG guide is outdated.');
+        epgItems.push({id: 'epg-status-stale', title: staleTitle, epgStatus: true});
+      }
+      for (var e = 0; e < epg.entries.length && epgItems.length < 80; e++) {
+        var entry = epg.entries[e];
+        epgItems.push({id: entry.id, title: entry.title, epg: entry});
+      }
+    }
+    if (epg && epg.status !== 'ok' && epg.status !== 'stale') {
+      var epgMessage = epg.status === 'stale' ? tr('The BrazilTVEPG guide is outdated.')
+        : epg.status === 'disabled' ? tr('BrazilTVEPG guide is not configured.')
+        : tr('Could not load the BrazilTVEPG guide.');
+      epgItems.push({id: 'epg-status-' + epg.status, title: epgMessage, epgStatus: true});
+    } else if (epg && !epg.entries.length && epg.status === 'ok') {
+      epgItems.push({id: 'epg-status-empty', title: tr('No programmes in the BrazilTVEPG guide today.'), epgStatus: true});
+    }
+    if (epgItems.length) rows.push({sport: 'epg', title: tr('BrazilTVEPG programming'), items: epgItems});
+    return {sports: true, epgPending: !epg, rows: rows, error: failed && !games.length ? 'failed' : ''};
+  }
+
+  function epgCard(node, item) {
+    var card = el('div', 'epg-card', node);
+    var start = formatDate('format|h:mm', item.start);
+    var stop = formatDate('format|h:mm', item.stop);
+    el('div', 'epg-time', card, start + ' – ' + stop);
+    el('div', 'epg-channel', card, item.channel);
+    el('div', 'epg-title', card, item.title);
+    if (item.subtitle) el('div', 'epg-subtitle', card, item.subtitle);
+    el('div', 'label', node, item.channel + ' · ' + item.title);
+  }
+
+  function epgHero(hero, info, item) {
+    el('div', 'gkicker', info, tr('BrazilTVEPG programming'));
+    el('div', 'htitle', info, item.title);
+    var now = Date.now(), state = item.start <= now && item.stop > now ? tr('Live')
+      : trf('Starts at {time}', {time: formatDate('format|h:mm', item.start)});
+    el('div', 'hmeta', info, item.channel + '  ·  ' + state + '  ·  ' + formatDate('format|h:mm', item.start) + '–' + formatDate('format|h:mm', item.stop));
+    if (item.subtitle) el('div', 'story', info, item.subtitle);
+  }
+
+  /** Tune only when the guide channel maps exactly to a channel in the user's IPTV sources. */
+  function watchEpgProgram(program) {
+    Channels.load(function () {
+      var matches = Sports.named(program.channel, Channels.channels());
+      if (!matches.length) { toast(tr('This guide channel is not in your IPTV lists.')); return; }
+      if (matches.length === 1) { startEpgChannel(program, matches[0]); return; }
+      var labels = matches.map(function (channel) { return channelName(channel.name) + (channel.group ? ' · ' + channel.group : ''); });
+      openPicker(tr('Choose a channel for this game'), labels, -1, 'sports', function (at) {
+        if (matches[at]) startEpgChannel(program, matches[at]);
+      });
+    });
+  }
+
+  function startEpgChannel(program, channel) {
+    Sports.leaving({id: program.id});
+    var failed = function () { Sports.forgetReturn(); noPlayer(); };
+    if (!openInIptv('channel', channel.name, Channels.linkFor(channel), failed)) failed();
+  }
+
+  /** "2º tempo · 67'", "3º quarto · 4:12", "Intervalo"; `short`: the minute alone for football. */
+  function gameClock(game, short) {
+    var c = game.clock;
+    if (!c) return game.state === 'ended' ? tr('Full time') : '';
+    if (c.phase === 'halftime') return tr('Halftime');
+    if (c.phase === 'other') return c.display;
+    var period = game.sport === 'basketball' ? trf('Q{n}', {n: c.period})
+        : c.phase === 'extra' ? tr('Extra time') : trf('Half {n}', {n: c.period});
+    if (short) return game.sport === 'soccer' && c.display ? c.display : period;
+    return c.display ? period + ' · ' + c.display : period;
+  }
+
+  function gameScore(game) {
+    if (game.state === 'soon' || !game.home || !game.away) return 'x';
+    return (game.home.score || '0') + ' – ' + (game.away.score || '0');
+  }
+
+  function gameBadge(game, parent) {
+    var text = game.state === 'live' ? tr('Live') : game.state === 'ended' ? tr('Ended')
+        : trf('Soon · {time}', {time: formatDate('format|h:mm', game.start)});
+    return el('span', 'gbadge ' + game.state, parent, text);
+  }
+
+  /** A team's crest: its logo, or its code on its color. */
+  function crest(t, cls, parent) {
+    var c = el('div', 'crest' + (cls ? ' ' + cls : ''), parent);
+    if (t.color) { c.style.backgroundColor = t.color; c.style.color = t.ink; }
+    if (t.logo) {
+      var img = el('img', '', c);
+      img.alt = t.code;
+      img.onerror = function () { c.removeChild(img); c.textContent = t.code; };
+      img.src = t.logo;
+    } else c.textContent = t.code;
+    return c;
+  }
+
+  /** The teams' colors as a background: home on the left, away on the right. */
+  function teamColors(node, game) {
+    var home = (game.home && game.home.color) || '#334155', away = (game.away && game.away.color) || '#1E293B';
+    node.style.backgroundImage = '-webkit-linear-gradient(left, ' + home + ' 50%, ' + away + ' 50%)';
+    node.style.backgroundImage = 'linear-gradient(90deg, ' + home + ' 50%, ' + away + ' 50%)';
+  }
+
+  function gameChannel(game) {
+    var channels = Channels.channels(), ch = Sports.selected(game, channels, Channels.identity);
+    if (!ch) {
+      var matches = Sports.broadcastMatches(game, channels, Channels.identity);
+      if (matches.length === 1) ch = matches[0];
+    }
+    return ch ? channelName(ch.name) : tr('Channel not confirmed');
+  }
+
+  function setGameReminder(game) {
+    var old = Sports.reminderFor(game.id), offsets = [0], choices = [tr('At kickoff')];
+    if (game.start - 10 * 60000 > Date.now()) { offsets.push(10); choices.push(tr('10 minutes before')); }
+    if (game.start - 30 * 60000 > Date.now()) { offsets.push(30); choices.push(tr('30 minutes before')); }
+    if (old) choices.push(tr('Cancel reminder'));
+    openPicker(tr('Remind me about this game'), choices, -1, 'sports', function (at) {
+      if (old && at === choices.length - 1) {
+        Sports.cancelReminder(game.id);
+        toast(tr('Reminder cancelled'));
+      } else {
+        Sports.setReminder(game, offsets[at]);
+        toast(trf('Reminder set: {time}', {time: formatDate('format|h:mm', game.start - offsets[at] * 60000)}));
+      }
+      drawCatalog();
+    });
+  }
+
+  function gameFromReminder(item) {
+    for (var r = 0; catalog && catalog.rows && r < catalog.rows.length; r++) {
+      for (var i = 0; i < catalog.rows[r].items.length; i++) {
+        var game = catalog.rows[r].items[i].game;
+        if (game && game.id === item.id) return game;
+      }
+    }
+    var league = null;
+    for (var l = 0; l < Sports.LEAGUES.length; l++) if (Sports.LEAGUES[l].path === item.leaguePath) league = Sports.LEAGUES[l];
+    return {id: item.id, title: item.title, competition: item.competition, start: item.start, sport: item.sport,
+      league: league || {path: item.leaguePath, channels: []}, home: item.home, away: item.away,
+      broadcasts: item.broadcasts || [], state: 'live'};
+  }
+
+  function renderSportsReminder(item) {
+    var layer = $('sportsalert');
+    layer.innerHTML = '';
+    el('div', 'alert-shade', layer);
+    var box = el('div', 'alert-box', layer);
+    el('div', 'alert-kicker', box, tr('Game reminder'));
+    el('div', 'alert-title', box, item.title);
+    el('div', 'alert-subtitle', box, item.competition + '  ·  ' + trf('Starts at {time}', {time: formatDate('format|h:mm', item.start)}));
+    var actions = el('div', 'alert-actions', box);
+    var labels = [tr('Watch the game'), tr('Remind me in 10 minutes'), tr('Dismiss')];
+    for (var i = 0; i < labels.length; i++) (function (at) {
+      var button = el('button', 'alert-action', actions, labels[at]);
+      button.onclick = function () { st.reminderAction = at; updateFocus(); activateSportsReminder(); };
+    })(i);
+    el('div', 'alert-hint', box, tr('Use arrows and OK. Back reminds again in 10 minutes.'));
+    setClass(layer, 'on', true);
+  }
+
+  function checkSportsReminder() {
+    if (reminderAlert || document.hidden) return;
+    var item = Sports.dueReminder(Date.now());
+    if (!item) return;
+    reminderAlert = item;
+    reminderReturnTab = st.tab;
+    reminderReturnZone = st.zone;
+    st.reminderAction = 0;
+    hideSaver();
+    stopPlayer();
+    st.zone = Z.REMINDER;
+    renderSportsReminder(item);
+    updateFocus();
+  }
+
+  function closeSportsReminder(snooze) {
+    if (!reminderAlert) return;
+    if (snooze) Sports.snoozeReminder(reminderAlert.id, 10);
+    reminderAlert = null;
+    $('sportsalert').innerHTML = '';
+    setClass($('sportsalert'), 'on', false);
+    st.tab = reminderReturnTab;
+    st.zone = reminderReturnZone;
+    updateFocus();
+  }
+
+  function activateSportsReminder() {
+    if (!reminderAlert) return;
+    var item = reminderAlert;
+    if (st.reminderAction === 1) { closeSportsReminder(true); toast(tr('Reminder postponed')); return; }
+    if (st.reminderAction === 2) { Sports.cancelReminder(item.id); closeSportsReminder(false); return; }
+    reminderAlert = null;
+    $('sportsalert').innerHTML = '';
+    setClass($('sportsalert'), 'on', false);
+    st.zone = Z.CATALOG;
+    updateFocus();
+    watchGame(gameFromReminder(item), true);
+  }
+
+  /** A game in a row: always dark, as a poster, so the white score reads on it in the day look too. */
+  function gameCard(node, game) {
+    var card = el('div', 'game', node);
+    teamColors(el('div', 'tint', card), game);
+    var top = el('div', 'gtop', card);
+    gameBadge(game, top);
+    if (Sports.reminderFor(game.id)) el('span', 'greminder', top, tr('Reminder'));
+    el('span', 'gch', top, gameChannel(game));
+    if (game.home && game.away) {
+      var mid = el('div', 'gmid', card);
+      crest(game.home, '', el('div', 'gteam', mid));
+      var score = el('div', 'gscore', mid);
+      el('b', '', score, gameScore(game));
+      el('span', '', score, gameClock(game, true));
+      crest(game.away, '', el('div', 'gteam', mid));
+    } else el('div', 'gevent', card, game.title);
+    el('div', 'label', node, game.title);
+    el('i', 'gbar', el('div', 'gprog', node)).style.width = game.progress + '%';
+  }
+
+  function gameHero(hero, info, game) {
+    teamColors(hero.firstChild, game);
+    setClass(hero.firstChild, 'on', true);
+    // The sport's drawing (web/sport-*.svg) over the teams' colors, under the fade.
+    var art = hero.querySelector('.sart');
+    if (!art) art = hero.insertBefore(el('div', 'sart'), hero.firstChild.nextSibling);
+    art.style.backgroundImage = 'url(sport-' + game.sport + '.svg)';
+    el('div', 'gkicker', info, game.competition);
+    var status = el('div', 'gstatus', info);
+    gameBadge(game, status);
+    el('span', '', status, gameClock(game, false));
+    if (game.home && game.away) {
+      var match = el('div', 'gmatch', info);
+      var home = el('div', 'gside', match);
+      crest(game.home, 'lg', home);
+      el('span', '', home, game.home.name);
+      el('div', 'gbig', match, gameScore(game));
+      var away = el('div', 'gside away', match);
+      el('span', '', away, game.away.name);
+      crest(game.away, 'lg', away);
+    } else el('div', 'htitle', info, game.title);
+    var ch = gameChannel(game), channel = el('div', 'hmeta sports-channel', info, ch + '  ·  ' + tr('OK chooses; red key changes channel; green key sets reminder'));
+    channel.onclick = function () { chooseSportsChannel(game); };
+    channel.onmouseover = function () { if (Date.now() - pointerAt.t <= POINTER_MOVED) channel.focus(); };
+    if (game.state === 'soon') {
+      el('div', 'hmeta', info, trf('Starts at {time}', {time: formatDate('format|h:mm', game.start)}));
+      var reminder = Sports.reminderFor(game.id), label = reminder ? trf('Reminder set: {time}', {time: formatDate('format|h:mm', reminder.triggerAt)}) : tr('Set a reminder');
+      var button = el('button', 'sports-reminder', info, label);
+      button.onclick = function () { setGameReminder(game); };
+      button.onmouseover = function () { if (Date.now() - pointerAt.t <= POINTER_MOVED) button.focus(); };
+    }
+  }
+
+  /** OK on a game: its channel in the IPTV player; a game still to come only says when it starts. */
+  function watchGame(game, reminder) {
+    if (game.state === 'soon' && !reminder) {
+      toast(trf('Starts at {time}', {time: formatDate('format|h:mm', game.start)}));
+      return;
+    }
+    if (game.state === 'ended') { toast(tr('This event has ended.')); return; }
+    if (!Channels.count()) { toast(tr("This game's channel isn't in your IPTV lists.")); return; }
+    toast(tr('Checking the channel guide…'));
+    Channels.load(function () {
+      Sports.resolve(game, Channels.channels(), Channels.identity, Channels.guide, function (result) {
+        if (result.status === 'confirmed' || result.status === 'picked' || result.status === 'rule') {
+          startSportsChannel(game, result.channel);
+        } else {
+          toast(result.status === 'ambiguous' ? tr('More than one channel may show this game. Choose one.')
+            : tr('The channel is not confirmed. Choose from your IPTV lists.'));
+          chooseSportsChannel(game, result.candidates);
+        }
+      }, Channels.guideScan);   // an M3U list's whole guide: any of its channels can be the one
+    });
+  }
+
+  /** A picker for the game: likely channels first, then every configured IPTV channel. */
+  function chooseSportsChannel(game, first) {
+    Channels.load(function () {
+      var channels = Channels.channels(), choices = [], seen = {};
+      function add(ch) {
+        if (!ch) return;
+        var key = Channels.identity(ch);
+        if (seen[key]) return;
+        seen[key] = true;
+        choices.push(ch);
+      }
+      for (var i = 0; first && i < first.length; i++) add(first[i]);
+      for (var j = 0; j < channels.length; j++) add(channels[j]);
+      if (!choices.length) { toast(tr("This game's channel isn't in your IPTV lists.")); return; }
+      var labels = choices.map(function (ch) { return channelName(ch.name) + (ch.group ? ' · ' + ch.group : ''); });
+      openPicker(tr('Choose a channel for this game'), labels, -1, 'sports', function (at) {
+        var selected = choices[at];
+        if (!selected) return;
+        var scopes = [tr('This game only'), trf('All games in {competition}', {competition: game.competition})];
+        openPicker(tr('Use this channel for…'), scopes, -1, 'sports', function (scope) {
+          Sports.choose(game, selected, Channels.identity, scope === 1);
+          drawCatalog();
+          startSportsChannel(game, selected);
+        });
+      });
+    });
+  }
+
+  function startSportsChannel(game, channel) {
+    if (!channel) return;
+    Sports.cancelReminder(game.id);
+    if (reminderAlert && reminderAlert.id === game.id) closeSportsReminder(false);
+    Sports.leaving(game);
+    var failed = function () { Sports.forgetReturn(); noPlayer(); };
+    if (!openInIptv('channel', channel.name, Channels.linkFor(channel), failed)) failed();
+  }
+
+  /** Restore the game and focus after the IPTV player returns to the launcher. */
+  function restoreSportsFocus() {
+    if (!sportReturnId || !catalog || !catalog.rows) return;
+    for (var r = 0; r < catalog.rows.length; r++) for (var i = 0; i < catalog.rows[r].items.length; i++) {
+      if (catalog.rows[r].items[i].id === sportReturnId) {
+        st.tab = 1;
+        st.zone = Z.CATALOG;
+        st.crow = r;
+        st.ccol[r] = i;
+        sportReturnId = '';
+        return;
+      }
+    }
+    if (!catalog.epgPending) sportReturnId = '';
   }
 
   // MARK: - Details: a movie's or a show's page (Watch, cast, similar titles) and a person's (filmography)
@@ -1050,7 +1472,7 @@
     }
 
     var head = el('div', 'dhead', holder);
-    var photo = el('div', 'dposter', head), photoPath = person ? (d && d.profile) || it.profile : (d && d.poster) || it.poster;
+    var photo = el('div', person ? 'dposter person' : 'dposter', head), photoPath = person ? (d && d.profile) || it.profile : (d && d.poster) || it.poster;
     if (photoPath) photo.style.backgroundImage = 'url(' + Data.image(photoPath, 'w342') + ')';
     else el('div', 'initials', photo, initials(person ? it.name : it.title));
     var info = el('div', 'dinfo', head);
@@ -1065,7 +1487,7 @@
         if (born) line.push(born);
         if (d.deathday) line.push(trf('Died {date}', {date: longDate(d.deathday)}));
         if (line.length) el('div', 'dmeta', info, line.join('  ·  '));
-        if (d.biography) el('div', 'dstory bio', info, d.biography);
+        if (d.biography) fitText(el('div', 'dstory bio', info, d.biography));
         if (page.rows.length) el('div', 'dsmall', info, tr("The titles TMDB knows of, not necessarily the whole career."));
       }
     } else {
@@ -1082,7 +1504,7 @@
       Data.imdbRating({kind: page.kind, id: page.id, title: t.title, year: t.year}, function (rating) {
         if (rating && pages[pages.length - 1] === page && meta.parentNode) meta.insertBefore(el('span', 'imdb', null, 'IMDb ' + rating), meta.firstChild);
       });
-      if (t.overview) el('div', 'dstory', info, t.overview);
+      if (t.overview) fitText(el('div', 'dstory', info, t.overview));
       if (d && d.directors.length) {
         var names = {names: d.directors.join(', ')};
         el('div', 'dline', info, page.kind === 'movie' ? trf('Directed by {names}', names) : trf('Created by {names}', names));
@@ -1377,6 +1799,18 @@
   function takeLaunchParams(params) {
     if (typeof params === 'string') { try { params = JSON.parse(params); } catch (e) { params = null; } }
     if (params && params.iptv && Channels.setSources(params.iptv)) loadChannels();
+    if (params && params.returned === 'channel') {
+      var returnedGame = Sports.takeReturn();
+      if (returnedGame) {
+        sportReturnId = returnedGame;
+        st.tab = 1;
+        st.zone = Z.CATALOG;
+        catalogKind = '';
+        renderCatalog();
+        updateFocus();
+        return true;
+      }
+    }
     if (params && (params.returned || params.iptv) && !params.progress) return true;   // the card or page it was opened from
     if (!params || !params.progress) return false;
     var report = params.progress;
@@ -1429,11 +1863,13 @@
     c.lastChild.textContent = formatDate('format|EEEE, MMMM d', d.getTime());
     $('topclock').textContent = formatDate('format|h:mm', d.getTime());
     if (st.tab === 0 && cards[0] && cards[0].live) renderLive();   // the programs' progress, every minute
+    if (TAB_KIND[st.tab] === 'sports' && !pages.length) renderCatalog();   // the scores
   }
 
   /** On the minute, so the clock never runs late (the 30-second refresh could, by up to 30 s). */
   function tickClock() {
     renderClock();
+    checkSportsReminder();
     setTimeout(tickClock, 60000 - Date.now() % 60000 + 50);
   }
 
@@ -1608,7 +2044,8 @@
       cell.style.left = (130 + c * 340) + 'px';
       cell.style.top = (196 + r * 239) + 'px';
       face(others[i], el('div', 'face', cell), wordFit(others[i].title, 300, 34));
-      el('div', 'label', cell, others[i].title);
+      // Without an icon the face already shows the name: no second one under it.
+      if (others[i].icon) el('div', 'label', cell, others[i].title);
       hover(cell, Z.APPS, i);
     }
   }
@@ -1897,6 +2334,12 @@
     var p = picker, at = st.lang;
     picker = null;
     setClass($('langpick'), 'open', false);
+    if (p && p.back === 'sports') {
+      st.zone = Z.CATALOG;
+      updateFocus();
+      if (pick && at !== p.current && p.onPick) p.onPick(at);
+      return;
+    }
     if (pick && p && at !== p.current) p.onPick(at);
     openSettings(p ? p.back : null);
   }
@@ -2312,11 +2755,12 @@
   }
 
   function activate() {
+    if (st.zone === Z.REMINDER) { activateSportsReminder(); return; }
     switch (st.zone) {
       case Z.TOP:
-        if (st.top < 3) return;
-        if (st.top === 3) showAntenna();
-        else if (st.top === 4) { st.zone = Z.SHELF; openDrawer(); st.drawer = 1 < drawerInputs ? 1 : 0; updateFocus(); }
+        if (st.top < NTABS) return;
+        if (st.top === NTABS) showAntenna();
+        else if (st.top === NTABS + 1) { st.zone = Z.SHELF; openDrawer(); st.drawer = 1 < drawerInputs ? 1 : 0; updateFocus(); }
         else openSettings();
         return;
       case Z.CARDS:
@@ -2330,7 +2774,10 @@
       case Z.CATALOG:
         // A TMDB title opens its page (Watch is there, focused); one of the provider's rows plays as before.
         var item = focusedItem();
-        if (item && !item.streamId && !item.seriesId) openDetail({type: 'title', kind: item.kind, id: item.id, item: item});
+        if (item && item.game) watchGame(item.game);
+        else if (item && item.epg) watchEpgProgram(item.epg);
+        else if (item && item.epgStatus) toast(item.title);
+        else if (item && !item.streamId && !item.seriesId) openDetail({type: 'title', kind: item.kind, id: item.id, item: item});
         else openTitle(item);
         return;
       case Z.DETAIL:
@@ -2408,12 +2855,12 @@
         break;
       case Z.TOP:
         if (dx) {
-          st.top = Math.max(0, Math.min(5, st.top + dx));
-          if (st.top < 3) selectTab(st.top);   // as on Apple TV: focusing a tab selects it
+          st.top = Math.max(0, Math.min(NTABS + 2, st.top + dx));
+          if (st.top < NTABS) selectTab(st.top);   // as on Apple TV: focusing a tab selects it
         } else if (dy > 0 && st.tab !== 0) {
           if (catalog && catalogRows().length) st.zone = Z.CATALOG;
         } else if (dy > 0) {
-          if (cards.length) { st.zone = Z.CARDS; st.card = Math.min(cards.length - 1, st.top < 3 ? 0 : cards.length - 1); }
+          if (cards.length) { st.zone = Z.CARDS; st.card = Math.min(cards.length - 1, st.top < NTABS ? 0 : cards.length - 1); }
           else st.zone = Z.SHELF;
         }
         break;
@@ -2444,11 +2891,16 @@
         if (dy) st.trow = Math.max(0, Math.min(traktRowsNow.length - 1, st.trow + dy));
         if (dy && traktArmed) { traktArmed = false; renderTrakt(); }   // leaving Disconnect: it asks again
         break;
+      case Z.REMINDER:
+        if (dx) st.reminderAction = Math.max(0, Math.min(2, st.reminderAction + dx));
+        else if (dy) st.reminderAction = Math.max(0, Math.min(2, st.reminderAction + (dy > 0 ? 1 : -1)));
+        break;
     }
     updateFocus();
   }
 
   function back() {
+    if (st.zone === Z.REMINDER) { closeSportsReminder(true); toast(tr('Reminder postponed')); return; }
     if (st.zone === Z.DETAIL) { detailBack(); return; }
     if (st.zone === Z.EDIT) { editBack(); return; }
     if (st.zone === Z.LANG) { closePicker(false); return; }
@@ -2480,7 +2932,7 @@
       if (zone === Z.SHELF && st.zone === Z.DRAWER) closeDrawer();
       if (zone === Z.LANG && st.zone === Z.LANG && st.lang === index) return;   // the picker draws its rows again
       st.zone = zone;
-      if (zone === Z.TOP) { st.top = index; if (index < 3) selectTab(index); }
+      if (zone === Z.TOP) { st.top = index; if (index < NTABS) selectTab(index); }
       else if (zone === Z.CARDS) st.card = index;
       else if (zone === Z.CATALOG) { st.crow = Math.floor(index / 1000); st.ccol[st.crow] = index % 1000; }
       else if (zone === Z.DETAIL && pages.length) {
@@ -2601,6 +3053,22 @@
       e.preventDefault();
       return;
     }
+    if ((k === 403 || e.key === 'ColorF0Red') && st.tab === 1 && st.zone === Z.CATALOG) {
+      var sportItem = focusedItem();
+      if (sportItem && sportItem.game) chooseSportsChannel(sportItem.game);
+      e.preventDefault();
+      return;
+    }
+    if ((k === 404 || e.key === 'ColorF1Green') && st.tab === 1 && st.zone === Z.CATALOG) {
+      var reminderItem = focusedItem();
+      if (reminderItem && reminderItem.game && reminderItem.game.state === 'soon') {
+        var existingReminder = Sports.reminderFor(reminderItem.game.id);
+        if (existingReminder) { Sports.cancelReminder(reminderItem.game.id); toast(tr('Reminder cancelled')); drawCatalog(); }
+        else { Sports.setReminder(reminderItem.game, 10); toast(trf('Reminder set: {time}', {time: formatDate('format|h:mm', reminderItem.game.start - 10 * 60000)})); drawCatalog(); }
+      }
+      e.preventDefault();
+      return;
+    }
     if (k === TV.keys.left) move(-1, 0);
     else if (k === TV.keys.right) move(1, 0);
     else if (k === TV.keys.up) move(0, -1);
@@ -2704,6 +3172,7 @@
       return;
     }
     Trakt.syncIfStale();
+    checkSportsReminder();
     idleAt = Date.now();
     loadApps(function () { renderShelf(); renderDrawer(); updateFocus(); Data.refresh(); });
   });
@@ -2728,6 +3197,7 @@
     if (Date.now() - channelsAt > 5 * 60000) loadChannels();   // what's on now, every 5 minutes
     if (antenna) idleAt = Date.now();   // watching the antenna full screen: no screensaver
     if (!saverOn && !sheetOpen() && Prefs.saverMinutes() && Date.now() - idleAt > Prefs.saverMinutes() * 60000) showSaver();
+    checkSportsReminder();
     if (saverOn) tickSaverClock($('saver').querySelector('.clock'));
   }, 30000);
 

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Central de Esportes · Home IPTV</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div><span class="eyebrow">HOME IPTV</span><h1>Central de Esportes</h1><p>Confirme em qual emissora cada jogo será transmitido.</p></div>
+    <button id="refresh" class="secondary">Atualizar jogos</button>
+  </header>
+  <main>
+    <section class="notice"><b>Esta confirmação vale para todos os launchers.</b> Cada TV procura esses nomes nas próprias listas. Nenhum endereço, usuário ou senha IPTV é enviado para cá.</section>
+    <div class="toolbar">
+      <label>Buscar jogo ou competição <input id="search" type="search" placeholder="Ex.: Palmeiras, Brasileirão"></label>
+      <label>Guia XMLTV <select id="epg-source"><option value="epg.xml">Seleção esportiva (epg.xml)</option><option value="claro.xml">Claro TV+</option><option value="globo.xml">Globoplay</option><option value="vivoplay.xml">Vivo Play</option><option value="xsports.xml">X Sports</option></select></label>
+      <label>Mostrar <select id="filter"><option value="all">Todos os jogos de hoje</option><option value="pending">Sem validação</option><option value="validated">Validados</option><option value="live">Ao vivo</option></select></label>
+      <span id="summary" class="summary">Carregando…</span>
+    </div>
+    <div id="message" class="message" role="status"></div>
+    <p class="epg-note">Sugestões de programação do <a href="https://github.com/limaalef/BrazilTVEPG" target="_blank" rel="noreferrer">BrazilTVEPG</a>. Confira o jogo antes de validar a emissora.</p>
+    <div id="events" class="events"></div>
+  </main>
+  <footer><span id="saved">As alterações ficam no arquivo compartilhado do projeto.</span><span>Para distribuí-las, publique <code>assets/sports/broadcasts.json</code> no GitHub.</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -13,6 +13,8 @@ export interface XtreamCatchupSource {
 
 export interface Channel {
   id: string;
+  /** Xtream's stream_id, distinct from `id` when an EPG channel id is present. */
+  xtreamStreamId?: string;
   name: string;
   logo: string;
   group: string;
