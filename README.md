@@ -1,4 +1,4 @@
-# LG TV Launcher
+# Home IPTV
 
 Uma tela inicial para TVs LG (webOS), com TV aberta ao vivo, filmes e séries dos seus apps e todos os apps da TV
 numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/free-my-tv) (MIT), só com o que serve
@@ -80,11 +80,11 @@ Precisa de uma TV LG (webOS 3 ou mais novo) e de um computador na mesma rede, co
    senha que aparecem.
 2. **No computador:**
    ```bash
-   git clone https://github.com/PauloJose1999/lg-tv-launcher && cd lg-tv-launcher
+   git clone https://github.com/PauloJose1999/home-iptv && cd home-iptv
    python3 webos/build.py        # a primeira vez cria config.properties: preencha e rode de novo
    python3 webos/install.py 192.168.0.123
    ```
-   Na primeira vez ele pede a senha do Developer Mode. Também dá para instalar o `FreeMyTV-webos.ipk` pelo
+   Na primeira vez ele pede a senha do Developer Mode. Também dá para instalar o `HomeIPTV-webos.ipk` pelo
    [webOS Dev Manager](https://github.com/webosbrew/dev-manager-desktop).
 3. **Na TV:** com o launcher aberto, segure uma tecla numérica do controle: ela passa a abrir o launcher de qualquer
    lugar. Na primeira vez a TV pergunta se permite o acesso ao controle remoto por rede: aperte **Permitir** (é o que

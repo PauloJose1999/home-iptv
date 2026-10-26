@@ -1,4 +1,4 @@
-# LG TV Launcher — auditoria e plano de interface
+# Home IPTV — auditoria e plano de interface
 
 26/10/2026 · Etapas 1 e 2 (auditoria e proposta de UI/UX). Nenhum código foi alterado nesta etapa.
 

@@ -109,9 +109,34 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   transition: color 2s;
 }
 
-/* No title ("Para você"): the tabs take its place, in line with the buttons. */
+/* No title ("Para você"): the Home IPTV mark takes its place, and the tabs follow it, in line with the buttons. */
 #title { display: none; }
-#tabs { position: absolute; left: 54px; top: 56px; height: 68px; white-space: nowrap; }
+#brand {
+  position: absolute;
+  left: 76px;
+  top: 62px;
+  height: 56px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#brand svg { display: inline-block; vertical-align: top; }
+#brand .house { fill: #0088AA; stroke: #0088AA; -webkit-transition: fill 2s, stroke 2s; transition: fill 2s, stroke 2s; }
+#brand .word {
+  display: inline-block;
+  margin-left: 12px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 56px;
+  color: #1D1D1F;
+  -webkit-transition: color 2s;
+  transition: color 2s;
+}
+#brand b { font-weight: 800; color: #0088AA; -webkit-transition: color 2s; transition: color 2s; }
+.night #brand .house { fill: #00D4FF; stroke: #00D4FF; }
+.night #brand .word { color: #F5F5F7; }
+.night #brand b { color: #00D4FF; }
+#tabs { position: absolute; left: 316px; top: 56px; height: 68px; white-space: nowrap; }
 .tab {
   position: relative;
   display: inline-block;

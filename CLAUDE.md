@@ -1,6 +1,6 @@
-# LG TV Launcher: notes for Claude
+# Home IPTV: notes for Claude
 
-A home screen for LG TVs (webOS) as a web app: `web/`, packed by `webos/build.py` into `FreeMyTV-webos.ipk` and
+A home screen for LG TVs (webOS) as a web app: `web/`, packed by `webos/build.py` into `HomeIPTV-webos.ipk` and
 installed through LG's Developer Mode (`webos/install.py`, or webOS Dev Manager). Only LG: the Android, Samsung and
 website parts of the original Free My TV were removed. The person you're helping isn't technical and speaks
 Portuguese: keep it short and simple, say what you'll do on their TV before you do it, and let them do the taps.
@@ -11,7 +11,7 @@ Before you push, run `tools/check.sh` (translations, the generic LG package, ES5
 
 1. On the TV (they do it): LG Content Store → *Developer Mode* → free LG developer account → *Dev Mode Status* on (the
    TV restarts) → *Key Server* on. It shows the IP and a passphrase.
-2. `python3 webos/build.py` must end with `Built FreeMyTV-webos.ipk` (the first run creates `config.properties`).
+2. `python3 webos/build.py` must end with `Built HomeIPTV-webos.ipk` (the first run creates `config.properties`).
 3. First install: they run `python3 webos/install.py <IP>` in their own terminal (the passphrase is theirs, never in
    the chat). Later updates run the same command. Raise `version` in `webos/appinfo.json` when an install doesn't
    replace the files.

@@ -8,8 +8,8 @@ python3 tools/translate.py --check
 
 # The generic package lands where your own build leaves yours (with your city and keys): keep yours and put it back.
 kept="$(mktemp -d)"
-if [ -f FreeMyTV-webos.ipk ]; then cp FreeMyTV-webos.ipk "$kept/"; fi
-trap 'if [ -f "$kept/FreeMyTV-webos.ipk" ]; then mv "$kept/FreeMyTV-webos.ipk" .; else rm -f FreeMyTV-webos.ipk; fi; rm -rf "$kept"' EXIT
+if [ -f HomeIPTV-webos.ipk ]; then cp HomeIPTV-webos.ipk "$kept/"; fi
+trap 'if [ -f "$kept/HomeIPTV-webos.ipk" ]; then mv "$kept/HomeIPTV-webos.ipk" .; else rm -f HomeIPTV-webos.ipk; fi; rm -rf "$kept"' EXIT
 python3 webos/build.py --generic
 
 # webOS 3 and 4 run a Chromium from 2015 to 2017: web/ has to be ES5, in syntax...

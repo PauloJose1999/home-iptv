@@ -1,4 +1,4 @@
-# Roadmap — LG TV Launcher
+# Roadmap — Home IPTV
 
 26/10/2026 · Segue a auditoria (`docs/auditoria-2026-10-26.md`).
 
