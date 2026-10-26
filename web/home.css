@@ -581,7 +581,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .cell.focus .face { -webkit-transform: scale(1.08); transform: scale(1.08); box-shadow: 0 16px 34px rgba(124, 58, 237, 0.5), inset 0 0 0 3px #A855F7; }
 .cell.focus .label { color: #FFF; }
 
-#settings .box, #shelfedit .box, #langpick .box {
+#settings .box, #shelfedit .box, #langpick .box, #traktsheet .box {
   position: absolute;
   left: 560px;
   top: 150px;
@@ -1178,3 +1178,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .night .epbar { background: rgba(255, 255, 255, 0.18); }
 /* Watched: a little faded, the purple bar full and a check on the still. */
 .eprow.done .epbody, .eprow.done .epstill { opacity: 0.6; }
+
+/* MARK: - Trakt.tv: the account in Home Settings; the code to type on another device, large enough to read from afar */
+
+.tbody { padding: 4px 18px 18px; }
+.tline { font-size: 30px; font-weight: 700; }
+.tsmall { margin-top: 10px; font-size: 24px; line-height: 34px; font-weight: 500; color: rgba(255, 255, 255, 0.78); }
+.tcode {
+  margin: 18px 0 6px;
+  padding: 18px 0;
+  border-radius: 20px;
+  text-align: center;
+  font-size: 84px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #FFF;
+  background: rgba(168, 85, 247, 0.22);
+}

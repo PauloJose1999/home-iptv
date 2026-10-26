@@ -1523,7 +1523,7 @@ class App {
         const vod = matchTitle(await loadAllVodStreams(account), link, v => v.streamId, link.id);
         if (vod) {
           this.showView('movies');
-          await this.movies.playItem(account, vod, () => void this.exitApp());
+          await this.movies.playItem(account, vod, () => this.returnMovieToLauncher(link, account, vod.streamId));
           return;
         }
       } else {
@@ -1556,6 +1556,20 @@ class App {
     if (link.from && isLunaAvailable()) {
       const progress = LauncherReport.take(
         series.seriesId, link.title, link.tmdbId, StorageService.getResumeList(account.id));
+      lunaRequest('luna://com.webos.applicationManager/launch', {
+        parameters: { id: link.from, params: { progress } },
+        onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),
+      });
+    }
+    void this.exitApp();
+  }
+
+  // Back from a launcher's movie: the launcher comes back knowing how far it
+  // went, and whether it ended (its Trakt history counts only finished ones).
+  private returnMovieToLauncher(link: DeepLink, account: PlaylistEntry, streamId: string): void {
+    if (link.from && isLunaAvailable()) {
+      const progress = LauncherReport.takeMovie(
+        streamId, link.title, link.tmdbId, StorageService.getResume(account.id, 'vod', streamId));
       lunaRequest('luna://com.webos.applicationManager/launch', {
         parameters: { id: link.from, params: { progress } },
         onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),

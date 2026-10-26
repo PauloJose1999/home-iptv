@@ -12,6 +12,8 @@ export interface EpisodeReport {
   position: number;
   duration: number;
   done: boolean;
+  /** When it ended (epoch ms): the same end reported twice is one play, a later one is a re-watch. */
+  endedAt?: number;
 }
 
 export interface SeriesReport {
@@ -20,15 +22,25 @@ export interface SeriesReport {
   episodes: EpisodeReport[];
 }
 
+export interface MovieReport {
+  tmdbId?: string;
+  title: string;
+  movie: { position: number; duration: number; done: boolean; endedAt?: number };
+}
+
 // Episodes played this run, by Xtream series id, then `season:episode`.
 const played = new Map<string, Map<string, EpisodeReport>>();
+// Movies played this run, by Xtream stream id.
+const movies = new Map<string, MovieReport['movie']>();
 
 function put(seriesId: string, report: EpisodeReport): void {
   let episodes = played.get(seriesId);
   if (!episodes) played.set(seriesId, episodes = new Map());
   const key = `${report.season}:${report.episode}`;
+  const had = episodes.get(key);
   // A finished episode stays finished when a later save (or the Continue entry) is partial.
-  if (episodes.get(key)?.done && !report.done) return;
+  if (had?.done && !report.done) return;
+  if (had?.done && report.done && had.endedAt) report.endedAt = had.endedAt;
   episodes.set(key, report);
 }
 
@@ -44,12 +56,20 @@ export function episodeOf(item: { title?: string; name?: string; searchMeta?: Vo
 export const LauncherReport = {
   /** An episode's progress as the player saves it (or its end). */
   record(item: VodQueueItem, position: number, duration: number, done: boolean): void {
+    // As for the Continue points here: a few seconds in is starting over, not progress.
+    if (!done && position < CONFIG.XTREAM.RESUME_MIN_SECS) return;
+    if (item.kind === 'vod') {
+      const had = movies.get(item.itemId);
+      if (had?.done && !done) return;
+      movies.set(item.itemId, { position: Math.round(position), duration: Math.round(duration), done,
+        ...(done ? { endedAt: had?.endedAt ?? Date.now() } : {}) });
+      return;
+    }
     const seriesId = item.watchlistOwner?.itemId;
     const code = episodeOf(item);
     if (item.kind !== 'episode' || !seriesId || !code) return;
-    // As for the Continue points here: a few seconds in is starting over, not progress.
-    if (!done && position < CONFIG.XTREAM.RESUME_MIN_SECS) return;
-    put(seriesId, { ...code, position: Math.round(position), duration: Math.round(duration), done });
+    put(seriesId, { ...code, position: Math.round(position), duration: Math.round(duration), done,
+      ...(done ? { endedAt: Date.now() } : {}) });
   },
 
   /**
@@ -66,5 +86,13 @@ export const LauncherReport = {
     const episodes = Array.from(played.get(seriesId)?.values() ?? [])
       .sort((a, b) => a.season - b.season || a.episode - b.episode);
     return tmdbId ? { tmdbId, title, episodes } : { title, episodes };
+  },
+
+  /** A movie's report: how far it went this run (or the Continue point saved before), and whether it ended. */
+  takeMovie(streamId: string, title: string, tmdbId: string | undefined, saved: ResumeEntry | null): MovieReport {
+    const movie = movies.get(streamId)
+      ?? (saved ? { position: Math.round(saved.position), duration: Math.round(saved.duration), done: false }
+        : { position: 0, duration: 0, done: false });
+    return tmdbId ? { tmdbId, title, movie } : { title, movie };
   },
 };

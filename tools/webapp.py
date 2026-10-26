@@ -18,7 +18,8 @@ GENERIC = {'tmdbKey': '', 'omdbKey': '', 'tmdbRegion': '', 'latitude': '', 'long
            'temperature': 'auto', 'hideAnimation': False, 'hideApps': [],
            'liveChannels': ['Globo', 'Record News', 'Band'], 'ssapKey': '',
            'iptvApp': 'com.lennylxx.iptv',
-           'iptv': {'m3u': '', 'server': '', 'user': '', 'pass': ''}}
+           'iptv': {'m3u': '', 'server': '', 'user': '', 'pass': ''},
+           'trakt': {'id': '', 'api': ''}}
 
 
 def config_from_args(args):
@@ -66,6 +67,7 @@ def read_config(path):
         'iptvApp': values.get('iptv_app', 'com.lennylxx.iptv'),
         'iptv': {'m3u': values.get('iptv_m3u', ''), 'server': values.get('iptv_server', ''),
                  'user': values.get('iptv_user', ''), 'pass': values.get('iptv_pass', '')},
+        'trakt': {'id': values.get('trakt_client_id', ''), 'api': values.get('trakt_api', '')},
     }
 
 

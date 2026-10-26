@@ -26,7 +26,7 @@ describe('LauncherReport', () => {
     expect(LauncherReport.take('s1', 'Alpha', '42', [])).toEqual({
       tmdbId: '42', title: 'Alpha',
       episodes: [
-        { season: 1, episode: 1, position: 2400, duration: 2400, done: true },
+        { season: 1, episode: 1, position: 2400, duration: 2400, done: true, endedAt: expect.any(Number) },
         { season: 1, episode: 2, position: 600, duration: 2400, done: false },
       ],
     });
@@ -47,8 +47,29 @@ describe('LauncherReport', () => {
     expect(LauncherReport.take('s5', 'Echo', undefined, []).episodes).toEqual([]);
   });
 
-  it('ignores what is not an episode of a series', () => {
-    LauncherReport.record({ ...episode('s4', 1, 1), kind: 'vod' }, 10, 100, false);
+  it('keeps when an episode first ended, so the same end is one play', () => {
+    LauncherReport.record(episode('s6', 1, 1), 2400, 2400, true);
+    const first = LauncherReport.take('s6', 'Foxtrot', undefined, []).episodes[0].endedAt;
+    LauncherReport.record(episode('s6', 1, 1), 2400, 2400, true);
+    expect(LauncherReport.take('s6', 'Foxtrot', undefined, []).episodes[0].endedAt).toBe(first);
+  });
+
+  it('keeps a movie apart from the series', () => {
+    LauncherReport.record({ ...episode('s4', 1, 1), kind: 'vod', itemId: 'm1' }, 100, 5000, false);
     expect(LauncherReport.take('s4', 'Delta', undefined, []).episodes).toEqual([]);
+  });
+
+  it('reports a movie that ended as done, and only then', () => {
+    const movie: VodQueueItem = { url: 'http://host/a', title: 'Golf', poster: '', accountId: 'acc', itemId: 'm2', kind: 'vod', subtitles: [] };
+    LauncherReport.record(movie, 600, 5400, false);
+    expect(LauncherReport.takeMovie('m2', 'Golf', '7', null).movie).toEqual({ position: 600, duration: 5400, done: false });
+    LauncherReport.record(movie, 5400, 5400, true);
+    LauncherReport.record(movie, 20, 5400, false);
+    expect(LauncherReport.takeMovie('m2', 'Golf', '7', null)).toEqual({ tmdbId: '7', title: 'Golf', movie: { position: 5400, duration: 5400, done: true, endedAt: expect.any(Number) } });
+  });
+
+  it('uses the Continue point saved before for a movie not played this run', () => {
+    const saved: ResumeEntry = { accountId: 'acc', kind: 'vod', itemId: 'm3', name: 'Hotel', poster: '', ext: 'mp4', position: 300, duration: 6000, updatedAt: 1 };
+    expect(LauncherReport.takeMovie('m3', 'Hotel', undefined, saved).movie).toEqual({ position: 300, duration: 6000, done: false });
   });
 });

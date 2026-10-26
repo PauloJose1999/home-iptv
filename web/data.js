@@ -357,7 +357,7 @@ var Data = (function () {
   // One TMDB request each (append_to_response), only when the page opens; what the pages show is kept 3 days (the 40
   // last pages, trimmed to what's drawn), so going back and forth costs nothing.
 
-  var DETAIL_DAYS = 3, DETAIL_MAX = 40, CAST_MAX = 20, SIMILAR_MAX = 20, CREDITS_MAX = 60;
+  var DETAIL_DAYS = 3, DETAIL_MAX = 100, CAST_MAX = 20, SIMILAR_MAX = 20, CREDITS_MAX = 60;
   // TV credits that are appearances as oneself (talk shows, news, reality, awards), not roles.
   var SELF_GENRES = [10767, 10763, 10764];
   var details = stored('details') || {};   // 'movie:1' | 'tv:2' | 'person:3' -> {at, lang, data}
@@ -482,7 +482,7 @@ var Data = (function () {
     for (var i = 0; i < report.episodes.length; i++) {
       var e = report.episodes[i];
       if (!(e.season >= 1 && e.episode >= 1)) continue;
-      show.eps[e.season + ':' + e.episode] = {p: e.position || 0, d: e.duration || 0, done: !!e.done};
+      show.eps[e.season + ':' + e.episode] = {p: e.position || 0, d: e.duration || 0, done: !!e.done, at: Date.now()};
     }
     show.at = Date.now();
     progressAll[report.tmdbId] = show;
@@ -498,6 +498,40 @@ var Data = (function () {
   function progressOf(tvId) {
     var show = progressAll[tvId];
     return show && Object.keys(show.eps).length ? show : null;
+  }
+
+  /** A title's short form (for My list, whose items come from Trakt with ids only), kept like the pages. */
+  function briefOf(kind, id) { return cachedDetail('brief:' + kind + ':' + id); }
+
+  /** Fetches the short forms missing among items ({id, kind}), one after the other; done() at the end. */
+  function loadBriefs(items, done) {
+    var todo = items.filter(function (x) { return !briefOf(x.kind, x.id); });
+    if (!KEY || !todo.length) { done(); return; }
+    each(todo, function (x, next) {
+      tmdb('/' + x.kind + '/' + x.id + '?language=' + lang(), function (err, o) {
+        if (!err && o && o.id) {
+          var b = brief(o, x.kind);
+          b.genres = (o.genres || []).map(function (g) { return g.id; });
+          keepDetail('brief:' + x.kind + ':' + x.id, b);
+        }
+        next();
+      });
+    }, done);
+  }
+
+  // A movie's progress as the IPTV player reports it (TMDB id -> {p, d, done, at}), the 200 last.
+  var moviesSeen = stored('moviesSeen') || {};
+
+  function recordMovie(report) {
+    if (!report || !report.tmdbId || !report.movie) return;
+    var m = report.movie;
+    moviesSeen[report.tmdbId] = {p: m.position || 0, d: m.duration || 0, done: !!m.done, at: Date.now()};
+    var keys = Object.keys(moviesSeen);
+    if (keys.length > 200) {
+      keys.sort(function (a, b) { return moviesSeen[a].at - moviesSeen[b].at; });
+      delete moviesSeen[keys[0]];
+    }
+    store('moviesSeen', moviesSeen);
   }
 
   /** A person's credits of one kind, each title once (its roles together), the most relevant first. */
@@ -625,6 +659,10 @@ var Data = (function () {
     titleDetails: titleDetails,
     seasonDetails: seasonDetails,
     recordProgress: recordProgress,
+    recordMovie: recordMovie,
+    movieSeen: function (tmdbId) { return moviesSeen[tmdbId] || null; },
+    briefOf: briefOf,
+    loadBriefs: loadBriefs,
     progressOf: progressOf,
     personDetails: personDetails,
     showcase: showcase,

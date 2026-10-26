@@ -270,11 +270,11 @@
 
   // MARK: - Focus
 
-  var Z = {TOP: 'top', CARDS: 'cards', CATALOG: 'catalog', DETAIL: 'detail', SHELF: 'shelf', DRAWER: 'drawer', APPS: 'apps', SETTINGS: 'settings', EDIT: 'edit', LANG: 'lang'};
-  var st = {zone: Z.SHELF, top: 0, tab: 0, card: 0, crow: 0, ccol: [], shelf: 0, drawer: 0, grid: 0, row: 0, edit: 0, lang: 0};
+  var Z = {TOP: 'top', CARDS: 'cards', CATALOG: 'catalog', DETAIL: 'detail', TRAKT: 'trakt', SHELF: 'shelf', DRAWER: 'drawer', APPS: 'apps', SETTINGS: 'settings', EDIT: 'edit', LANG: 'lang'};
+  var st = {zone: Z.SHELF, top: 0, tab: 0, card: 0, crow: 0, ccol: [], trow: 0, shelf: 0, drawer: 0, grid: 0, row: 0, edit: 0, lang: 0};
   var cards = [];
 
-  function sheetOpen() { return st.zone === Z.APPS || st.zone === Z.SETTINGS || st.zone === Z.EDIT || st.zone === Z.LANG; }
+  function sheetOpen() { return st.zone === Z.APPS || st.zone === Z.SETTINGS || st.zone === Z.EDIT || st.zone === Z.LANG || st.zone === Z.TRAKT; }
 
   function updateFocus() {
     var i, list;
@@ -297,6 +297,7 @@
     var rows = Math.max(1, Math.ceil(others.length / 5)), r = Math.floor(st.grid / 5), first = Math.max(0, Math.min(rows - 3, r - 1));
     $('apps').lastChild.style.webkitTransform = $('apps').lastChild.style.transform = 'translateY(' + (-first * 239) + 'px)';
     focusRows($('settings'), st.row, st.zone === Z.SETTINGS);
+    focusRows($('traktsheet'), st.trow, st.zone === Z.TRAKT);
     if (settingsAbout && rowsNow[st.row]) settingsAbout.textContent = rowsNow[st.row].about || '';
     if (st.zone === Z.EDIT) placeEdit();
     if (st.zone === Z.LANG) renderPicker();
@@ -675,11 +676,12 @@
   // to the left; only the photos near the focus are loaded (small ones, w300), and the large one waits until the focus
   // rests on a title.
 
-  var catalog = null, catalogKind = '', drawnFor = null, drawnRows = 0;
+  var catalog = null, catalogKind = '', drawnFor = null, drawnKey = '', drawnRows = 0;
   var ITEM_STEP = 360, ROW_H = 300, ROW_TOP = 620;
 
   function renderCatalog() {
     var kind = TAB_KIND[st.tab];
+    Trakt.syncIfStale();
     setClass(body, 'no-picks', false);
     if (cards.length) { cards = []; $('cards').innerHTML = ''; liveIds = ''; }
     backdrop('');
@@ -698,10 +700,39 @@
     drawCatalog();
   }
 
+  /**
+   * The tab's rows: My list first (the Trakt watchlist of this kind, with TMDB's photos as they come), then the
+   * catalog's. Its titles come from Trakt with ids only; the missing photos are fetched once, then it's drawn again.
+   */
+  var myList = null, myListKey = '';
+
+  function catalogRows() {
+    var rows = catalog ? catalog.rows : [], kind = TAB_KIND[st.tab], list = st.tab ? Trakt.watchlist(kind) : [];
+    if (!list.length) { myList = null; return rows; }
+    var key = kind + ':' + list.map(function (x) { return x.id; }).join(',');
+    if (key !== myListKey) {
+      myListKey = key;
+      var shown = list.slice(0, 30);
+      Data.loadBriefs(shown, function () { if (myListKey === key) { myList = null; drawnFor = null; drawCatalog(); } });
+    }
+    if (!myList) {
+      myList = {title: tr('My list'), items: list.slice(0, 30).map(function (x) {
+        var b = Data.briefOf(x.kind, x.id);
+        return b || {id: x.id, kind: x.kind, title: x.title, year: x.year, backdrop: '', overview: '', rating: 0, genres: []};
+      })};
+    }
+    return [myList].concat(rows);
+  }
+
   function drawCatalog() {
     var holder = $('rows'), msg = $('catalog').querySelector('.msg');
-    if (!catalog || drawnFor !== catalog) { holder.innerHTML = ''; drawnFor = catalog; drawnRows = 0; }
-    var rows = catalog ? catalog.rows : [];
+    var rows = catalogRows(), shownKey = catalog && (myList ? myListKey : '');
+    if (!catalog || drawnFor !== catalog || drawnKey !== shownKey) {
+      holder.innerHTML = '';
+      drawnFor = catalog;
+      drawnKey = shownKey;
+      drawnRows = 0;
+    }
     for (var r = drawnRows; r < rows.length; r++) {
       var row = el('div', 'crow', holder);
       row.style.top = r * ROW_H + 'px';
@@ -725,7 +756,7 @@
   }
 
   function focusedItem() {
-    var row = catalog && catalog.rows[st.crow];
+    var row = catalog && catalogRows()[st.crow];
     return row ? row.items[st.ccol[st.crow] || 0] : null;
   }
 
@@ -742,7 +773,7 @@
         setClass(items[i], 'focus', st.zone === Z.CATALOG && r === st.crow && i === col);
         // Only the photos on screen, and a little around it, are loaded.
         if (!items[i].loaded && r >= st.crow - 1 && r <= st.crow + 2 && i >= first - 1 && i <= first + 6) {
-          var p = catalog.rows[r].items[i];
+          var p = catalogRows()[r].items[i];
           items[i].loaded = true;
           if (p.backdrop) items[i].firstChild.style.backgroundImage = 'url(' + Data.image(p.backdrop, 'w300') + ')';
         }
@@ -801,6 +832,7 @@
     if (p.streamId || p.seriesId) extra.id = p.streamId || p.seriesId;
     if (p.year) extra.year = p.year;
     if (p.original && p.original !== p.title) extra.altTitle = p.original;
+    if (!p.streamId && !p.seriesId && p.id) extra.tmdbId = String(p.id);   // handed back with the progress
     if (openInIptv(p.kind === 'movie' ? 'movie' : 'series', p.title, extra)) return;
     if (extra.id) { toast(tr('Install the IPTV Player on the TV to watch this title.')); return; }
     Data.whereToWatch(p, function (app) {
@@ -863,6 +895,21 @@
         rows.push({type: 'actions', items: [{label: tr('Watch'), run: function () {
           openTitle({kind: page.kind, id: page.id, title: t.title, year: t.year, original: t.original});
         }}]});
+      }
+      // With Trakt: My list, on or off; changed once Trakt confirms.
+      if (Trakt.connected()) {
+        var on = Trakt.listed(page.kind, page.id);
+        rows[0].items.push({label: page.listing ? tr('Saving…') : on ? tr('In My list') : tr('Add to My list'), run: function () {
+          if (page.listing) return;
+          page.listing = true;
+          renderDetail();
+          Trakt.setListed({kind: page.kind, id: page.id, title: t.title, year: t.year}, !on, function (ok, why) {
+            page.listing = false;
+            toast(ok ? (on ? tr('Removed from My list.') : tr('Added to My list.'))
+                : why === 'limit' ? tr('Your Trakt list is full.') : tr("Couldn't change My list. Try again."));
+            if (pages[pages.length - 1] === page) renderDetail();
+          });
+        }});
       }
       if (d && d.cast.length) rows.push({type: 'cast', title: tr('Cast'), items: d.cast});
       if (d && d.similar.length) rows.push({type: 'posters', title: page.kind === 'movie' ? tr('Similar movies') : tr('Similar shows'), items: d.similar});
@@ -945,6 +992,7 @@
       var meta = el('div', 'dmeta', info), parts = [];
       if (t.year) parts.push(t.year);
       if (t.rating) parts.push('★ ' + (Math.round(t.rating * 10) / 10).toFixed(1));
+      if (page.kind === 'movie' && (Trakt.movieWatched(page.id) || (Data.movieSeen(page.id) || {}).done)) parts.push('✓ ' + tr('Watched'));
       if (d && d.runtime && page.kind === 'movie') parts.push(trf('runtime|{n} min', {n: d.runtime}));
       if (d && d.seasons) parts.push(plural('plural|one:{n} season|other:{n} seasons', d.seasons));
       if (d && d.genreNames.length) parts.push(d.genreNames.slice(0, 3).join(', '));
@@ -1059,9 +1107,28 @@
   // in the launch params (Data.recordProgress), as apps can't read each other's storage. Without it (no player, never
   // watched), a show starts at S1·E1.
 
+  /**
+   * A show's episodes as far as they're known: the IPTV player's progress (position and length, the only source of a
+   * purple bar), and the ones Trakt says were watched (done, with no position: `remote`). An episode in progress here
+   * since Trakt's last watch of it is a re-watch: still in progress. Specials (season 0) are left out.
+   */
+  function episodeStates(tvId) {
+    var prog = Data.progressOf(tvId), remote = Trakt.showEpisodes(tvId), eps = {}, any = false, k;
+    for (k in prog ? prog.eps : {}) {
+      if (prog.eps.hasOwnProperty(k) && k.indexOf('0:') !== 0) { eps[k] = prog.eps[k]; any = true; }
+    }
+    for (k in remote || {}) {
+      if (!remote.hasOwnProperty(k) || k.indexOf('0:') === 0) continue;
+      var local = eps[k];
+      if (!local || (!local.done && (local.at || 0) < remote[k])) eps[k] = {p: 0, d: 0, done: true, remote: true};
+      any = true;
+    }
+    return any ? {eps: eps} : null;
+  }
+
   /** Where a show goes on: {season, episode, resume, left (seconds), share (0-1), label}. */
   function nextEpisode(page) {
-    var seasons = (page.data && page.data.seasonList) || [], prog = Data.progressOf(page.id);
+    var seasons = (page.data && page.data.seasonList) || [], prog = episodeStates(page.id);
     var first = seasons.length ? seasons[0].n : 1;
     var start = {season: first, episode: 1, resume: false, label: trf('Watch S{s} · E{e}', {s: first, e: 1})};
     if (!prog) return start;
@@ -1120,7 +1187,7 @@
 
   /** The episodes page: the seasons on top, then a row per episode (still, title, minutes, story, progress). */
   function renderEpisodes(page) {
-    var box = $('detail'), holder = box.lastChild, prog = Data.progressOf(page.id), target = page.target;
+    var box = $('detail'), holder = box.lastChild, prog = episodeStates(page.id), target = page.target;
     holder.innerHTML = '';
     page.nodes = [];
     page.rows = [{type: 'seasons', items: page.seasons}];
@@ -1158,7 +1225,8 @@
       else if (x && x.d) meta.push(trf('episode|{n} min left', {n: Math.max(1, Math.ceil((x.d - x.p) / 60))}));
       if (meta.length) el('div', 'epmeta', bodyNode, meta.join('  ·  '));
       if (ep.overview) el('div', 'epstory', bodyNode, ep.overview);
-      if (x) el('div', 'fill', el('div', 'epbar', bodyNode)).style.width = (x.done ? 100 : Math.round(100 * x.p / Math.max(1, x.d))) + '%';
+      // The bar only from the player's real position: watched at Trakt shows the check, not an invented share.
+      if (x && !x.remote) el('div', 'fill', el('div', 'epbar', bodyNode)).style.width = (x.done ? 100 : Math.round(100 * x.p / Math.max(1, x.d))) + '%';
       hover(row, Z.DETAIL, r * 1000);
       page.nodes[r] = [row];
       // The focus starts on the episode where the show goes on.
@@ -1220,7 +1288,18 @@
   function takeLaunchParams(params) {
     if (typeof params === 'string') { try { params = JSON.parse(params); } catch (e) { params = null; } }
     if (!params || !params.progress) return false;
-    Data.recordProgress(params.progress);
+    var report = params.progress;
+    if (report.movie) {
+      Data.recordMovie(report);
+      if (report.movie.done) Trakt.watched({kind: 'movie', tmdb: report.tmdbId, at: report.movie.endedAt});
+    } else {
+      Data.recordProgress(report);
+      // Only what the player saw to the end goes to Trakt's history; one only opened or left halfway doesn't.
+      for (var i = 0; report.episodes && i < report.episodes.length; i++) {
+        var e = report.episodes[i];
+        if (e.done) Trakt.watched({kind: 'episode', tmdb: report.tmdbId, season: e.season, episode: e.episode, at: e.endedAt});
+      }
+    }
     if (pages.length) {
       var top = pages[pages.length - 1];
       if (top.type === 'episodes') top.target = nextEpisode(top.show);
@@ -1462,6 +1541,8 @@
     setClass($('settings'), 'open', false);
     setClass($('shelfedit'), 'open', false);
     setClass($('langpick'), 'open', false);
+    if (st.zone === Z.TRAKT) { Trakt.cancel(); traktFlow = null; }
+    setClass($('traktsheet'), 'open', false);
     picker = null;
     edit.held = false;
     edit.menu = false;
@@ -1470,7 +1551,7 @@
   }
 
   // A click (mouse, Magic Remote) on the dim around Home Settings or one of its pickers closes them, nothing picked.
-  ['settings', 'langpick'].forEach(function (id) {
+  ['settings', 'langpick', 'traktsheet'].forEach(function (id) {
     $(id).addEventListener('click', function (e) { if (e.target === $(id)) closeSheets(); });
   });
 
@@ -1498,6 +1579,10 @@
     rows.push({key: 'shelf', label: tr('Shelf'), value: '›',
       about: tr("Put the apps in the order you like, and hide the ones you don't use."),
       step: function (d) { if (d >= 0) openShelfEdit(); }});
+    rows.push({key: 'trakt', label: 'Trakt.tv', opens: true,
+      value: !Trakt.configured ? tr('Not set up') : Trakt.connected() ? (Trakt.user() || tr('Connected')) : tr('Not connected'),
+      about: tr('Your Trakt account: the episodes and movies you watched here and on other devices, and My list.'),
+      step: function (d) { if (d >= 0) openTrakt(); }});
     rows.push({key: 'theme', label: tr('Theme'), value: theme === 'light' ? tr('Light') : theme === 'dark' ? tr('Dark') : auto,
       about: tr('Automatic: light by day, dark at night.'),
       step: function (d) { cycle('theme', ['auto', 'light', 'dark'], theme, d); checkNight(); }});
@@ -1578,6 +1663,108 @@
     setClass($('settings'), 'open', true);
     updateFocus();
   }
+
+  // MARK: - Trakt.tv: connect (a code to type on another device), sync, disconnect
+
+  var traktFlow = null, traktRowsNow = [], traktArmed = false;
+
+  function openTrakt() {
+    setClass($('settings'), 'open', false);
+    st.zone = Z.TRAKT;
+    st.trow = 0;
+    traktArmed = false;
+    renderTrakt();
+    setClass($('traktsheet'), 'open', true);
+    updateFocus();
+  }
+
+  /** Back: the sign-in, if one is waiting, is given up; then Home Settings, on Trakt.tv. */
+  function closeTrakt() {
+    Trakt.cancel();
+    traktFlow = null;
+    setClass($('traktsheet'), 'open', false);
+    openSettings('trakt');
+  }
+
+  function startTrakt() {
+    traktFlow = {state: 'starting'};
+    st.trow = 0;
+    renderTrakt();
+    Trakt.connect(function (update) {
+      traktFlow = update.state === 'done' ? null : update;
+      if (update.state === 'done') toast(trf('Connected to Trakt as {user}.', {user: Trakt.user() || 'Trakt'}));
+      if (st.zone === Z.TRAKT) { st.trow = 0; renderTrakt(); }
+    });
+  }
+
+  /** What Trakt is doing, in a line. */
+  function traktStatus() {
+    var s = Trakt.status();
+    if (s.syncing) return tr('Syncing…');
+    if (s.error === 'offline') return tr("No connection to Trakt. What you watch is kept here and sent later.");
+    if (s.error === 'expired') return tr('Trakt signed you out. Connect again.');
+    if (s.error) return tr("Trakt didn't answer. Try syncing again.");
+    var line = s.syncedAt ? trf('Synced at {time}', {time: formatDate('format|h:mm', s.syncedAt)}) : '';
+    if (s.pending) line += (line ? '  ·  ' : '') + plural('plural|one:{n} item waiting to be sent|other:{n} items waiting to be sent', s.pending);
+    return line;
+  }
+
+  function renderTrakt() {
+    var box = $('traktsheet').firstChild, f = traktFlow, rows = [];
+    box.innerHTML = '';
+    el('div', 'title', box, 'Trakt.tv');
+    var body = el('div', 'tbody', box);
+    if (!Trakt.configured) {
+      el('div', 'tline', body, tr('Trakt is not set up on this TV yet.'));
+      el('div', 'tsmall', body, tr('Put the Client ID of your Trakt app in config.properties (trakt_client_id) and install the launcher again.'));
+      rows.push({label: tr('Close'), run: closeTrakt});
+    } else if (Trakt.connected()) {
+      el('div', 'tline', body, trf('Connected as {user}', {user: Trakt.user() || 'Trakt'}));
+      el('div', 'tsmall', body, traktStatus());
+      rows.push({label: tr('Sync now'), run: function () { Trakt.sync(true); renderTrakt(); }});
+      rows.push({label: traktArmed ? tr('Press OK again to disconnect') : tr('Disconnect'), warn: traktArmed, run: function () {
+        if (!traktArmed) { traktArmed = true; renderTrakt(); return; }
+        traktArmed = false;
+        Trakt.disconnect(function () { toast(tr('Disconnected from Trakt. The history on this TV stays.')); });
+        renderTrakt();
+      }});
+    } else if (f && f.state === 'code') {
+      el('div', 'tsmall', body, trf('On your phone or computer, open {url} and type this code:', {url: (f.url || '').replace(/^https?:\/\//, '')}));
+      el('div', 'tcode', body, f.code);
+      el('div', 'tsmall', body, trf('The code works until {time}. Waiting for you to allow it…', {time: formatDate('format|h:mm', f.until)}));
+      rows.push({label: tr('Cancel'), run: function () { Trakt.cancel(); traktFlow = null; renderTrakt(); }});
+    } else if (f && f.state === 'starting') {
+      el('div', 'tsmall', body, tr('Asking Trakt for a code…'));
+      rows.push({label: tr('Cancel'), run: function () { Trakt.cancel(); traktFlow = null; renderTrakt(); }});
+    } else {
+      if (f && f.state === 'expired') el('div', 'tline', body, tr('The code expired before it was allowed.'));
+      else if (f && f.state === 'denied') el('div', 'tline', body, tr('The connection was refused at Trakt.'));
+      else if (f && f.state === 'error') el('div', 'tline', body, tr("Couldn't reach Trakt. Check the internet and try again."));
+      el('div', 'tsmall', body, tr('Connect your Trakt account to see the episodes you watched on other devices, keep a history of what you watch here, and use My list.'));
+      rows.push({label: f ? tr('Try again') : tr('Connect'), run: startTrakt});
+    }
+    var list = el('div', 'list', box), holder = el('div', 'rows', list);
+    list.style.height = rows.length * 78 + 'px';
+    traktRowsNow = rows;
+    st.trow = Math.min(st.trow, rows.length - 1);
+    for (var i = 0; i < rows.length; i++) {
+      hover(el('div', 'row' + (rows[i].warn ? ' warn' : ''), holder, rows[i].label), Z.TRAKT, i);
+    }
+    el('div', 'hint', box, tr('OK chooses. Back closes.'));
+    updateFocus();
+  }
+
+  // What Trakt brings shows where it's on screen: this sheet, Home Settings, a page, Movies and Shows.
+  Trakt.onChange(function () {
+    if (st.zone === Z.TRAKT) renderTrakt();
+    else if (st.zone === Z.SETTINGS) renderSettings();
+    if (pages.length) {
+      var top = pages[pages.length - 1];
+      if (top.type === 'episodes') top.target = nextEpisode(top.show);
+      renderDetail();
+    }
+    if (st.tab !== 0) { drawnFor = null; drawCatalog(); }
+  });
 
   // MARK: - Picker: one choice out of a list (the language, a card's channel); only the rows on screen are drawn, as
   // an IPTV list can have thousands
@@ -2008,6 +2195,9 @@
       case Z.LANG:
         closePicker(true);
         return;
+      case Z.TRAKT:
+        if (traktRowsNow[st.trow]) traktRowsNow[st.trow].run();
+        return;
     }
   }
 
@@ -2051,9 +2241,9 @@
         detailMove(dx, dy);
         break;
       case Z.CATALOG:
-        var row = catalog && catalog.rows[st.crow];
+        var shownRows = catalogRows(), row = catalog && shownRows[st.crow];
         if (dx && row) st.ccol[st.crow] = Math.max(0, Math.min(row.items.length - 1, (st.ccol[st.crow] || 0) + dx));
-        else if (dy > 0 && st.crow < catalog.rows.length - 1) st.crow++;
+        else if (dy > 0 && st.crow < shownRows.length - 1) st.crow++;
         else if (dy < 0 && st.crow > 0) st.crow--;
         else if (dy < 0) { st.zone = Z.TOP; st.top = st.tab; }
         break;
@@ -2062,7 +2252,7 @@
           st.top = Math.max(0, Math.min(5, st.top + dx));
           if (st.top < 3) selectTab(st.top);   // as on Apple TV: focusing a tab selects it
         } else if (dy > 0 && st.tab !== 0) {
-          if (catalog && catalog.rows.length) st.zone = Z.CATALOG;
+          if (catalog && catalogRows().length) st.zone = Z.CATALOG;
         } else if (dy > 0) {
           if (cards.length) { st.zone = Z.CARDS; st.card = Math.min(cards.length - 1, st.top < 3 ? 0 : cards.length - 1); }
           else st.zone = Z.SHELF;
@@ -2091,6 +2281,10 @@
       case Z.LANG:
         if (dy && picker) st.lang = Math.max(0, Math.min(picker.choices.length - 1, st.lang + dy));
         break;
+      case Z.TRAKT:
+        if (dy) st.trow = Math.max(0, Math.min(traktRowsNow.length - 1, st.trow + dy));
+        if (dy && traktArmed) { traktArmed = false; renderTrakt(); }   // leaving Disconnect: it asks again
+        break;
     }
     updateFocus();
   }
@@ -2099,6 +2293,7 @@
     if (st.zone === Z.DETAIL) { detailBack(); return; }
     if (st.zone === Z.EDIT) { editBack(); return; }
     if (st.zone === Z.LANG) { closePicker(false); return; }
+    if (st.zone === Z.TRAKT) { closeTrakt(); return; }
     if (sheetOpen()) { closeSheets(); return; }
     if (st.zone === Z.DRAWER) { closeDrawer(); return; }
     // Movies and Shows: Back goes up to the tabs, then to TV aberta.
@@ -2119,7 +2314,7 @@
   /** The pointer focuses what it's over (the Magic Remote, or a mouse when previewing). */
   function hover(node, zone, index) {
     var focusHere = function () {
-      if (saverOn || (sheetOpen() !== (zone === Z.APPS || zone === Z.SETTINGS || zone === Z.EDIT || zone === Z.LANG))) return;
+      if (saverOn || (sheetOpen() !== (zone === Z.APPS || zone === Z.SETTINGS || zone === Z.EDIT || zone === Z.LANG || zone === Z.TRAKT))) return;
       if (zone === Z.DRAWER && st.zone !== Z.DRAWER) return;
       if (zone !== Z.DRAWER && st.zone === Z.DRAWER && zone !== Z.SHELF) return;
       if (zone === Z.SHELF && st.zone === Z.DRAWER) closeDrawer();
@@ -2138,6 +2333,7 @@
       else if (zone === Z.SETTINGS) st.row = index;
       else if (zone === Z.EDIT) st.edit = index;
       else if (zone === Z.LANG) st.lang = index;
+      else if (zone === Z.TRAKT) st.trow = index;
       updateFocus();
     };
     node.onmouseover = function () {
@@ -2320,6 +2516,7 @@
       return;
     }
     player.currentAt = 0;   // back from the TV's own Live TV: the antenna may be on another channel
+    Trakt.syncIfStale();
     idleAt = Date.now();
     loadApps(function () { renderShelf(); renderDrawer(); updateFocus(); Data.refresh(); });
   });
@@ -2335,6 +2532,7 @@
   loadApps(function () {
     renderAll();
     Data.refresh();
+    setTimeout(Trakt.syncIfStale, 5000);   // Trakt, after the screen is up
   });
   setInterval(function () {
     checkNight();
