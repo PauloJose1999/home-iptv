@@ -262,6 +262,20 @@ var TV = (function () {
   var self = 'io.freemytv';
   if (webos && window.PalmSystem && window.PalmSystem.identifier) self = window.PalmSystem.identifier.split(' ')[0];
 
+  // The antenna inside this app: a <video> of the broadcast is a session of the TV's broadcast service (its mediaId is
+  // the session's broadcastId), which tells and switches that picture's channel. Not LG's Live TV: opening it to
+  // switch the tuner left it holding the antenna, and this app's picture went black.
+  var BROADCAST = 'luna://com.webos.service.utp.broadcast/';
+
+  /** The channel of the antenna's picture in `video`: {id, number, name} or null. */
+  function broadcastChannel(video, done) {
+    if (!webos || !video || !video.mediaId) { setTimeout(function () { done(null); }, 0); return; }
+    luna(BROADCAST + 'getCurrentChannel', {broadcastId: video.mediaId, subscribe: false}, function (res) {
+      var c = res && res.channel;
+      done(c && c.channelId ? {id: c.channelId, number: c.channelNumber || '', name: c.channelName || ''} : null);
+    });
+  }
+
   // MARK: - Live channels (LG), for the "TV aberta" tab
 
   /** A time as LG gives it ("2026,10,24,20,30,00", "2026/10/24 20:30:00", seconds or ms) in ms, or 0. */
@@ -524,6 +538,19 @@ var TV = (function () {
     /** The TV's time zone ("America/Sao_Paulo"), or ''. */
     zone: function () {
       try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; }
+    },
+
+    broadcastChannel: broadcastChannel,
+
+    /** The antenna's picture in `video` on another channel ({id}), in this app. done(ok). */
+    tune: function (video, ch, done) {
+      broadcastChannel(video, function (cur) {
+        if (!cur) { done(false); return; }
+        if (cur.id === ch.id) { done(true); return; }
+        luna(BROADCAST + 'changeChannel', {channelId: ch.id, broadcastId: video.mediaId, currentChannelId: cur.id}, function (res) {
+          done(!!res);
+        });
+      });
     },
 
     /** Key codes: the arrows, OK and the TV's Back (461 on LG). */

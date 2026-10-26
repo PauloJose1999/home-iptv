@@ -391,21 +391,31 @@
   }
 
   /**
-   * The channel card's channel (beside the antenna), from the IPTV list only: each plays its stream in its card, and OK plays it in the
-   * IPTV player (never LG's Live TV). The one picked in Home Settings first; when the list doesn't have it (an
-   * antenna channel picked before, one the list dropped), the config's channels, then the list's first one. [] when
-   * the list can't be read.
+   * TV aberta's two cards, as picked in Home Settings: the big one any channel, from the antenna or the internet
+   * (IPTV); the other one a channel of the other kind, as the TV plays one of each at once, no more. Before any
+   * pick: the antenna big (the channel the TV is on), and an internet channel beside it.
+   */
+  function cardPicks() {
+    var p = Prefs.cardPicks();
+    if (p && p.big && p.small) return p;
+    return {big: {kind: 'antenna', name: ''}, small: {kind: 'iptv', name: liveWanted()[1] || ''}};
+  }
+
+  /**
+   * The internet card's channel, from the IPTV list: OK plays it in the IPTV player (never LG's Live TV). The one
+   * picked first; when the list doesn't have it (one the list dropped), the config's channels, then the list's first
+   * one. [] when the list can't be read.
    */
   function iptvCards(done) {
     if (!IPTV.enabled) { done([], 'none'); return; }
     IPTV.load(function () {
-      var all = IPTV.channels() || [], out = [], seen = {};
+      var all = IPTV.channels() || [], out = [], seen = {}, picks = cardPicks();
       function add(ch) {
         if (!ch || seen[ch.url] || out.length >= 1) return;
         seen[ch.url] = true;
         out.push({id: 'iptv:' + ch.url, number: '', name: ch.name, program: null, iptv: ch, logo: ch.logo});
       }
-      var wanted = liveWanted().slice(1, 2).concat(CONFIG.liveChannels || []);
+      var wanted = [picks.big.kind === 'iptv' ? picks.big.name : picks.small.name].concat(CONFIG.liveChannels || []);
       for (var w = 0; w < wanted.length; w++) if (wanted[w]) add(IPTV.lookup(wanted[w]));
       for (var i = 0; i < all.length && out.length < 1; i++) add(all[i]);
       done(out, all.length ? '' : 'empty');
@@ -422,18 +432,40 @@
     });
   }
 
+  /** A channel's comparison key: remove quality suffixes, punctuation and Portuguese accents. */
+  function plainName(name) {
+    return channelName(name || '').toLowerCase()
+      .replace(/[áàâãä]/g, 'a').replace(/[éèêë]/g, 'e').replace(/[íìîï]/g, 'i')
+      .replace(/[óòôõö]/g, 'o').replace(/[úùûü]/g, 'u').replace(/ç/g, 'c')
+      .replace(/[^a-z0-9]/g, '');
+  }
+
   /**
-   * The cards of the first tab: the big one is the antenna (the channel the TV is on: the TV has one tuner, which
-   * only LG's Live TV switches), beside it one IPTV channel (a card that says why when the list can't be read), and
-   * under it All channels, the whole list in the IPTV player. Two pictures at once: the TV plays no more.
+   * The antenna card's picture on the channel picked for it, once it plays (the switch goes through that picture,
+   * staying in this app); then its name and number. Nothing picked: the channel the TV is on.
+   */
+  function tuneAntenna(video) {
+    var picks = cardPicks(), want = picks.big.kind === 'antenna' ? picks.big.name : picks.small.name;
+    if (!want) { learnAntenna(video); return; }
+    TV.channels([], 999, function (list) {
+      var target = null;
+      for (var i = 0; list && i < list.length && !target; i++) if (plainName(list[i].name) === plainName(want)) target = list[i];
+      if (!target) { learnAntenna(video); return; }
+      TV.tune(video, target, function () { learnAntenna(video, target); });
+    });
+  }
+
+  /**
+   * The cards of the first tab: the antenna card (the channel the TV is on: it has one tuner) and the internet card
+   * (a card that says why when the list can't be read), the big one as picked, and under the small one All channels,
+   * the whole list in the IPTV player. Two pictures at once: the TV plays no more.
    */
   function liveCards() {
     var ch = liveChannels && liveChannels[0];
-    return [
-      {live: true, antenna: true, channel: antennaChannel, id: 'antenna'},
-      ch ? {live: true, channel: ch, id: 'ch' + ch.id} : {live: true, channel: null, id: 'nochannels'},
-      {all: true, id: 'all'}
-    ];
+    var air = {live: true, antenna: true, channel: antennaChannel, id: 'antenna'};
+    var net = ch ? {live: true, channel: ch, id: 'ch' + ch.id} : {live: true, channel: null, id: 'nochannels'};
+    var big = cardPicks().big.kind === 'iptv';
+    return [big ? net : air, big ? air : net, {all: true, id: 'all'}];
   }
 
   /** All channels: the list in the IPTV player (its own channels screen), else the list inside the launcher. */
@@ -463,22 +495,35 @@
   // The channel the antenna is on, as the TV tells it ({id, number, name}); null until it does (or when it won't).
   var antennaChannel = null;
 
-  /** Asks the TV which channel the antenna is on, once its picture plays; the big card takes its name and number. */
-  function learnAntenna() {
-    TV.currentChannel(function (ch) {
-      if (!ch || (antennaChannel && antennaChannel.id === ch.id)) return;
-      antennaChannel = ch;
-      TV.nowOnTuner(function (res) {
-        if (res && res.program && antennaChannel && res.channelId === antennaChannel.id) antennaChannel.program = res.program;
-        if (st.tab === 0 && cards[0] && cards[0].antenna) {
-          cards[0].channel = antennaChannel;
-          var card = $('cards').children[0];
-          if (card) {
-            card.querySelector('.chan').textContent = channelName(antennaChannel.name) || tr('Live TV');
-            fillFoot(card.querySelector('.foot'), antennaChannel, true);
-          }
+  /**
+   * Which channel the antenna card's picture is on: the card takes its name, number and program. The broadcast
+   * service may leave a subchannel's name out: the channel list's (`known`, the one tuned) fills it in.
+   */
+  function learnAntenna(video, known) {
+    TV.broadcastChannel(video, function (ch) {
+      if (!ch) { TV.currentChannel(showAntennaChannel); return; }   // an older TV: its remote-control service tells it
+      if (!ch.name && known && known.id === ch.id) ch.name = known.name;
+      showAntennaChannel(ch);
+    });
+  }
+
+  /** The antenna card shows `ch` ({id, number, name}), with what's on now when the TV tells it. */
+  function showAntennaChannel(ch) {
+    if (!ch || (antennaChannel && antennaChannel.id === ch.id)) return;
+    antennaChannel = ch;
+    TV.nowOnTuner(function (res) {
+      if (res && res.program && antennaChannel && res.channelId === antennaChannel.id) antennaChannel.program = res.program;
+      for (var i = 0; st.tab === 0 && i < cards.length; i++) {
+        if (!cards[i].antenna) continue;
+        cards[i].channel = antennaChannel;
+        var card = $('cards').children[i];
+        if (card) {
+          card.querySelector('.chan').textContent = channelName(antennaChannel.name) || tr('Live TV');
+          var num = card.querySelector('.num') || (antennaChannel.number ? el('span', 'num', card.querySelector('.head')) : null);
+          if (num) num.textContent = antennaChannel.number ? trf('Channel {n}', {n: antennaChannel.number}) : '';
+          fillFoot(card.querySelector('.foot'), antennaChannel, i === 0);
         }
-      });
+      }
     });
   }
 
@@ -562,16 +607,16 @@
     return LIVE_RECTS[i];
   }
 
-  // MARK: - The players: the antenna on the big card, and one IPTV card beside it
+  // MARK: - The player: one channel card plays at a time
   //
-  // The TV plays the antenna and one internet stream at once, no more: a second stream pauses the first for good (a
-  // black card that looks alive). So the big card always plays the antenna, and of the two IPTV cards the focused one
-  // plays (or the last one focused, while the focus is elsewhere); the other shows its channel's logo. A stream that
-  // fails or that the TV pauses leaves its card on the logo.
+  // The focused channel card plays (the big one at first, then the last one focused while the focus is elsewhere);
+  // the other shows its channel's logo and what's on. One at a time: this TV shows one picture at once (with the
+  // antenna and an internet stream both playing, the antenna's stays black; two streams pause each other). A
+  // failed or paused stream also leaves its card on the logo.
 
   // slots[i]: card i's player {video, key, ok, timer}; failed: the keys that didn't play (not tried again here);
-  // net: the IPTV card that plays.
-  var player = {slots: [], failed: {}, net: -1};
+  // active: the card that plays.
+  var player = {slots: [], failed: {}, active: 0};
 
   /** What a card plays: {tv: true} (the antenna) | {url} | null. */
   function sourceFor(card) {
@@ -616,21 +661,21 @@
     player.failed = {};
   }
 
-  /** The antenna card, and the focused (or last focused) IPTV card; silent unless focused with card sound on. */
+  /** The focused (or last focused) channel card plays; silent unless focused with card sound on. */
   function placePlayer() {
     if (st.tab !== 0 || saverOn || sheetOpen() || IPTV.isOpen() || antenna) { stopPlayer(); return; }
     var delay = 0, order = [], i;
-    if (cards[st.card] && !cards[st.card].antenna && cards[st.card].channel) player.net = st.card;
-    if (!cards[player.net] || cards[player.net].antenna) {
-      player.net = -1;
-      for (i = 0; i < cards.length && player.net < 0; i++) if (!cards[i].antenna && cards[i].channel) player.net = i;
+    if (st.zone === Z.CARDS && sourceFor(cards[st.card])) player.active = st.card;
+    if (!sourceFor(cards[player.active])) {
+      player.active = -1;
+      for (i = 0; i < cards.length && player.active < 0; i++) if (sourceFor(cards[i])) player.active = i;
     }
-    // The cards that stop first, then the ones that play: a new stream never starts while the old one holds on.
-    for (i = 0; i < cards.length; i++) if (!cards[i].antenna && !cards[i].all && i !== player.net) order.push(i);
-    for (i = 0; i < cards.length; i++) if (cards[i].antenna || i === player.net) order.push(i);
+    // The other cards stop first, then the one that plays starts: two pictures never overlap.
+    for (i = 0; i < cards.length; i++) if (i !== player.active) order.push(i);
+    if (player.active >= 0) order.push(player.active);
     for (i = cards.length; i < player.slots.length; i++) stopSlot(i);
     for (var o = 0; o < order.length; o++) {
-      var at = order[o], src = cards[at].antenna || at === player.net ? sourceFor(cards[at]) : null;
+      var at = order[o], src = at === player.active ? sourceFor(cards[at]) : null;
       var key = src ? cards[at].id + ':' + (src.tv ? 'tv' : src.url) : '';
       if (player.failed[key]) key = '';
       var slot = player.slots[at];
@@ -665,7 +710,7 @@
         if (player.slots[at] !== slot || slot.ok) return;
         slot.ok = true;
         setClass($('cards').children[at], 'playing', true);
-        if (src.tv) setTimeout(learnAntenna, 1500);   // the TV tells its channel only while its picture runs
+        if (src.tv) setTimeout(function () { if (player.slots[at] === slot) tuneAntenna(v); }, 1000);   // once it runs
       }
       v.addEventListener('playing', works);
       v.addEventListener('loadeddata', works);
@@ -1602,13 +1647,14 @@
   function settingRows() {
     var unit = Prefs.temperature(), theme = Prefs.theme(), mins = Prefs.saverMinutes();
     var auto = tr('Automatic'), picked = pickedLanguage(), wanted = liveWanted();
-    var rows = [];
-    rows.push({key: 'card0', label: tr('Big card'), value: tr('Antenna'), okOnly: true,
-      about: tr("The big card shows the antenna: the channel the TV is on. Change it with the TV's own remote buttons."),
-      step: function () {}});
-    rows.push({key: 'card1', label: tr('Channel card'), value: wanted[1] ? channelName(wanted[1]) : auto, opens: true,
-      about: tr('The IPTV channel beside the antenna. OK picks another one.'),
-      step: function (d) { if (d >= 0) pickChannel(1); }});
+    var rows = [], picks = cardPicks();
+    rows.push({key: 'card0', label: tr('Big card'), value: pickLabel(picks.big), opens: true,
+      about: tr('Any channel, from the antenna or from the internet (IPTV). OK picks it.'),
+      step: function (d) { if (d >= 0) pickChannel('big'); }});
+    rows.push({key: 'card1', label: tr('Small card'), value: pickLabel(picks.small), opens: true,
+      about: picks.big.kind === 'antenna' ? tr('Beside an antenna channel, an internet one: the TV plays one of each at once.')
+          : tr('Beside an internet channel, an antenna one: the TV plays one of each at once.'),
+      step: function (d) { if (d >= 0) pickChannel('small'); }});
     rows.push({key: 'sound', label: tr('Channel sound'), toggle: Prefs.cardSound(),
       about: tr('The selected channel card plays with sound; the others stay silent.'),
       step: function () { Prefs.set('cardSound', !Prefs.cardSound()); }});
@@ -1868,29 +1914,50 @@
     });
   }
 
-  /** A card's channel: one of the IPTV list's (the antenna's aren't offered: a card plays a stream), each name once. */
-  function pickChannel(slot) {
-    if (!IPTV.enabled) { toast(tr('Add an IPTV list (iptv_m3u or iptv_server in config.properties) to see channels here.')); return; }
-    (function () {
+  /** A card's pick as Home Settings shows it: "TV Cultura · internet", or for the antenna alone, the TV's channel. */
+  function pickLabel(p) {
+    if (!p.name) return p.kind === 'antenna' ? tr("The TV's channel") : tr('Automatic');
+    var name = {name: channelName(p.name)};
+    return p.kind === 'antenna' ? trf('{name} · antenna', name) : trf('{name} · internet', name);
+  }
+
+  /**
+   * A card's channel. The big card: every channel, the antenna's and the IPTV list's (each name once per kind). The
+   * small card: only the other kind's (an antenna channel big, internet ones; an internet one big, the antenna's).
+   * A big card of the small one's kind turns the small one to the other kind.
+   */
+  function pickChannel(which) {
+    var picks = cardPicks(), kinds = which === 'big' ? ['antenna', 'iptv'] : [picks.big.kind === 'antenna' ? 'iptv' : 'antenna'];
+    TV.channels([], 999, function (antenna) {
       IPTV.load(function () {
-        var names = [], seen = {}, all = IPTV.channels() || [];
-        for (var i = 0; i < all.length; i++) {
-          var name = channelName(all[i].name), k = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-          if (k && !seen[k]) { seen[k] = true; names.push(name); }
+        var choices = [], seen = {};
+        function add(kind, list) {
+          for (var i = 0; list && i < list.length; i++) {
+            var name = channelName(list[i].name), k = kind + ':' + plainName(name);
+            if (plainName(name) && !seen[k]) { seen[k] = true; choices.push({kind: kind, name: name}); }
+          }
         }
-        if (!names.length) { toast(tr('No channels found.')); return; }
-        var wanted = liveWanted().slice(), now = -1, mine = (wanted[slot] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        for (var n = 0; n < names.length; n++) if (names[n].toLowerCase().replace(/[^a-z0-9]/g, '') === mine) now = n;
-        openPicker(tr('Channel card'), names, now, 'card' + slot, function (at) {
-          while (wanted.length < 3) wanted.push('');
-          wanted[slot] = names[at];
-          Prefs.set('liveChannels', wanted);
+        if (kinds.indexOf('antenna') >= 0) add('antenna', antenna);
+        if (kinds.indexOf('iptv') >= 0 && IPTV.enabled) add('iptv', IPTV.channels());
+        if (!choices.length) {
+          toast(kinds[0] === 'iptv' && !IPTV.enabled ? tr('Add an IPTV list (iptv_m3u or iptv_server in config.properties) to see channels here.')
+              : tr('No channels found.'));
+          return;
+        }
+        var mine = picks[which], now = -1;
+        for (var n = 0; n < choices.length; n++) if (choices[n].kind === mine.kind && plainName(choices[n].name) === plainName(mine.name)) now = n;
+        var labels = choices.map(function (c) { return kinds.length > 1 ? pickLabel(c) : c.name; });
+        openPicker(which === 'big' ? tr('Big card') : tr('Small card'), labels, now, 'card' + which, function (at) {
+          var next = {big: picks.big, small: picks.small};
+          next[which] = choices[at];
+          if (which === 'big' && next.small.kind === next.big.kind) next.small = {kind: next.big.kind === 'antenna' ? 'iptv' : 'antenna', name: ''};
+          Prefs.set('cardPicks', next);
           liveIds = '';
           stopPlayer();
-          loadChannels();
+          loadChannels();   // the antenna card starts again, on the channel picked
         });
       });
-    })();
+    });
   }
 
   // MARK: - Shelf editor: the apps as on the shelf, in a grid. OK on one offers to move it or hide it; moving, the app

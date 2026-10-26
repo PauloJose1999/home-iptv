@@ -36,15 +36,17 @@ person's, stay only in that file (git ignores it), are never printed and never c
   `tv/getChannelProgramInfo` returns an empty list on Brazilian open TV, so each channel's program is kept from when it
   was tuned (`guide` in localStorage); `tv/openChannel` switches the tuner but brings the TV's Live TV app to the front
   (and a hidden app's timers stop, so it can't come back by itself).
-- `web/home.js`: the screen. The TV aberta cards all play at once, a `<video>` each, muted but the focused one: its
-  IPTV stream when the list has it, else the antenna (`<video>` with `service/webos-broadcast`), only on the card of
-  the channel the tuner is on (one tuner: one antenna card). Cards without a picture show the channel's logo from the
-  IPTV list.
+- `web/home.js`: the screen. TV aberta has a big card and a small card, plus All channels. Settings choose any channel
+  for the big card; the small card is restricted to the other kind (antenna or IPTV). Only the focused (or last
+  focused) card plays: with a broadcast `<video>` (`service/webos-broadcast`) and an IPTV one playing, the TV shows the
+  broadcast black, and two streams pause each other. The other card shows its logo. Antenna retuning goes through the
+  playing broadcast session (`utp.broadcast/changeChannel`, its `video.mediaId` as `broadcastId`) in `web/tv.js`, not
+  `tv/openChannel` (which opens LG Live TV and leaves it holding the antenna).
 - Movies and Shows tabs: a Netflix-like catalog (light by day, dark at night, the focused title large on top, rows below). `Data.catalog`
   fetches a tab's rows from TMDB only when the tab is opened (one request per row, one after the other), only titles
   on the TV's streaming apps, kept 6 hours; only photos near the focus load (w300), the large one when focus rests.
 - Home Settings (`settingRows`): each row has an `about` shown under the list. Prefs set on the TV win over
-  config.properties (`liveChannels`, `shelf` order, `shelfHidden`, `cardSound`, `saverMinutes`); `Prefs.reset()` forgets
+  config.properties (`cardPicks`, `liveChannels`, `shelf` order, `shelfHidden`, `cardSound`, `saverMinutes`); `Prefs.reset()` forgets
   them. The picker (language, a card's channel) draws only the rows on screen. The Shelf editor is a grid: OK › Move
   lifts the app and the arrows move it (Back undoes), or the pointer holds and drags it; saved only when dropped.
 - Detail pages (`openDetail`, zone `DETAIL`, a stack Back walks down): OK on a TMDB title opens its page (Watch focused,

@@ -6,9 +6,10 @@ numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/
 
 ## O que tem
 
-- **TV aberta:** três canais em cartões (um grande e dois pequenos), com o nome, o selo AO VIVO, o programa, o horário
-  de começo e de fim e a barra de progresso. O cartão em foco toca o seu canal, imagem e som: pela internet quando a
-  lista IPTV tem o canal, senão pela antena. OK abre o canal em tela cheia.
+- **TV aberta:** um card grande e um pequeno, mais o atalho para todos os canais. Nas configurações, escolha qualquer
+  canal para o card grande; o pequeno mostra um canal da outra fonte (antena ou IPTV). Toca o card em foco (de início, o
+  grande); o outro mostra o logo e o programa, porque a TV mostra uma imagem por vez. OK no card da antena abre a imagem em tela cheia dentro do launcher;
+  OK no card IPTV abre o canal no Player IPTV.
 - **Filmes e Séries:** como na Netflix: o título em foco grande no topo e fileiras (em alta, por app, lançamentos,
   mais bem avaliados, gêneros), só dos apps que você tem na TV (TMDB). Só carrega quando você abre a aba.
 - **Página de cada filme e série:** cartaz, nota (do IMDb também, com a chave grátis do OMDb), sinopse, direção,

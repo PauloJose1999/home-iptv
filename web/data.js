@@ -47,8 +47,10 @@ var Prefs = (function () {
     shelf: function () { return pick('shelf', null); },
     /** Apps kept off the shelf (still in All Apps). */
     shelfHidden: function () { return pick('shelfHidden', []); },
-    /** The three channels of TV aberta, by name; null: config.properties' live_channels. */
+    /** The three channels of TV aberta, by name (before the two cards); null: config.properties' live_channels. */
     liveChannels: function () { return pick('liveChannels', null); },
+    /** TV aberta's two cards: {big, small}, each {kind: 'antenna' | 'iptv', name ('' for the antenna: its channel)}. */
+    cardPicks: function () { return pick('cardPicks', null); },
     /** The focused channel card plays with sound. */
     cardSound: function () { return pick('cardSound', true); },
     /** Minutes without a key before the screensaver; 0: never. */

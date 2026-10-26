@@ -317,6 +317,32 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .card.live.playing .mark { opacity: 0; }
 .card.live.focus .shade { box-shadow: inset 0 0 0 3px #A855F7; }
 
+/* The TV draws a playing card's picture on its own layer, under the page: it neither grows with the card nor keeps
+   its rounded corners. So a channel card doesn't grow when focused (its ring lights up), and its corners are
+   rounded over the picture in the page's own color. */
+.card.live.focus { -webkit-transform: none; transform: none; }
+.card.live::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 100%, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) left top / 24px 24px no-repeat,
+    radial-gradient(circle at 0 100%, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) right top / 24px 24px no-repeat,
+    radial-gradient(circle at 100% 0, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) left bottom / 24px 24px no-repeat,
+    radial-gradient(circle at 0 0, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) right bottom / 24px 24px no-repeat;
+}
+.night .card.live::after {
+  background:
+    radial-gradient(circle at 100% 100%, rgba(5, 10, 26, 0) 23px, #050A1A 24px) left top / 24px 24px no-repeat,
+    radial-gradient(circle at 0 100%, rgba(5, 10, 26, 0) 23px, #050A1A 24px) right top / 24px 24px no-repeat,
+    radial-gradient(circle at 100% 0, rgba(5, 10, 26, 0) 23px, #050A1A 24px) left bottom / 24px 24px no-repeat,
+    radial-gradient(circle at 0 0, rgba(5, 10, 26, 0) 23px, #050A1A 24px) right bottom / 24px 24px no-repeat;
+}
+
 /* All channels: under the channel card, a glass button as wide as it: the list's symbol, its name and size, an arrow.
    Focused, it rises and lights up like the cards. */
 .card.allch .img {

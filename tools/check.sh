@@ -47,4 +47,7 @@ for b in bad:
 sys.exit(1 if bad else 0)
 PY
 
+# Antenna names come from two webOS APIs and may differ by HD suffix, case, punctuation or Portuguese accents.
+node tools/test_channel_names.js
+
 echo "All checks passed."
