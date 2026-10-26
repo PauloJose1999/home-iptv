@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchTitle, normalizeTitle, parseDeepLink } from './deep-link';
+import { matchTitle, normalizeTitle, opensWithoutChannels, parseDeepLink } from './deep-link';
 
 describe('parseDeepLink', () => {
   it('reads a cold-launch JSON string', () => {
@@ -83,5 +83,17 @@ describe('matchTitle', () => {
     expect(matchTitle(items, { title: 'Echo' })).toBeNull();
     expect(matchTitle(items, { title: 'Delta Echo Foxtrot' })).toBeNull();
     expect(matchTitle(items.slice(0, 2), { title: 'Alpha Bravo', year: 1990 })).toBeNull();
+  });
+});
+
+describe('opensWithoutChannels', () => {
+  it('plays a movie, a series, or a channel with its stream before the live channels load', () => {
+    expect(opensWithoutChannels({ kind: 'movie', title: 'Dune' })).toBe(true);
+    expect(opensWithoutChannels({ kind: 'series', title: 'Breaking Bad', season: 1, episode: 2 })).toBe(true);
+    expect(opensWithoutChannels({ kind: 'channel', title: 'TV Cultura', url: 'https://example.com/c.m3u8' })).toBe(true);
+  });
+
+  it('waits for the playlists for a channel known by name alone', () => {
+    expect(opensWithoutChannels({ kind: 'channel', title: 'TV Cultura' })).toBe(false);
   });
 });

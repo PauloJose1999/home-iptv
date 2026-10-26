@@ -317,6 +317,30 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .card.live.playing .mark { opacity: 0; }
 .card.live.focus .shade { box-shadow: inset 0 0 0 3px #A855F7; }
 
+/* All channels: under the channel card, a glass button as wide as it: the list's symbol, its name and size, an arrow.
+   Focused, it rises and lights up like the cards. */
+.card.allch .img {
+  background: -webkit-linear-gradient(-20deg, #4C1D95, #1E1B4B 60%, #0F172A);
+  background: linear-gradient(110deg, #4C1D95, #1E1B4B 60%, #0F172A);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.card.allch .icon {
+  position: absolute; left: 26px; top: 50%; width: 84px; height: 84px; margin-top: -42px; border-radius: 22px;
+  background: rgba(255, 255, 255, 0.12); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); color: #FFF; text-align: center;
+}
+.card.allch .icon .sym { width: 48px; height: 48px; margin-top: 18px; }
+.card.allch .text { position: absolute; left: 134px; right: 90px; top: 50%; -webkit-transform: translateY(-50%); transform: translateY(-50%); color: #FFF; }
+.card.allch .title { font-size: 36px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.allch .sub { margin-top: 4px; font-size: 24px; font-weight: 600; color: rgba(255, 255, 255, 0.7); white-space: nowrap; }
+.card.allch .go { position: absolute; right: 26px; top: 50%; width: 48px; height: 48px; margin-top: -24px; color: rgba(255, 255, 255, 0.55); -webkit-transition: color 0.17s, -webkit-transform 0.22s; transition: color 0.17s, transform 0.22s; }
+.card.allch .go .sym { width: 48px; height: 48px; }
+.card.allch.focus .go { color: #FFF; -webkit-transform: translateX(6px); transform: translateX(6px); }
+.card.allch.focus { -webkit-transform: translateY(-4px) scale(1.03); transform: translateY(-4px) scale(1.03); }
+
+/* The antenna full screen (TV ao vivo): the TV's picture over the whole home screen, under the toast. */
+video.antenna { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #000; z-index: 5; }
+#toast { z-index: 6; }
+
 /* Each card's picture (home.js, placePlayer): under the card it plays in, which shows through. */
 .cardplayer {
   position: absolute;
@@ -325,16 +349,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background: #000;
   object-fit: cover;
 }
-/* In a computer's browser, a stand-in for the picture. */
-.cardplayer.sample {
-  background: -webkit-linear-gradient(-30deg, #1E3A8A, #0F172A 40%, #312E81 70%, #0F172A);
-  background: linear-gradient(120deg, #1E3A8A, #0F172A 40%, #312E81 70%, #0F172A);
-  background-size: 300% 300%;
-  -webkit-animation: sample 6s ease-in-out infinite alternate;
-  animation: sample 6s ease-in-out infinite alternate;
-}
-@-webkit-keyframes sample { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
-@keyframes sample { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
 
 .card.live .mark { position: absolute; right: 40px; top: 50%; margin-top: -60px; width: 120px; height: 120px; color: rgba(255, 255, 255, 0.12); -webkit-transition: opacity 0.4s; transition: opacity 0.4s; }
 .card.live .mark .sym { width: 120px; height: 120px; }
@@ -1195,3 +1209,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   color: #FFF;
   background: rgba(168, 85, 247, 0.22);
 }
+/* The QR code (on white, for any phone camera) on the left; the address and the code on the right. */
+.tqr { position: relative; min-height: 264px; margin-top: 8px; }
+.tqr canvas { position: absolute; left: 0; top: 0; width: 240px; height: 240px; padding: 12px; border-radius: 20px; background: #FFF; }
+.tqrside { margin-left: 290px; }
+.tqrside .tcode { font-size: 56px; letter-spacing: 0.06em; white-space: nowrap; }

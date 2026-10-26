@@ -317,9 +317,10 @@ var IPTV = (function () {
     st.open = true;
     st.direct = true;
     st.group = 0;
-    st.shown = list;
-    setClass(root, 'open', true);
+    // The channel itself: one the list doesn't have (yet) plays alone, never the list's first in its place.
     var at = list.indexOf(ch);
+    st.shown = at >= 0 ? list : [ch];
+    setClass(root, 'open', true);
     play(at >= 0 ? at : 0);
   }
 

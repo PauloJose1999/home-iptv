@@ -129,3 +129,12 @@ export function matchTitle<T extends Candidate>(
   }
   return null;
 }
+
+/**
+ * A link that plays without this app's live channels: a movie or a series
+ * (from the Xtream account), or a channel the launcher sent with its stream.
+ * Only a channel by name alone has to wait for the playlists to load.
+ */
+export function opensWithoutChannels(link: DeepLink): boolean {
+  return link.kind !== 'channel' || !!link.url;
+}

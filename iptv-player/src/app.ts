@@ -33,7 +33,7 @@ import { SearchHistoryDropdown } from './components/search-history-dropdown';
 import { showToast } from './components/toast';
 import { showNumberEntry, hideNumberEntry } from './components/number-entry';
 import { ReminderService } from './services/reminder-service';
-import { parseDeepLink, matchTitle, type DeepLink } from './services/deep-link';
+import { parseDeepLink, matchTitle, opensWithoutChannels, type DeepLink } from './services/deep-link';
 import { LauncherReport } from './services/launcher-report';
 import { loadAllVodStreams, loadAllSeries } from './services/xtream-catalog';
 import { ReminderPrompt } from './components/reminder-prompt';
@@ -404,9 +404,17 @@ class App {
     // Register a retail-safe callback immediately. If Developer Mode is
     // detected below, the same named activities are replaced with alerts.
     ReminderService.reschedulePending();
-    await this.loadData();
+    // A launcher's movie, episode, or channel stream plays first: the live
+    // channels load behind it (no channel list, no auto-play over it) instead
+    // of before it. Anything else (a reminder's channel) needs them loaded.
+    const coldParams = this.coldLaunchParams();
+    const link = parseDeepLink(coldParams);
+    const early = link && opensWithoutChannels(link) ? link : null;
+    const opened = early ? await this.openDeepLink(early) : false;
+    if (opened) hide(this.views.loading);
+    await this.loadData(false, opened);
     // Cold launch from a "Watch now" alert: channels are loaded now, so tune.
-    this.handleLaunchParams(this.coldLaunchParams());
+    if (!early) this.handleLaunchParams(coldParams);
     // Spawning the service process can synchronously stall Luna on a cold TV.
     // Keep LAN setup off the critical path so cached channels render first.
     const bundledServiceReady = this.startBundledService();
@@ -892,10 +900,12 @@ class App {
     }
   }
 
-  private async loadData(forceEpgRefresh = false): Promise<void> {
+  // behind: something else is on screen (a launcher's deep link playing), so
+  // the channels load without the splash, the channel list or auto-play.
+  private async loadData(forceEpgRefresh = false, behind = false): Promise<void> {
     const done = log.time('loadData');
     this.loadingData = true;
-    show(this.views.loading);
+    if (!behind) show(this.views.loading);
     this.stopEpgRefresh();
     this.stopPlaylistRefresh();
     if (this.playlistRefreshPromise) await this.playlistRefreshPromise;
@@ -917,6 +927,7 @@ class App {
         this.tabBar.setSections(false);
         this.tabBar.setAccounts([], '');
         this.channelList.render();
+        if (behind) return;
         this.showView('settings');
         this.settings.render();
         showToast(t('app.welcome'));
@@ -959,17 +970,17 @@ class App {
         .filter((p) => p.source === 'xtream' && p.xtream && isSourceEnabled(p));
       this.tabBar.setAccounts(xtreamAccounts, this.activeXtreamAccount()?.id ?? '');
 
-      this.showView('channels');
+      if (!behind) this.showView('channels');
       this.channelList.render();
 
-      showToast(tp('app.channelsLoaded', PlaylistService.channels.length));
+      if (!behind) showToast(tp('app.channelsLoaded', PlaylistService.channels.length));
       // Let the load confirmation finish before a new-category notice replaces it.
       setTimeout(() => this.showLiveCategoryNotices(), 3000);
 
       this.scanReminders();
       ReminderService.reschedulePending();
 
-      if (StorageService.getAutoPlay()) {
+      if (StorageService.getAutoPlay() && !behind) {
         // The per-stream key survives customization and provider reshuffles.
         const lastCh = PlaylistService.resolveLastChannelIndex(
           StorageService.getLastChannelKey(),
@@ -1012,12 +1023,14 @@ class App {
       this.searchPrewarm.schedule('startup');
     } catch (err) {
       log.error('loadData failed:', err);
-      this.showView('settings');
-      this.settings.render();
-      showToast(t('app.loadFailed'));
+      if (!behind) {
+        this.showView('settings');
+        this.settings.render();
+        showToast(t('app.loadFailed'));
+      }
     } finally {
       this.loadingData = false;
-      hide(this.views.loading);
+      if (!behind) hide(this.views.loading);
       done();
     }
   }
@@ -1497,37 +1510,44 @@ class App {
   }
 
   // A launcher on the TV opened a movie, series, or channel here by name.
-  private async openDeepLink(link: DeepLink): Promise<void> {
+  // True once something is on screen for it (playing, or the section it's
+  // in when it wasn't found); false when nothing could be shown.
+  private async openDeepLink(link: DeepLink): Promise<boolean> {
+    const started = Date.now();
+    const took = () => `ms=${String(Date.now() - started)}`;
     log.info('Deep link', 'event=deeplink.open', `kind=${link.kind}`);
     if (link.kind === 'channel') {
       // The launcher's own stream first: a playlist channel of the same name may come from an account that's down.
       if (link.url) {
-        this.playLinkedStream(link.url, link.title, link.logo ?? '');
-        return;
+        this.playLinkedStream(link.url, link.title, link.logo ?? '', link.from);
+        return true;
       }
       const channel = matchTitle(PlaylistService.channels, link);
       const index = channel ? PlaylistService.channels.indexOf(channel) : -1;
       if (index >= 0) this.playChannel(index);
       else showToast(t('deepLink.notFound', { title: link.title }));
-      return;
+      return index >= 0;
     }
     const account = this.activeXtreamAccount();
     if (!account) {
       showToast(t('deepLink.noAccount'));
-      return;
+      return false;
     }
     const section = link.kind === 'movie' ? 'movies' : 'series';
     showToast(t('deepLink.searching', { title: link.title }));
     try {
       if (link.kind === 'movie') {
         const vod = matchTitle(await loadAllVodStreams(account), link, v => v.streamId, link.id);
+        log.info('Deep link resolved', 'event=deeplink.resolved', `found=${String(!!vod)}`, took());
         if (vod) {
           this.showView('movies');
           await this.movies.playItem(account, vod, () => this.returnMovieToLauncher(link, account, vod.streamId));
-          return;
+          log.info('Deep link playing', 'event=deeplink.play', took());
+          return true;
         }
       } else {
         const series = matchTitle(await loadAllSeries(account), link, s => s.seriesId, link.id);
+        log.info('Deep link resolved', 'event=deeplink.resolved', `found=${String(!!series)}`, took());
         if (series) {
           const back = () => this.returnToLauncher(link, account, series);
           this.showView('series');
@@ -1536,17 +1556,19 @@ class App {
               account, series, link.season, link.episode, link.resume === true, back);
             if (req) this.player.playVod({ ...req, onBack: back });
             else showToast(t('deepLink.notFound', { title: `${link.title} T${link.season} E${link.episode}` }));
-            return;
+            log.info('Deep link playing', 'event=deeplink.play', `episode=${String(!!req)}`, took());
+            return true;
           }
           await this.series.openItem(account, series, back);
-          return;
+          return true;
         }
       }
     } catch (err) {
-      log.error('Deep link failed', 'event=deeplink.failed', `kind=${link.kind}`, err);
+      log.error('Deep link failed', 'event=deeplink.failed', `kind=${link.kind}`, took(), err);
     }
     showToast(t('deepLink.notFound', { title: link.title }));
     this.switchSection(section);
+    return true;
   }
 
   // Back from a launcher's series: the launcher comes back with the series'
@@ -1580,11 +1602,21 @@ class App {
 
   // A launcher's channel that no playlist here has: its stream, as a one-off
   // (a live stream has no duration, so nothing lands in Continue Watching).
-  // Back returns to the launcher, where it came from.
-  private playLinkedStream(url: string, title: string, poster: string): void {
+  // Back returns to the launcher, where it came from: brought to the front
+  // first, as for a movie or a series (closing alone leaves the TV on
+  // whatever app was under this one, often LG's own home).
+  private playLinkedStream(url: string, title: string, poster: string, from?: string): void {
     this.player.playVod({
       url, title, poster, accountId: '', itemId: `deeplink:${url}`, kind: 'vod',
-      resumeSecs: 0, subtitles: [], onBack: () => void this.exitApp(),
+      resumeSecs: 0, subtitles: [], onBack: () => {
+        if (from && isLunaAvailable()) {
+          lunaRequest('luna://com.webos.applicationManager/launch', {
+            parameters: { id: from, params: { returned: 'channel' } },
+            onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),
+          });
+        }
+        void this.exitApp();
+      },
     });
   }
 
