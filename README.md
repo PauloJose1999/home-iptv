@@ -35,9 +35,20 @@ trakt.tv/activate no celular e digita. Daí em diante:
   conta), sem duplicar, e o que não deu para enviar sem internet vai depois;
 - **Minha lista** (a watchlist do Trakt) aparece no alto de Filmes e Séries, e cada página tem o botão de pôr e tirar.
 
-Para ligar: crie um app seu em [app.trakt.tv/settings/apps/api/new](https://app.trakt.tv/settings/apps/api/new)
-(Redirect URI `urn:ietf:wg:oauth:2.0:oob`) e cole **só o Client ID** em `trakt_client_id` no `config.properties`. O
-Client Secret não é usado: o login pela TV não precisa dele, e o Trakt pede para nunca pô-lo num app.
+Para ligar, crie um app seu no Trakt (uma vez só):
+
+1. Entre na sua conta em [trakt.tv](https://trakt.tv) e abra o painel de desenvolvedor,
+   [developer.trakt.tv](https://developer.trakt.tv), em **My Apps**.
+2. O Trakt exige uma **conta do GitHub verificada**: conecte a sua no painel de desenvolvedor (uma vez só).
+3. Crie um app novo: **App name** (por exemplo, "Launcher da minha TV"), **App type: Development** (só você e quem você
+   adicionar podem entrar, o certo para uso pessoal) e **Redirect URIs: `http://localhost`**. Deixe "Allowed origins"
+   em branco.
+4. Ao criar, você aceita os termos do Trakt (entre eles, seguir o repositório
+   [trakt/trakt-api](https://github.com/trakt/trakt-api) no GitHub para receber os avisos da API).
+5. Na página do app, copie o **Client ID** e cole em `trakt_client_id=` no `config.properties`. O **Client Secret não
+   é usado**: o login pela TV não precisa dele, e o Trakt pede para nunca pô-lo num app.
+6. Gere e instale de novo (`python3 webos/build.py` e `python3 webos/install.py <IP>`) e, na TV, **Ajustes do Início ›
+   Trakt.tv › Conectar**.
 
 O que fica na TV: o token de acesso (vale 7 dias e é renovado sozinho), o que veio do Trakt (episódios e filmes vistos,
 a lista) e a fila de envios, no armazenamento do launcher, que **não é criptografado** (o webOS não oferece um cofre a

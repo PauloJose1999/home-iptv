@@ -18,6 +18,8 @@ var Trakt = (function () {
 
   var cfg = (window.CONFIG && CONFIG.trakt) || {};
   var ID = cfg.id || '', API = (cfg.api || 'https://api.trakt.tv').replace(/\/+$/, '');
+  // The app's Redirect URI on Trakt, which a token refresh has to repeat: a Development app takes localhost only.
+  var REDIRECT = cfg.redirect || 'http://localhost';
   var AUTH = 'fmtv.trakt', DATA = 'fmtv.traktdata', QUEUE = 'fmtv.traktqueue', SENT = 'fmtv.traktsent';
   var PAGE = 50, SYNC_EVERY = 15 * 60000;
 
@@ -95,7 +97,7 @@ var Trakt = (function () {
   function fresh(done) {
     if (!auth) { done(false); return; }
     if (Date.now() < auth.expiresAt - 60000) { done(true); return; }
-    request('POST', '/oauth/token', {refresh_token: auth.refresh, client_id: ID, redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
+    request('POST', '/oauth/token', {refresh_token: auth.refresh, client_id: ID, redirect_uri: REDIRECT,
       grant_type: 'refresh_token'}, false, function (s, t) {
       if (s === 200 && t && t.access_token) { keep(t); done(true); return; }
       // Refused (revoked at trakt.tv, or a refresh token already used): signed out, the local history stays.

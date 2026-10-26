@@ -57,7 +57,8 @@ person's, stay only in that file (git ignores it), are never printed and never c
   this app with `{progress: {tmdbId, title, episodes: [...]}}` (`takeLaunchParams` → `Data.recordProgress`,
   `fmtv.progress`): apps can't read each other's storage, and the player's service stops in the background.
 - Trakt (`web/trakt.js`, `Trakt`): device-code sign-in with the client id only (`trakt_client_id`; Trakt deprecated
-  the secret, never ship it); tokens, Trakt's data and a send queue in localStorage (`fmtv.trakt*`, not encrypted).
+  the secret, never ship it; a refresh repeats the app's Redirect URI, `trakt_redirect_uri`, default http://localhost, the
+  only kind a Development app takes); tokens, Trakt's data and a send queue in localStorage (`fmtv.trakt*`, not encrypted).
   `sync` reads `/sync/last_activities`, then only what changed (watched shows/movies, the watchlist page by page); one
   request at a time, POSTs 1/s, 429 waits Retry-After. Only plays the player saw end go to `/sync/history`, with the
   end time (`endedAt` in the player's report): Trakt doesn't refuse duplicates, so a key per item and end, and a lost
