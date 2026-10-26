@@ -4,7 +4,8 @@
 // opens on its episodes, or plays the one asked for; a channel plays from the stream
 // URL the launcher sent (else the playlist channel of that name).
 
-export type DeepLinkKind = 'movie' | 'series' | 'channel';
+// section: one of this app's sections (title: 'live'); account: the launcher asks for this app's IPTV lists.
+export type DeepLinkKind = 'movie' | 'series' | 'channel' | 'section' | 'account';
 
 export interface DeepLink {
   kind: DeepLinkKind;
@@ -27,7 +28,7 @@ export interface DeepLink {
   from?: string;
 }
 
-const KINDS: readonly DeepLinkKind[] = ['movie', 'series', 'channel'];
+const KINDS: readonly DeepLinkKind[] = ['movie', 'series', 'channel', 'section', 'account'];
 
 function text(v: unknown): string {
   return typeof v === 'string' ? v.trim() : typeof v === 'number' ? String(v) : '';
@@ -131,10 +132,11 @@ export function matchTitle<T extends Candidate>(
 }
 
 /**
- * A link that plays without this app's live channels: a movie or a series
- * (from the Xtream account), or a channel the launcher sent with its stream.
- * Only a channel by name alone has to wait for the playlists to load.
+ * A link handled before this app's live channels load: a movie or a series
+ * (from the Xtream account), or the launcher asking for the lists. A channel
+ * and a section wait for them: a channel plays from its place in the list, so
+ * channel up and down, the guide and the list work from it.
  */
 export function opensWithoutChannels(link: DeepLink): boolean {
-  return link.kind !== 'channel' || !!link.url;
+  return link.kind === 'movie' || link.kind === 'series' || link.kind === 'account';
 }

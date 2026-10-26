@@ -16,9 +16,9 @@ numa barra só. Feita a partir do [Free My TV](https://github.com/simbasjungles/
   **Assistir**, o elenco em fotos redondas e os filmes semelhantes. OK num artista abre a página dele, com biografia e
   os filmes e séries em que aparece; cada título leva à página dele, e Voltar volta ao ponto de onde você saiu.
 - **Barra de apps:** todos os apps da TV, rolando com as setas.
-- **IPTV dentro do launcher:** os canais gratuitos e oficiais do Brasil (lista
-  [Free-TV](https://github.com/Free-TV/IPTV)) ou a sua lista M3U ou Xtream, tocados em tela cheia sem abrir outro app
-  (↓ na barra › IPTV). Canais do YouTube abrem no app do YouTube.
+- **IPTV no Player IPTV:** a conta e as listas ficam só no Player IPTV (configure por lá, na TV). Ele as passa ao
+  launcher, que mostra os canais no card, em Todos os canais e na gaveta (↓ na barra › IPTV); todo canal abre no
+  player, já dentro da lista (canal +/− e guia funcionam), e Voltar volta ao launcher.
 - **Gaveta (↓):** entradas HDMI, atalhos, clima, ajustes.
 - **Ajustes do Início:** os canais de cada cartão, o som dos canais, a prateleira, o tema, a proteção de tela, o
   idioma, o clima e restaurar o padrão, cada um com uma explicação. Na **Prateleira** você pega um app (OK › Mover) e
@@ -96,15 +96,15 @@ launcher: `python3 webos/install.py 192.168.0.123 --uninstall`.
 ## Configurações
 
 Ficam em `config.properties` (fora do git; o exemplo é `config.example.properties`): a chave do TMDB, a cidade, os
-canais da TV aberta (`live_channels`), a lista IPTV (`iptv_m3u` ou `iptv_server`, `iptv_user`, `iptv_pass`) e a chave
-do controle remoto por rede (`ssap_key`). Mudou algo? `python3 webos/build.py` e instale de novo.
+canais de reserva do card (`live_channels`), o Player IPTV (`iptv_app`) e a chave do controle remoto por rede
+(`ssap_key`). A lista IPTV não fica aqui: fica no Player IPTV. Mudou algo? `python3 webos/build.py` e instale de novo.
 
 ## Como funciona
 
 - HTML, CSS e JavaScript simples (ES5, sem bibliotecas) em [`web/`](web), para o Chromium das TVs LG mais antigas.
 - [`web/tv.js`](web/tv.js) fala com a TV: os apps e as entradas pelo barramento da LG (Luna) e, onde o webOS 6+ não
   deixa, pelo controle remoto por rede da própria TV (`ws://127.0.0.1:3000`), que também dá os canais e a programação.
-- [`web/home.js`](web/home.js) é a tela; [`web/iptv.js`](web/iptv.js), a lista e o player IPTV;
+- [`web/home.js`](web/home.js) é a tela; [`web/channels.js`](web/channels.js), os canais das listas do Player IPTV;
   [`web/data.js`](web/data.js), as sugestões (TMDB) e o clima (Open-Meteo).
 - [`webos/build.py`](webos/build.py) monta o `.ipk` sem as ferramentas da LG; [`webos/install.py`](webos/install.py)
   instala pelo Developer Mode. `python3 webos/build.py --preview` deixa uma prévia em `out/webos/index.html`.
@@ -115,7 +115,8 @@ do controle remoto por rede (`ssap_key`). Mudou algo? `python3 webos/build.py` e
 
 - Baseado no [Free My TV](https://github.com/simbasjungles/free-my-tv) (MIT), que se baseou no
   [FreeMyTvWebOS](https://github.com/danielthejoker18/FreeMyTvWebOS) (MIT) de @danielthejoker18.
-- Canais gratuitos e oficiais do Brasil da lista [Free-TV](https://github.com/Free-TV/IPTV).
+- Canais gratuitos e oficiais do Brasil da lista [Free-TV](https://github.com/Free-TV/IPTV), nos testes
+  (`tools/test-channels.m3u`).
 - Usa a API do TMDB, sem ser endossado ou certificado pelo [TMDB](https://www.themoviedb.org/). Clima por
   [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0).
 - Ícones: [Material Symbols](https://fonts.google.com/icons) (Apache 2.0). Fonte: [Inter](https://rsms.me/inter/)

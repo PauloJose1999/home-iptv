@@ -87,13 +87,22 @@ describe('matchTitle', () => {
 });
 
 describe('opensWithoutChannels', () => {
-  it('plays a movie, a series, or a channel with its stream before the live channels load', () => {
+  it('handles a movie, a series, or the account request before the live channels load', () => {
     expect(opensWithoutChannels({ kind: 'movie', title: 'Dune' })).toBe(true);
     expect(opensWithoutChannels({ kind: 'series', title: 'Breaking Bad', season: 1, episode: 2 })).toBe(true);
-    expect(opensWithoutChannels({ kind: 'channel', title: 'TV Cultura', url: 'https://example.com/c.m3u8' })).toBe(true);
+    expect(opensWithoutChannels({ kind: 'account', title: 'account' })).toBe(true);
   });
 
-  it('waits for the playlists for a channel known by name alone', () => {
+  it('waits for the playlists for a channel (even with its stream) and a section', () => {
     expect(opensWithoutChannels({ kind: 'channel', title: 'TV Cultura' })).toBe(false);
+    expect(opensWithoutChannels({ kind: 'channel', title: 'TV Cultura', url: 'https://example.com/c.m3u8' })).toBe(false);
+    expect(opensWithoutChannels({ kind: 'section', title: 'live' })).toBe(false);
+  });
+
+  it('reads a section and an account request', () => {
+    expect(parseDeepLink({ deepLink: { kind: 'section', title: 'live', from: 'io.freemytv' } }))
+      .toEqual({ kind: 'section', title: 'live', from: 'io.freemytv' });
+    expect(parseDeepLink({ deepLink: { kind: 'account', title: 'account', from: 'io.freemytv' } }))
+      .toEqual({ kind: 'account', title: 'account', from: 'io.freemytv' });
   });
 });

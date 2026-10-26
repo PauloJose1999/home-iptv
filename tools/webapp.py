@@ -18,7 +18,6 @@ GENERIC = {'tmdbKey': '', 'omdbKey': '', 'tmdbRegion': '', 'latitude': '', 'long
            'temperature': 'auto', 'hideAnimation': False, 'hideApps': [],
            'liveChannels': ['Globo', 'Record News', 'Band'], 'ssapKey': '',
            'iptvApp': 'com.lennylxx.iptv',
-           'iptv': {'m3u': '', 'server': '', 'user': '', 'pass': ''},
            'trakt': {'id': '', 'api': '', 'redirect': 'http://localhost'}}
 
 
@@ -65,8 +64,6 @@ def read_config(path):
         'liveChannels': [s.strip() for s in values.get('live_channels', 'Globo,Record News,Band').split(',') if s.strip()],
         'ssapKey': values.get('ssap_key', ''),
         'iptvApp': values.get('iptv_app', 'com.lennylxx.iptv'),
-        'iptv': {'m3u': values.get('iptv_m3u', ''), 'server': values.get('iptv_server', ''),
-                 'user': values.get('iptv_user', ''), 'pass': values.get('iptv_pass', '')},
         'trakt': {'id': values.get('trakt_client_id', ''), 'api': values.get('trakt_api', ''),
                   'redirect': values.get('trakt_redirect_uri', '') or 'http://localhost'},
     }

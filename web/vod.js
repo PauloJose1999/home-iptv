@@ -1,6 +1,7 @@
 /*
- * Xtream VOD: the movies and series of the IPTV provider, shown in the Movies and Shows tabs instead of
- * the TMDB catalog when config.properties has an Xtream server (iptv_server, iptv_user, iptv_pass).
+ * Xtream VOD: the movies and series of the IPTV provider, a catalog for the Movies and Shows tabs in place of TMDB's,
+ * from the IPTV player's Xtream account (Channels.xtream()). Off for now: the tabs show TMDB's catalog; the browser
+ * preview's demo (?demo=vod) shows it.
  * Each row is a category; OK on a title deep-links the IPTV player to its exact page (stream_id/series_id).
  * Fetched only when a tab is opened, one category at a time, so a huge VOD list never loads whole.
  * Plain ES5, like the rest of web/.
@@ -11,9 +12,13 @@ var VOD_DEMO = (typeof TV !== 'undefined' && TV.name === 'browser') && /(?:^|[?&
 var VOD = (function () {
   'use strict';
 
-  var cfg = (window.CONFIG && CONFIG.iptv) || {};
-  var server = (cfg.server || '').replace(/\/+$/, '');
-  var enabled = !!(server && cfg.user && cfg.pass) || VOD_DEMO;
+  var enabled = VOD_DEMO;
+
+  /** The IPTV player's Xtream account, as it handed it over: {server, user, pass}, or null. */
+  function account() {
+    var a = window.Channels && Channels.xtream();
+    return a ? {server: (a.url || '').replace(/\/+$/, ''), user: a.user, pass: a.pass} : null;
+  }
   var catalogs = {};          // kind ('movie' | 'tv') -> catalog
   var MAX_ROWS = 12, MAX_ITEMS = 30;
 
@@ -34,8 +39,10 @@ var VOD = (function () {
   }
 
   function api(action, done) {
-    get(server + '/player_api.php?username=' + encodeURIComponent(cfg.user)
-        + '&password=' + encodeURIComponent(cfg.pass) + '&action=' + action, done);
+    var a = account();
+    if (!a) { done(new Error('no Xtream account in the IPTV player')); return; }
+    get(a.server + '/player_api.php?username=' + encodeURIComponent(a.user)
+        + '&password=' + encodeURIComponent(a.pass) + '&action=' + action, done);
   }
 
   /** Runs fn on each item one after the other, then done(). */
@@ -49,7 +56,7 @@ var VOD = (function () {
 
   /** The tab's catalog: {rows: [{title, items}], at, loading, error, update}, like Data.catalog. */
   function catalog(kind, update) {
-    if (VOD_DEMO && !server) { update(sampleCatalog(kind)); return; }
+    if (VOD_DEMO && !account()) { update(sampleCatalog(kind)); return; }
     var prev = catalogs[kind], t = Date.now();
     if (prev && prev.loading) { prev.update = update; update(prev); return; }
     if (prev && prev.rows.length && t - prev.at < 6 * 3600000) { prev.update = update; update(prev); return; }

@@ -1,5 +1,5 @@
 import { CONFIG } from '../config';
-import type { ResumeEntry, VodQueueItem } from '../types';
+import type { PlaylistEntry, ResumeEntry, VodQueueItem } from '../types';
 
 // What a launcher that deep-linked a series here learns back when Back
 // returns to it: each episode's progress. Apps can't read each other's
@@ -96,3 +96,33 @@ export const LauncherReport = {
     return tmdbId ? { tmdbId, title, movie } : { title, movie };
   },
 };
+
+/**
+ * One of this app's IPTV lists, as the launcher reads it for its own screens
+ * (the channel cards, All channels, Sports): an Xtream account or an M3U link.
+ */
+export interface LauncherSource {
+  type: 'xtream' | 'm3u';
+  name: string;
+  url: string;
+  user?: string;
+  pass?: string;
+}
+
+/**
+ * The lists the launcher gets on every return, so the account is set up in
+ * this app alone: the enabled Xtream accounts and M3U links. A file uploaded
+ * from a phone lives only here (the launcher can't fetch it) and stays out.
+ */
+export function launcherSources(playlists: readonly PlaylistEntry[]): LauncherSource[] {
+  const out: LauncherSource[] = [];
+  for (const p of playlists) {
+    if (p.enabled === false) continue;
+    if (p.source === 'xtream' && p.xtream) {
+      out.push({ type: 'xtream', name: p.name, url: p.url, user: p.xtream.username, pass: p.xtream.password });
+    } else if (p.source !== 'upload' && /^https?:\/\//i.test(p.url)) {
+      out.push({ type: 'm3u', name: p.name, url: p.url });
+    }
+  }
+  return out;
+}

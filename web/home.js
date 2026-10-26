@@ -392,8 +392,8 @@
 
   /**
    * TV aberta's two cards, as picked in Home Settings: the big one any channel, from the antenna or the internet
-   * (IPTV); the other one a channel of the other kind, as the TV plays one of each at once, no more. Before any
-   * pick: the antenna big (the channel the TV is on), and an internet channel beside it.
+   * (IPTV); the other one a channel of the other kind. Before any pick: the antenna big (the channel the TV is on),
+   * and an internet channel beside it.
    */
   function cardPicks() {
     var p = Prefs.cardPicks();
@@ -407,18 +407,18 @@
    * one. [] when the list can't be read.
    */
   function iptvCards(done) {
-    if (!IPTV.enabled) { done([], 'none'); return; }
-    IPTV.load(function () {
-      var all = IPTV.channels() || [], out = [], seen = {}, picks = cardPicks();
+    if (!Channels.count()) { done([], 'none'); return; }
+    Channels.load(function () {
+      var all = Channels.channels(), out = [], seen = {}, picks = cardPicks();
       function add(ch) {
         if (!ch || seen[ch.url] || out.length >= 1) return;
         seen[ch.url] = true;
         out.push({id: 'iptv:' + ch.url, number: '', name: ch.name, program: null, iptv: ch, logo: ch.logo});
       }
       var wanted = [picks.big.kind === 'iptv' ? picks.big.name : picks.small.name].concat(CONFIG.liveChannels || []);
-      for (var w = 0; w < wanted.length; w++) if (wanted[w]) add(IPTV.lookup(wanted[w]));
+      for (var w = 0; w < wanted.length; w++) if (wanted[w]) add(Channels.lookup(wanted[w]));
       for (var i = 0; i < all.length && out.length < 1; i++) add(all[i]);
-      done(out, all.length ? '' : 'empty');
+      done(out, all.length ? '' : Channels.error() ? 'error' : 'none');
     });
   }
 
@@ -468,16 +468,26 @@
     return [big ? net : air, big ? air : net, {all: true, id: 'all'}];
   }
 
-  /** All channels: the list in the IPTV player (its own channels screen), else the list inside the launcher. */
+  /** All channels: the IPTV player's channel list (Back there comes back here). */
   function openAllChannels() {
-    var inside = function () {
-      if (IPTV.enabled) { stopPlayer(); IPTV.open(); }
-      else toast(noChannelsText());
-    };
-    if (!iptvApp()) { inside(); return; }
     stopPlayer();
-    TV.launch(iptvApp(), null, function (ok) { if (!ok) inside(); });
+    if (!openInIptv('section', 'live', null, noPlayer)) noPlayer();
   }
+
+  /**
+   * The IPTV player's lists, asked for: it opens a moment and comes back with them (the account is set up there, the
+   * one place). Once when this app has none yet (a day apart, if the player has none either), or from Home Settings.
+   */
+  function askForLists(always) {
+    var asked = 0;
+    try { asked = +localStorage.getItem('fmtv.iptvAsked') || 0; } catch (e) {}
+    if (!always && (Channels.known() || Date.now() - asked < 86400000)) return;
+    try { localStorage.setItem('fmtv.iptvAsked', String(Date.now())); } catch (e) {}
+    if (!openInIptv('account', 'account', null, noPlayer) && always) noPlayer();
+  }
+
+  /** The IPTV player isn't set or isn't on the TV: every channel plays there. */
+  function noPlayer() { toast(tr('Install the IPTV Player to watch the channels.')); }
 
   /** The All channels button: a grid symbol, its name, how many channels the list has, and an arrow. */
   function drawAllChannels(card) {
@@ -486,9 +496,8 @@
     sym('apps', icon);
     var text = el('div', 'text', card);
     el('div', 'title', text, tr('All channels'));
-    // The IPTV player has its own lists: it's named, not this list's size.
-    var n = IPTV.enabled && IPTV.channels() ? IPTV.channels().length : 0;
-    el('div', 'sub', text, iptvApp() ? tr('Opens the IPTV Player') : n ? plural('plural|one:{n} channel|other:{n} channels', n) : tr('The IPTV list'));
+    var n = Channels.channels().length;
+    el('div', 'sub', text, n ? plural('plural|one:{n} channel|other:{n} channels', n) : tr('Opens the IPTV Player'));
     sym('chevron_right', el('div', 'go', card));
   }
 
@@ -529,7 +538,7 @@
 
   /** Why there's no channel on the cards: no IPTV list set, or one that is empty or couldn't be read. */
   function noChannelsText() {
-    return liveProblem === 'none' ? tr('Add an IPTV list (iptv_m3u or iptv_server in config.properties) to see channels here.')
+    return liveProblem === 'none' ? tr('Set up your IPTV list in the IPTV Player: its channels show here.')
         : tr("Couldn't load the IPTV list. Check the internet and try again.");
   }
 
@@ -554,14 +563,14 @@
     var list = liveCards(), holder = $('cards');
     var ids = list.map(function (x) { return x.id; }).join(',');
     setClass(body, 'no-picks', false);
-    if (ids === liveIds && holder.children.length === list.length && cards[0] && cards[0].live && (IPTV.channels() || []).length === allCount) {
+    if (ids === liveIds && holder.children.length === list.length && cards[0] && cards[0].live && Channels.channels().length === allCount) {
       cards = list;
       for (var u = 0; u < list.length; u++) if (!list[u].all) fillFoot(holder.children[u].querySelector('.foot'), list[u].channel, u === 0);
       placePlayer();
       return;
     }
     liveIds = ids;
-    allCount = (IPTV.channels() || []).length;
+    allCount = Channels.channels().length;
     cards = list;
     holder.innerHTML = '';
     for (var c = 0; c < list.length; c++) {
@@ -663,7 +672,7 @@
 
   /** The focused (or last focused) channel card plays; silent unless focused with card sound on. */
   function placePlayer() {
-    if (st.tab !== 0 || saverOn || sheetOpen() || IPTV.isOpen() || antenna) { stopPlayer(); return; }
+    if (st.tab !== 0 || saverOn || sheetOpen() || antenna) { stopPlayer(); return; }
     var delay = 0, order = [], i;
     if (st.zone === Z.CARDS && sourceFor(cards[st.card])) player.active = st.card;
     if (!sourceFor(cards[player.active])) {
@@ -1361,10 +1370,14 @@
     watchEpisode(page.show, page.season, ep.n, !!(t && t.resume && t.season === page.season && t.episode === ep.n));
   }
 
-  /** The IPTV player's report, when it brings this app back: kept, and the page on screen shows it. */
+  /**
+   * The IPTV player's report, when it brings this app back: its lists (the account lives there alone), and a show's
+   * or a movie's progress, kept, the page on screen showing it.
+   */
   function takeLaunchParams(params) {
     if (typeof params === 'string') { try { params = JSON.parse(params); } catch (e) { params = null; } }
-    if (params && params.returned) return true;   // Back from a channel in the IPTV player: the card it was opened from
+    if (params && params.iptv && Channels.setSources(params.iptv)) loadChannels();
+    if (params && (params.returned || params.iptv) && !params.progress) return true;   // the card or page it was opened from
     if (!params || !params.progress) return false;
     var report = params.progress;
     if (report.movie) {
@@ -1502,18 +1515,8 @@
       drawerItems.push({label: x.label || tr('Live TV'), symbol: x.symbol, off: !x.connected, run: launcher(x.id, x.label)});
     }
     drawerInputs = drawerItems.length;
-    // IPTV: the IPTV player when it's on the TV, else the list inside the launcher.
-    if (IPTV.enabled || iptvApp()) {
-      drawerItems.push({label: tr('IPTV'), symbol: 'live_tv', run: function () {
-        closeDrawer();
-        if (!iptvApp()) { IPTV.open(); return; }
-        TV.launch(iptvApp(), null, function (ok) {   // not on the TV after all: the list inside the launcher
-          if (ok) return;
-          if (IPTV.enabled) IPTV.open();
-          else toast(trf("Couldn't open {app}.", {app: tr('IPTV')}));
-        });
-      }});
-    }
+    // IPTV: the IPTV player's channel list.
+    if (iptvApp()) drawerItems.push({label: tr('IPTV'), symbol: 'live_tv', run: function () { closeDrawer(); openAllChannels(); }});
     drawerItems.push({label: tr('All Apps'), symbol: 'apps', run: openApps});
     drawerItems.push({label: tr('Home Settings'), symbol: 'settings', run: openSettings});
     drawerItems.push({label: tr('TV Settings'), symbol: 'tv_settings', run: tvSettings});
@@ -1655,6 +1658,9 @@
       about: picks.big.kind === 'antenna' ? tr('Beside an antenna channel, an internet one: the TV plays one of each at once.')
           : tr('Beside an internet channel, an antenna one: the TV plays one of each at once.'),
       step: function (d) { if (d >= 0) pickChannel('small'); }});
+    rows.push({key: 'lists', label: tr('IPTV list'), value: Channels.count() ? plural('plural|one:{n} list|other:{n} lists', Channels.count()) : tr('None'),
+      opens: true, about: tr('The lists set up in the IPTV Player. OK brings them here again.'),
+      step: function (d) { if (d >= 0) { closeSheets(); askForLists(true); } }});
     rows.push({key: 'sound', label: tr('Channel sound'), toggle: Prefs.cardSound(),
       about: tr('The selected channel card plays with sound; the others stay silent.'),
       step: function () { Prefs.set('cardSound', !Prefs.cardSound()); }});
@@ -1929,7 +1935,7 @@
   function pickChannel(which) {
     var picks = cardPicks(), kinds = which === 'big' ? ['antenna', 'iptv'] : [picks.big.kind === 'antenna' ? 'iptv' : 'antenna'];
     TV.channels([], 999, function (antenna) {
-      IPTV.load(function () {
+      Channels.load(function () {
         var choices = [], seen = {};
         function add(kind, list) {
           for (var i = 0; list && i < list.length; i++) {
@@ -1938,9 +1944,9 @@
           }
         }
         if (kinds.indexOf('antenna') >= 0) add('antenna', antenna);
-        if (kinds.indexOf('iptv') >= 0 && IPTV.enabled) add('iptv', IPTV.channels());
+        if (kinds.indexOf('iptv') >= 0) add('iptv', Channels.channels());
         if (!choices.length) {
-          toast(kinds[0] === 'iptv' && !IPTV.enabled ? tr('Add an IPTV list (iptv_m3u or iptv_server in config.properties) to see channels here.')
+          toast(kinds[0] === 'iptv' && !Channels.count() ? tr('Set up your IPTV list in the IPTV Player: its channels show here.')
               : tr('No channels found.'));
           return;
         }
@@ -2255,24 +2261,14 @@
   }
 
   /**
-   * OK on a channel card: its stream from the IPTV list, in the IPTV player, else in the launcher's own player; never
-   * LG's Live TV (the cards hold the list's channels only).
+   * OK on a channel card: the channel in the IPTV player, from its place in the player's list (channel up and down
+   * and the guide work there); its stream goes along for when no list there has it. Never LG's Live TV.
    */
   function openLiveCard(ch) {
     if (!ch) { toast(noChannelsText()); return; }
-    var url = ch.iptv && ch.iptv.url;
-    if (url && !/youtube\.com|youtu\.be/.test(url)) {
-      var entry = ch.iptv;
-      var inside = function () {
-        if (IPTV.enabled) { stopPlayer(); IPTV.playChannel(entry); }
-        else toast(trf("Couldn't open {app}.", {app: channelName(ch.name)}));
-      };
-      stopPlayer();
-      // The stream goes along: the IPTV player plays it even when none of its playlists has the channel.
-      if (!openInIptv('channel', channelName(ch.name), {url: url, logo: entry.logo || ch.logo || ''}, inside)) inside();
-      return;
-    }
-    toast(trf("Couldn't open {app}.", {app: channelName(ch.name)}));
+    var entry = ch.iptv;
+    stopPlayer();
+    if (!openInIptv('channel', entry.name, {url: entry.url, logo: entry.logo || ''}, noPlayer)) noPlayer();
   }
 
   // MARK: - The antenna full screen: the channel the TV is on, inside the launcher (TV ao vivo on the top bar)
@@ -2623,7 +2619,7 @@
   var WHEEL_GAP = 160, wheelAt = 0;
   function wheel(e) {
     e.preventDefault();
-    if (poke() || IPTV.isOpen() || antenna) return;
+    if (poke() || antenna) return;
     var dy = e.deltaY !== undefined ? e.deltaY : -(e.wheelDelta || 0), dx = e.deltaX || 0;
     if (e.shiftKey && !dx) { dx = dy; dy = 0; }
     if (!dx && !dy) return;
@@ -2716,7 +2712,7 @@
   if (window.PalmSystem) takeLaunchParams(window.PalmSystem.launchParams);   // opened by the IPTV player, with a report
   checkNight();   // now, from the last forecast: not after the TV lists its apps, with the day look until then
   // LG's screensaver waits only when ours will show: not under a sheet (ours waits there), and not without photos.
-  TV.holdScreenSaver(function () { return IPTV.isOpen() || !!antenna || (Prefs.saverMinutes() > 0 && !sheetOpen() && saverPhotos().length > 0); });
+  TV.holdScreenSaver(function () { return !!antenna || (Prefs.saverMinutes() > 0 && !sheetOpen() && saverPhotos().length > 0); });
   fit();
   renderTop();
   tickClock();
@@ -2724,12 +2720,13 @@
     renderAll();
     Data.refresh();
     setTimeout(Trakt.syncIfStale, 5000);   // Trakt, after the screen is up
+    if (TV.name === 'webos') setTimeout(function () { askForLists(false); }, 3000);   // the IPTV player's lists, once
   });
   setInterval(function () {
     checkNight();
     Data.refresh();
     if (Date.now() - channelsAt > 5 * 60000) loadChannels();   // what's on now, every 5 minutes
-    if (IPTV.isOpen() || antenna) idleAt = Date.now();   // watching a channel: no screensaver
+    if (antenna) idleAt = Date.now();   // watching the antenna full screen: no screensaver
     if (!saverOn && !sheetOpen() && Prefs.saverMinutes() && Date.now() - idleAt > Prefs.saverMinutes() * 60000) showSaver();
     if (saverOn) tickSaverClock($('saver').querySelector('.clock'));
   }, 30000);

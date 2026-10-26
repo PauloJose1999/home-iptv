@@ -8,7 +8,7 @@ a real account.
 Its movies and series are the ones the launcher shows (TMDB, in Portuguese, on the Brazilian streaming services), with
 their posters, synopses, ratings, cast, director and IMDb ids, so a title picked in the launcher is found here. Every
 movie and episode plays the same free test video (Big Buck Bunny, a public HLS test stream). Its live channels are the
-free Brazilian ones of web/iptv-brasil.m3u. Needs the TMDB key in config.properties. Python 3, standard library only.
+free Brazilian ones of tools/test-channels.m3u. Needs the TMDB key in config.properties. Python 3, standard library only.
 """
 import json
 import os
@@ -148,7 +148,7 @@ def build(kinds):
 def live_channels():
     """The free Brazilian channels of the launcher's list (the YouTube ones can't play in a player)."""
     out, info = [], None
-    with open(os.path.join(ROOT, 'web', 'iptv-brasil.m3u'), encoding='utf-8') as f:
+    with open(os.path.join(ROOT, 'tools', 'test-channels.m3u'), encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line.startswith('#EXTINF'):

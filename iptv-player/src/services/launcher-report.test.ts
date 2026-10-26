@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResumeEntry, VodQueueItem } from '../types';
-import { LauncherReport, episodeOf } from './launcher-report';
+import { LauncherReport, episodeOf, launcherSources } from './launcher-report';
 
 function episode(seriesId: string, season: number, ep: number): VodQueueItem {
   return {
@@ -71,5 +71,19 @@ describe('LauncherReport', () => {
   it('uses the Continue point saved before for a movie not played this run', () => {
     const saved: ResumeEntry = { accountId: 'acc', kind: 'vod', itemId: 'm3', name: 'Hotel', poster: '', ext: 'mp4', position: 300, duration: 6000, updatedAt: 1 };
     expect(LauncherReport.takeMovie('m3', 'Hotel', undefined, saved).movie).toEqual({ position: 300, duration: 6000, done: false });
+  });
+});
+
+describe('launcherSources', () => {
+  it('gives the launcher the enabled Xtream accounts and M3U links, not uploaded files', () => {
+    expect(launcherSources([
+      { id: 'a', name: 'Conta', url: 'http://srv:8080', source: 'xtream', xtream: { username: 'u', password: 'p' } },
+      { id: 'b', name: 'Lista', url: 'https://example.com/list.m3u' },
+      { id: 'c', name: 'Do celular', url: 'upload://x', source: 'upload' },
+      { id: 'd', name: 'Desligada', url: 'https://example.com/off.m3u', enabled: false },
+    ])).toEqual([
+      { type: 'xtream', name: 'Conta', url: 'http://srv:8080', user: 'u', pass: 'p' },
+      { type: 'm3u', name: 'Lista', url: 'https://example.com/list.m3u' },
+    ]);
   });
 });

@@ -68,13 +68,17 @@ person's, stay only in that file (git ignores it), are never printed and never c
   source of a purple bar) with Trakt's watched episodes (✓ only). My list: `catalogRows`, the detail button.
   `tools/trakt_test_server.py` mimics the API (device codes, refresh, pagination, 429, a lost answer).
 - IPTV player (`iptv-player/`, lennylxx/webos-iptv-player, app `com.lennylxx.iptv`, `iptv_app`): when it's installed,
-  the Movies/Shows titles, the IPTV channel cards and drawer › IPTV open in it by deep link (`openInIptv`): launch params
-  `{deepLink: {kind: movie|series|channel, title, year?, altTitle?, id?, url?, logo?}}`. It finds a movie by name in its
-  Xtream account and plays it (`iptv-player/src/services/deep-link.ts`); a channel no playlist of its has plays from
-  `url`; Back returns here. Without it, the launcher's own player and the streaming apps, as before. Build it in
+  every IPTV playback happens there (the launcher has no player of its own). Deep link (`openInIptv`): launch params
+  `{deepLink: {kind: movie|series|channel|section|account, title, from, year?, altTitle?, id?, url?, logo?, …}}`. A movie
+  or series is found by name in its Xtream account and plays at once; a channel plays from its place in the player's
+  list (`url` only when no list has it); `section` `live` opens its channel list; `account` just sends the lists back.
+  Back (one press) returns here via `backToLauncher`, whose launch params always carry `iptv`: the player's enabled
+  Xtream accounts and M3U links (`launcherSources`), as the account lives in the player alone. Build it in
   `iptv-player/` (`npm run build`, the service, `ares-package`) and install with `webos/install.py <IP> <ipk>`.
-- `web/iptv.js`: the IPTV list (M3U or Xtream, from `config.properties`; by default `web/iptv-brasil.m3u`, the Free-TV
-  Brazilian channels) and its full-screen player; it takes the remote's keys while open.
+- `web/channels.js`: the channels of those lists (kept in `fmtv.iptvSources`; Xtream live categories as groups), for
+  the channel card, All channels and Home Settings. Asked of the player once (`askForLists`) when there are none yet.
+  The launcher's own player and list (`web/iptv.js`, `iptv-brasil.m3u`) are gone; the free list is now only test data
+  (`tools/test-channels.m3u`).
 - Text: `tr('…')`, `trf('{n} min', {n: 3})`, `plural('plural|…', n)`, `formatDate('format|h:mm', at)`, from
   `assets/i18n/{en,pt}.json`. After changing text, `python3 tools/translate.py` lists what's missing; add it to
   `pt.json` by hand.

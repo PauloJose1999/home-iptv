@@ -34,7 +34,7 @@ import { showToast } from './components/toast';
 import { showNumberEntry, hideNumberEntry } from './components/number-entry';
 import { ReminderService } from './services/reminder-service';
 import { parseDeepLink, matchTitle, opensWithoutChannels, type DeepLink } from './services/deep-link';
-import { LauncherReport } from './services/launcher-report';
+import { LauncherReport, launcherSources } from './services/launcher-report';
 import { loadAllVodStreams, loadAllSeries } from './services/xtream-catalog';
 import { ReminderPrompt } from './components/reminder-prompt';
 import { ReminderManager } from './components/reminder-manager';
@@ -164,6 +164,7 @@ class App {
       },
     );
     this.player = new Player(this.views.player, () => {
+      if (this.launcherBack()) return;
       this.channelList.render();
       this.showView('channels');
     }, (idx, catchupStart) => {
@@ -412,7 +413,7 @@ class App {
     const early = link && opensWithoutChannels(link) ? link : null;
     const opened = early ? await this.openDeepLink(early) : false;
     if (opened) hide(this.views.loading);
-    await this.loadData(false, opened);
+    await this.loadData(false, opened, !link);
     // Cold launch from a "Watch now" alert: channels are loaded now, so tune.
     if (!early) this.handleLaunchParams(coldParams);
     // Spawning the service process can synchronously stall Luna on a cold TV.
@@ -902,7 +903,8 @@ class App {
 
   // behind: something else is on screen (a launcher's deep link playing), so
   // the channels load without the splash, the channel list or auto-play.
-  private async loadData(forceEpgRefresh = false, behind = false): Promise<void> {
+  // autoPlay: false when a launcher's link says what to play.
+  private async loadData(forceEpgRefresh = false, behind = false, autoPlay = true): Promise<void> {
     const done = log.time('loadData');
     this.loadingData = true;
     if (!behind) show(this.views.loading);
@@ -980,7 +982,7 @@ class App {
       this.scanReminders();
       ReminderService.reschedulePending();
 
-      if (StorageService.getAutoPlay() && !behind) {
+      if (StorageService.getAutoPlay() && !behind && autoPlay) {
         // The per-stream key survives customization and provider reshuffles.
         const lastCh = PlaylistService.resolveLastChannelIndex(
           StorageService.getLastChannelKey(),
@@ -1516,17 +1518,42 @@ class App {
     const started = Date.now();
     const took = () => `ms=${String(Date.now() - started)}`;
     log.info('Deep link', 'event=deeplink.open', `kind=${link.kind}`);
+    if (link.kind === 'account') {
+      // The launcher has no lists yet: they go back, and this app closes. Only once this app is on screen: sent while
+      // the TV still brings it forward, the launcher opened under it, and closing it left another app in front.
+      const send = () => this.backToLauncher(link.from, {});
+      if (document.visibilityState === 'visible') setTimeout(send, 300);
+      else {
+        const shown = () => {
+          if (document.visibilityState !== 'visible') return;
+          document.removeEventListener('visibilitychange', shown);
+          setTimeout(send, 300);
+        };
+        document.addEventListener('visibilitychange', shown);
+      }
+      return true;
+    }
+    if (link.kind === 'section') {
+      this.launcherReturn = link.from ?? '';
+      this.switchSection('live');
+      return true;
+    }
     if (link.kind === 'channel') {
-      // The launcher's own stream first: a playlist channel of the same name may come from an account that's down.
+      // From its place in the list: channel up and down, the guide and the list work from there. The launcher's
+      // stream only when no list here has it.
+      const channel = matchTitle(PlaylistService.channels, link);
+      const index = channel ? PlaylistService.channels.indexOf(channel) : -1;
+      if (index >= 0) {
+        this.launcherReturn = link.from ?? '';
+        this.playChannel(index);
+        return true;
+      }
       if (link.url) {
         this.playLinkedStream(link.url, link.title, link.logo ?? '', link.from);
         return true;
       }
-      const channel = matchTitle(PlaylistService.channels, link);
-      const index = channel ? PlaylistService.channels.indexOf(channel) : -1;
-      if (index >= 0) this.playChannel(index);
-      else showToast(t('deepLink.notFound', { title: link.title }));
-      return index >= 0;
+      showToast(t('deepLink.notFound', { title: link.title }));
+      return false;
     }
     const account = this.activeXtreamAccount();
     if (!account) {
@@ -1575,25 +1602,38 @@ class App {
   // episode progress in its launch params (it can't read this app's storage),
   // then this app closes.
   private returnToLauncher(link: DeepLink, account: PlaylistEntry, series: SeriesItem): void {
-    if (link.from && isLunaAvailable()) {
-      const progress = LauncherReport.take(
-        series.seriesId, link.title, link.tmdbId, StorageService.getResumeList(account.id));
-      lunaRequest('luna://com.webos.applicationManager/launch', {
-        parameters: { id: link.from, params: { progress } },
-        onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),
-      });
-    }
-    void this.exitApp();
+    this.backToLauncher(link.from, {
+      progress: LauncherReport.take(series.seriesId, link.title, link.tmdbId, StorageService.getResumeList(account.id)),
+    });
   }
 
   // Back from a launcher's movie: the launcher comes back knowing how far it
   // went, and whether it ended (its Trakt history counts only finished ones).
   private returnMovieToLauncher(link: DeepLink, account: PlaylistEntry, streamId: string): void {
-    if (link.from && isLunaAvailable()) {
-      const progress = LauncherReport.takeMovie(
-        streamId, link.title, link.tmdbId, StorageService.getResume(account.id, 'vod', streamId));
+    this.backToLauncher(link.from, {
+      progress: LauncherReport.takeMovie(streamId, link.title, link.tmdbId, StorageService.getResume(account.id, 'vod', streamId)),
+    });
+  }
+
+  // The launcher that opened a channel or a section here: Back returns to it
+  // (it brings this app's lists along), not to this app's own screens.
+  private launcherReturn = '';
+
+  private launcherBack(): boolean {
+    if (!this.launcherReturn) return false;
+    const from = this.launcherReturn;
+    this.launcherReturn = '';
+    this.backToLauncher(from, { returned: 'channel' });
+    return true;
+  }
+
+  // The one way back to a launcher: it opens again with `params` and this
+  // app's IPTV lists (the account is set up here alone; the launcher reads
+  // its channels from them), then this app closes.
+  private backToLauncher(from: string | undefined, params: Record<string, unknown>): void {
+    if (from && isLunaAvailable()) {
       lunaRequest('luna://com.webos.applicationManager/launch', {
-        parameters: { id: link.from, params: { progress } },
+        parameters: { id: from, params: { ...params, iptv: launcherSources(StorageService.getPlaylists()) } },
         onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),
       });
     }
@@ -1608,15 +1648,7 @@ class App {
   private playLinkedStream(url: string, title: string, poster: string, from?: string): void {
     this.player.playVod({
       url, title, poster, accountId: '', itemId: `deeplink:${url}`, kind: 'vod',
-      resumeSecs: 0, subtitles: [], onBack: () => {
-        if (from && isLunaAvailable()) {
-          lunaRequest('luna://com.webos.applicationManager/launch', {
-            parameters: { id: from, params: { returned: 'channel' } },
-            onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),
-          });
-        }
-        void this.exitApp();
-      },
+      resumeSecs: 0, subtitles: [], onBack: () => this.backToLauncher(from, { returned: 'channel' }),
     });
   }
 
@@ -1807,6 +1839,7 @@ class App {
       if (currentView === 'channels') {
         if (this.livePreview.handleBack()) return;
         if (this.channelList.handleBack()) return;
+        if (this.launcherBack()) return;
         const now = Date.now();
         if (now - this.backPressTime < 3000) {
           void this.exitApp();

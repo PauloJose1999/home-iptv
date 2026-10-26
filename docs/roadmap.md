@@ -10,7 +10,7 @@
 | 2 | O **player interno do launcher sai**. Toda reprodução de IPTV vai para o Player IPTV. |
 | 3 | **Todos os idiomas** voltam (25 no launcher; o Player IPTV vai de 11 para os mesmos 25). |
 | 4 | **Samsung (Tizen)** entra no roadmap. |
-| 5 | **A conta IPTV fica num lugar só: o Player IPTV** (onde já está configurada, pela TV). O launcher deixa de ter lista própria (`iptv_m3u`, `iptv_server`, `iptv_user`, `iptv_pass` saem do `config.properties`, e a lista embutida `iptv-brasil.m3u` também). O launcher recebe a conta do player (ver fase 1, item 6). *Proposta, aguardando aprovação.* |
+| 5 | **A conta IPTV fica num lugar só: o Player IPTV** (onde já está configurada, pela TV). O launcher deixa de ter lista própria (`iptv_m3u`, `iptv_server`, `iptv_user`, `iptv_pass` saem do `config.properties`, e a lista embutida `iptv-brasil.m3u` também). O launcher recebe a conta do player (ver fase 1, item 6). *Aprovado.* |
 
 ## Visão geral
 
@@ -29,7 +29,7 @@ As fases 1 e 2 podem andar em paralelo: uma é código, a outra é desenho.
 
 ---
 
-## Fase 0 — Marco de segurança
+## Fase 0 — Marco de segurança ✓
 
 - `git tag antes-da-reorganizacao` e envio da tag ao GitHub.
 - **Pronto quando:** a tag existe no GitHub e dá para voltar a ela com um comando.
