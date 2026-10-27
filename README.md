@@ -93,6 +93,23 @@ consultam o catálogo público a cada 15 minutos e cruzam os nomes confirmados c
 de uma correspondência, ela ainda pede a escolha do usuário. O catálogo expira quatro horas depois do início do jogo.
 As alterações do painel são salvas localmente até serem publicadas.
 
+A Central também analisa os jogos uma vez por dia enquanto o servidor local estiver aberto: baixa os guias do BrazilTVEPG,
+consulta os eventos esportivos e compara times, horário, emissora brasileira indicada pela ESPN, atualidade do guia e
+concordância entre fontes. Com poucos resultados observados, mostra uma pontuação inicial de aderência e mantém os
+jogos em revisão. Depois que o usuário registra quais canais realmente transmitiram partidas concluídas, a Central
+treina uma regressão logística, calibra as saídas em jogos separados e mede o erro de Brier em um conjunto de jogos
+que não foi usado no treino. Só usa “chance estimada” e libera previsões automáticas quando o modelo supera a previsão
+base nesse teste. O limite começa em 75%. EPG desatualizado, empate ou confiança abaixo do limite sempre exigem revisão.
+O painel envia uma notificação do Windows quando a análise termina ou falha. A janela do servidor iniciada pelo
+atalho precisa continuar aberta; o navegador pode ser minimizado ou fechado. Ao abrir a Central, ela executa a análise
+do dia se ainda não tiver sido feita. “Analisar agora” inicia uma execução imediata.
+
+Após validar o resultado real de um jogo, marque “Transmitiu” ou “Não transmitiu” para os canais candidatos. Esses
+rótulos ficam somente neste computador e alimentam o treinamento; não são enviados às TVs. Enquanto não houver dados
+suficientes e bom resultado fora da amostra, nenhuma previsão baseada apenas na pontuação inicial será publicada como
+confirmada. Uma confirmação manual tem prioridade. Mesmo depois da calibração, a porcentagem é uma estimativa baseada
+nos jogos registrados, não garantia para um evento futuro. A Central nunca recebe nem publica listas ou credenciais IPTV.
+
 Ao apertar OK num jogo, a TV também consulta o guia das suas listas para achar o canal que o transmite: numa conta Xtream,
 o guia curto de cada canal sugerido (`get_short_epg`); numa lista M3U, o arquivo XMLTV da lista inteira — o que o
 Player IPTV tem configurado para ela (Ajustes › Guia) ou o que a própria lista declara (`url-tvg`). O canal do guia é

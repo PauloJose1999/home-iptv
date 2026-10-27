@@ -144,8 +144,117 @@
       .then(function () { message(okText); render(); $('saved').textContent = 'Salvo localmente em assets/sports/broadcasts.json · precisa ser publicado no GitHub para chegar às TVs.'; })
       .catch(function (e) { message('Falha ao salvar: ' + e.message, true); });
   }
-  $('refresh').addEventListener('click', load);
+  function postJson(url, body) {
+    return fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).then(function (r) {
+      return r.json().then(function (data) { if (!r.ok) throw new Error(data.error || 'HTTP ' + r.status); return data; });
+    });
+  }
+  function loadForecast() {
+    getJson('/api/state').then(function (state) {
+      $('threshold').value = String(state.threshold || 75);
+      var stale = state.staleSources && state.staleSources.length ? ' · EPG para revisar: ' + state.staleSources.join(', ') : ' · EPG atualizado';
+      var model = state.model || {mode: 'initial', samples: 0};
+      var learning = model.mode === 'calibrated' ? ' · modelo validado em partidas anteriores (' + model.samples + ' resultados, Brier ' + model.brier + ')' : ' · aprendendo com ' + (model.samples || 0) + ' resultados reais; percentuais ainda são pontuação inicial';
+      $('forecast-meta').textContent = state.lastRun ? 'Última análise: ' + new Date(state.lastRun).toLocaleString('pt-BR') + ' · ' + (state.eventCount || 0) + ' jogos · limite ' + state.threshold + '%' + learning + stale : 'Aguardando a primeira análise da Central.';
+      $('run-badge').textContent = state.running ? 'Análise em andamento' : state.error ? 'Conferir avisos' : state.lastRun ? 'Análise concluída' : 'Iniciando';
+      renderForecast(state.forecasts || [], state.history || [], state.observations || []);
+      if (state.error) message('A análise terminou com fontes indisponíveis: ' + state.error, true);
+      if (state.running) window.setTimeout(loadForecast, 4000);
+    }).catch(function (e) { $('forecast-meta').textContent = 'Não consegui ler o estado da análise: ' + e.message; });
+  }
+  function renderForecast(items, history, observations) {
+    var host = $('forecast-list');
+    host.innerHTML = '';
+    var seen = {};
+    observations.forEach(function (x) { seen[x.eventId + '|' + String(x.channel).toLowerCase()] = true; });
+    var review = items.filter(function (x) { return x.status === 'review'; });
+    var approved = items.filter(function (x) { return x.status === 'approved' || x.status === 'manual-confirmed'; });
+    var heading = document.createElement('h3'); heading.textContent = 'Previsões com confiança suficiente · ' + approved.length; host.appendChild(heading);
+    if (!approved.length) { var emptyA = document.createElement('p'); emptyA.className = 'forecast-empty'; emptyA.textContent = 'Nenhuma previsão atingiu os critérios de segurança hoje.'; host.appendChild(emptyA); }
+    approved.forEach(function (item) { host.appendChild(forecastCard(item, false, seen)); });
+    var reviewHeading = document.createElement('h3'); reviewHeading.textContent = 'Revisão manual · ' + review.length; host.appendChild(reviewHeading);
+    if (!review.length) { var emptyR = document.createElement('p'); emptyR.className = 'forecast-empty'; emptyR.textContent = 'Nenhum jogo aguardando revisão.'; host.appendChild(emptyR); }
+    review.forEach(function (item) { host.appendChild(forecastCard(item, true, seen)); });
+    var currentIds = {};
+    items.forEach(function (x) { currentIds[x.id] = true; });
+    var outcomeQueue = history.filter(function (x) {
+      return !currentIds[x.id] && Date.now() > x.start + 4 * 3600000 && x.candidates && x.candidates.some(function (candidate) {
+        return candidate.features && !seen[x.id + '|' + String(candidate.channel).toLowerCase()];
+      });
+    });
+    var outcomeHeading = document.createElement('h3'); outcomeHeading.textContent = 'Resultados de jogos anteriores para calibrar · ' + outcomeQueue.length; host.appendChild(outcomeHeading);
+    if (!outcomeQueue.length) { var emptyOutcome = document.createElement('p'); emptyOutcome.className = 'forecast-empty'; emptyOutcome.textContent = 'Quando houver resultados observados, registre aqui quais canais realmente transmitiram.'; host.appendChild(emptyOutcome); }
+    outcomeQueue.forEach(function (item) { host.appendChild(forecastCard(item, false, seen)); });
+  }
+  function forecastCard(item, needsReview, seen) {
+    var card = document.createElement('article'); card.className = 'forecast-card' + (needsReview ? ' needs-review' : '');
+    var top = document.createElement('div'); top.className = 'forecast-top';
+    var title = document.createElement('strong'); title.textContent = item.title || 'Evento esportivo';
+    var calibrated = item.model && item.model.mode === 'calibrated';
+    var score = document.createElement('span'); score.className = 'confidence ' + (item.confidence >= 75 ? 'high' : 'low'); score.textContent = (calibrated ? 'Chance estimada: ' : 'Aderência dos sinais: ') + (item.confidence || 0) + '%';
+    top.appendChild(title); top.appendChild(score); card.appendChild(top);
+    var meta = document.createElement('p'); meta.className = 'forecast-detail'; meta.textContent = (item.competition || '') + ' · ' + new Date(item.start).toLocaleString('pt-BR'); card.appendChild(meta);
+    if (item.candidates && item.candidates.length) {
+      item.candidates.slice(0, 3).forEach(function (candidate, index) {
+        var line = document.createElement('div'); line.className = 'candidate';
+        var label = document.createElement('span'); label.textContent = (index + 1) + '. ' + candidate.channel + ' — ' + (calibrated ? 'chance ' : 'sinais ') + candidate.score + '%'; line.appendChild(label);
+        var reason = document.createElement('small'); reason.textContent = candidate.reasons.join(' · '); line.appendChild(reason); card.appendChild(line);
+      });
+    } else { var noMatch = document.createElement('p'); noMatch.className = 'forecast-detail'; noMatch.textContent = 'Sem correspondência no EPG. Escolha manualmente se souber a emissora.'; card.appendChild(noMatch); }
+    var note = document.createElement('p'); note.className = 'estimate-note'; note.textContent = 'Estimativa baseada nos dados disponíveis; não é garantia de transmissão.'; card.appendChild(note);
+    if (needsReview) {
+      var actions = document.createElement('div'); actions.className = 'review-actions';
+      var select = document.createElement('select'); select.setAttribute('aria-label', 'Canal a confirmar');
+      var first = document.createElement('option'); first.value = ''; first.textContent = 'Escolha o canal correto'; select.appendChild(first);
+      (item.candidates || []).forEach(function (candidate) { var option = document.createElement('option'); option.value = candidate.channel; option.textContent = candidate.channel + ' (' + candidate.score + '%)'; select.appendChild(option); });
+      var custom = document.createElement('input'); custom.placeholder = 'Ou digite o nome da emissora';
+      var confirm = document.createElement('button'); confirm.textContent = 'Confirmar canal'; confirm.onclick = function () {
+        var channel = custom.value.trim() || select.value;
+        if (!channel) { message('Escolha ou digite uma emissora antes de confirmar.', true); return; }
+        postJson('/api/review', {id: item.id, action: 'confirm', channel: channel}).then(function () { message('Emissora confirmada e adicionada ao catálogo local.'); loadForecast(); load(); }).catch(function (e) { message('Não consegui salvar a revisão: ' + e.message, true); });
+      };
+      var dismiss = document.createElement('button'); dismiss.className = 'secondary'; dismiss.textContent = 'Sem canal confirmado'; dismiss.onclick = function () {
+        postJson('/api/review', {id: item.id, action: 'dismiss'}).then(function () { message('Jogo marcado como sem canal confirmado.'); loadForecast(); }).catch(function (e) { message('Não consegui salvar: ' + e.message, true); });
+      };
+      actions.appendChild(select); actions.appendChild(custom); actions.appendChild(confirm); actions.appendChild(dismiss); card.appendChild(actions);
+    } else if (item.status === 'manual-confirmed') {
+      var manual = document.createElement('div'); manual.className = 'badge manual-badge'; manual.textContent = 'Confirmado manualmente: ' + item.reviewed.channel; card.appendChild(manual);
+    } else if (item.candidates && item.candidates[0]) {
+      var auto = document.createElement('div'); auto.className = 'badge auto-badge'; auto.textContent = 'Previsão automática: ' + item.candidates[0].channel; card.appendChild(auto);
+    }
+    if (item.start && Date.now() > item.start + 4 * 3600000 && item.candidates && item.candidates.some(function (x) { return x.features; })) {
+      var outcome = document.createElement('div'); outcome.className = 'outcome-tools';
+      var outcomeTitle = document.createElement('small'); outcomeTitle.textContent = 'Depois de conferir o resultado real, ajude a calibrar o modelo:'; outcome.appendChild(outcomeTitle);
+        item.candidates.forEach(function (candidate) {
+        if (!candidate.features || seen[item.id + '|' + String(candidate.channel).toLowerCase()]) return;
+        var outcomeRow = document.createElement('div'); outcomeRow.className = 'outcome-row';
+        var channelName = document.createElement('span'); channelName.textContent = candidate.channel; outcomeRow.appendChild(channelName);
+        [[1, 'Transmitiu'], [0, 'Não transmitiu']].forEach(function (choice) {
+          var button = document.createElement('button'); button.className = 'secondary'; button.textContent = choice[1];
+          button.onclick = function () {
+            postJson('/api/outcome', {id: item.id, channel: candidate.channel, label: choice[0]}).then(function (result) {
+              message(result.model.mode === 'calibrated' ? 'Resultado salvo. O modelo já passou pela validação com jogos separados.' : 'Resultado salvo para treinar e medir o algoritmo; ainda falta uma amostra maior.');
+              runForecast();
+            }).catch(function (e) { message('Não consegui registrar o resultado: ' + e.message, true); });
+          };
+          outcomeRow.appendChild(button);
+        });
+        outcome.appendChild(outcomeRow);
+      });
+      card.appendChild(outcome);
+    }
+    return card;
+  }
+  function runForecast() {
+    $('refresh').disabled = true;
+    postJson('/api/forecast/run', {force: true}).then(function () { message('Análise iniciada. A Central vai avisar quando terminar.'); loadForecast(); }).catch(function (e) { message('Não consegui iniciar a análise: ' + e.message, true); }).finally(function () { $('refresh').disabled = false; });
+  }
+  $('threshold').addEventListener('change', function () {
+    postJson('/api/settings', {threshold: Number($('threshold').value)}).then(function () { runForecast(); }).catch(function (e) { message('Não consegui guardar o limite: ' + e.message, true); });
+  });
+  $('refresh').addEventListener('click', function () { load(); runForecast(); });
   $('search').addEventListener('input', render);
   $('filter').addEventListener('change', render);
   load();
+  loadForecast();
 })();
