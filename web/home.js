@@ -1648,6 +1648,7 @@
   var SAVER_CHOICES = [0, 2, 5, 10, 30], resetArmed = false;
 
   function settingRows() {
+    if (settingsPage === 'access') return accessRows();
     var unit = Prefs.temperature(), theme = Prefs.theme(), mins = Prefs.saverMinutes();
     var auto = tr('Automatic'), picked = pickedLanguage(), wanted = liveWanted();
     var rows = [], picks = cardPicks();
@@ -1671,6 +1672,9 @@
       value: !Trakt.configured ? tr('Not set up') : Trakt.connected() ? (Trakt.user() || tr('Connected')) : tr('Not connected'),
       about: tr('Your Trakt account: the episodes and movies you watched here and on other devices, and My list.'),
       step: function (d) { if (d >= 0) openTrakt(); }});
+    rows.push({key: 'access', label: tr('Accessibility'), value: '›',
+      about: tr('Text size, contrast and focus, to see the screen well from afar.'),
+      step: function (d) { if (d >= 0) { settingsPage = 'access'; st.row = 0; } }});
     rows.push({key: 'theme', label: tr('Theme'), value: theme === 'light' ? tr('Light') : theme === 'dark' ? tr('Dark') : auto,
       about: tr('Automatic: light by day, dark at night.'),
       step: function (d) { cycle('theme', ['auto', 'light', 'dark'], theme, d); checkNight(); }});
@@ -1695,6 +1699,50 @@
     return rows;
   }
 
+  // MARK: - Accessibility: a page of Home Settings (Back returns to the list). Each choice is a class on <body>, so it
+  // reaches every screen at once: text-large / text-xlarge, contrast, focus-strong, still.
+
+  var settingsPage = '';   // '' (the list) | 'access'
+  var TEXT_SIZES = ['normal', 'large', 'xlarge'];
+
+  function accessRows() {
+    var size = Prefs.textSize();
+    return [
+      {key: 'textsize', label: tr('Text size'),
+        value: size === 'xlarge' ? tr('Extra large') : size === 'large' ? tr('Large') : tr('text|Normal'),
+        about: tr('Bigger letters on the home screen, the title pages and these settings.'),
+        step: function (d) { cycle('textSize', TEXT_SIZES, size, d); applyAccess(); }},
+      {key: 'contrast', label: tr('High contrast'), toggle: Prefs.contrast(),
+        about: tr('The smaller texts in solid colors, easier to read.'),
+        step: function () { Prefs.set('contrast', !Prefs.contrast()); applyAccess(); }},
+      {key: 'focus', label: tr('Stronger focus'), toggle: Prefs.strongFocus(),
+        about: tr('A thick yellow frame around what is selected.'),
+        step: function () { Prefs.set('strongFocus', !Prefs.strongFocus()); applyAccess(); }},
+      {key: 'motion', label: tr('Fewer animations'), toggle: Prefs.still(),
+        about: tr('Nothing slides or fades: the screen changes at once.'),
+        step: function () { Prefs.set('still', !Prefs.still()); applyAccess(); }}
+    ];
+  }
+
+  function applyAccess() {
+    var size = Prefs.textSize();
+    setClass(body, 'text-large', size === 'large');
+    setClass(body, 'text-xlarge', size === 'xlarge');
+    setClass(body, 'contrast', Prefs.contrast());
+    setClass(body, 'focus-strong', Prefs.strongFocus());
+    setClass(body, 'still', Prefs.still());
+  }
+
+  /** Back on the Accessibility page: the list again, on its row. */
+  function settingsBack() {
+    if (settingsPage !== 'access') return false;
+    settingsPage = '';
+    renderSettings();
+    for (var i = 0; i < rowsNow.length; i++) if (rowsNow[i].key === 'access') st.row = i;
+    updateFocus();
+    return true;
+  }
+
   function cycle(name, values, current, d) {
     var i = values.indexOf(current);
     Prefs.set(name, values[(i + (d || 1) + values.length) % values.length]);
@@ -1705,6 +1753,7 @@
     if (!resetArmed) { resetArmed = true; return; }
     resetArmed = false;
     Prefs.reset();
+    applyAccess();
     I18N.set(Prefs.language());
     pickShelf();
     liveIds = '';
@@ -1719,9 +1768,11 @@
   function renderSettings() {
     var box = $('settings').firstChild;
     box.innerHTML = '';
+    // Accessibility: a panel at the side, the home screen in full beside it, so each choice shows as it's made.
+    setClass($('settings'), 'side', settingsPage === 'access');
     var title = el('div', 'title', box);
     sym('settings', title);
-    title.appendChild(document.createTextNode(tr('Home Settings')));
+    title.appendChild(document.createTextNode(settingsPage === 'access' ? tr('Accessibility') : tr('Home Settings')));
     var list = el('div', 'list', box), holder = el('div', 'rows', list);
     rowsNow = settingRows();
     list.style.height = Math.min(rowsNow.length, 7) * 78 + 'px';
@@ -1745,6 +1796,7 @@
   function openSettings(key) {
     st.zone = Z.SETTINGS;
     st.row = 0;
+    settingsPage = '';
     resetArmed = false;
     renderSettings();
     for (var i = 0; key && i < rowsNow.length; i++) if (rowsNow[i].key === key) st.row = i;
@@ -2453,6 +2505,7 @@
     if (st.zone === Z.EDIT) { editBack(); return; }
     if (st.zone === Z.LANG) { closePicker(false); return; }
     if (st.zone === Z.TRAKT) { closeTrakt(); return; }
+    if (st.zone === Z.SETTINGS && settingsBack()) return;
     if (sheetOpen()) { closeSheets(); return; }
     if (st.zone === Z.DRAWER) { closeDrawer(); return; }
     // Movies and Shows: Back goes up to the tabs, then to TV aberta.
@@ -2710,6 +2763,7 @@
 
   I18N.set(Prefs.language());
   if (window.PalmSystem) takeLaunchParams(window.PalmSystem.launchParams);   // opened by the IPTV player, with a report
+  applyAccess();   // the accessibility choices, before anything is drawn
   checkNight();   // now, from the last forecast: not after the TV lists its apps, with the day look until then
   // LG's screensaver waits only when ours will show: not under a sheet (ours waits there), and not without photos.
   TV.holdScreenSaver(function () { return !!antenna || (Prefs.saverMinutes() > 0 && !sheetOpen() && saverPhotos().length > 0); });

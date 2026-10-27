@@ -53,6 +53,12 @@ var Prefs = (function () {
     cardPicks: function () { return pick('cardPicks', null); },
     /** The focused channel card plays with sound. */
     cardSound: function () { return pick('cardSound', true); },
+    /** Accessibility: the text size ('normal' | 'large' | 'xlarge'), solid colors for small text, a thick focus frame,
+     *  and no sliding or fading. */
+    textSize: function () { return pick('textSize', 'normal'); },
+    contrast: function () { return pick('contrast', false); },
+    strongFocus: function () { return pick('strongFocus', false); },
+    still: function () { return pick('still', false); },
     /** Minutes without a key before the screensaver; 0: never. */
     saverMinutes: function () { return pick('saverMinutes', 5); },
     set: function (name, value) { v[name] = value; save(); this.version++; },
