@@ -5,5 +5,6 @@
 12-rules-titles.js
 13-rules-settings.js
 20-data-iptv.js
+21-data-tv.js
 home.js
 90-start.js

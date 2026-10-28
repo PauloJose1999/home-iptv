@@ -14,24 +14,6 @@
 
   /** hide_apps in config.properties: left out of the shelf, All Apps and the picks, by id or name (part of it). */
   var HIDE = (CONFIG.hideApps || []).map(function (s) { return s.toLowerCase(); });
-  function hidden(app) {
-    var id = (app.id || '').toLowerCase(), title = (app.title || '').toLowerCase();
-    for (var i = 0; i < HIDE.length; i++) if (id.indexOf(HIDE[i]) >= 0 || title.indexOf(HIDE[i]) >= 0) return true;
-    return false;
-  }
-
-  function loadApps(done) {
-    TV.apps(function (list) {
-      apps = list.filter(function (a) { return !hidden(a); });
-      Data.setApps(apps);
-      pickShelf();
-      TV.inputs(function (list2) {
-        inputs = list2;
-        if (done) done();
-        loadChannels();
-      });
-    });
-  }
 
   /** Back to the home screen (the app was opened again): the shelf, everything closed, the first tab. */
   function reset() {

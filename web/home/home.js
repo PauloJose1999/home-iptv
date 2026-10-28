@@ -263,21 +263,6 @@
     [/rede ?tv/i, ['#7C3AED', '#1E1B4B']]
   ];
 
-  /**
-   * The antenna card's picture on the channel picked for it, once it plays (the switch goes through that picture,
-   * staying in this app); then its name and number. Nothing picked: the channel the TV is on.
-   */
-  function tuneAntenna(video) {
-    var picks = cardPicks(), want = picks.big.kind === 'antenna' ? picks.big.name : picks.small.name;
-    if (!want) { learnAntenna(video); return; }
-    TV.channels([], 999, function (list) {
-      var target = null;
-      for (var i = 0; list && i < list.length && !target; i++) if (plainName(list[i].name) === plainName(want)) target = list[i];
-      if (!target) { learnAntenna(video); return; }
-      TV.tune(video, target, function () { learnAntenna(video, target); });
-    });
-  }
-
   /** The All channels button: a grid symbol, its name, how many channels the list has, and an arrow. */
   function drawAllChannels(card) {
     el('div', 'img', card);
@@ -292,18 +277,6 @@
 
   // The channel the antenna is on, as the TV tells it ({id, number, name}); null until it does (or when it won't).
   var antennaChannel = null;
-
-  /**
-   * Which channel the antenna card's picture is on: the card takes its name, number and program. The broadcast
-   * service may leave a subchannel's name out: the channel list's (`known`, the one tuned) fills it in.
-   */
-  function learnAntenna(video, known) {
-    TV.broadcastChannel(video, function (ch) {
-      if (!ch) { TV.currentChannel(showAntennaChannel); return; }   // an older TV: its remote-control service tells it
-      if (!ch.name && known && known.id === ch.id) ch.name = known.name;
-      showAntennaChannel(ch);
-    });
-  }
 
   /** The antenna card shows `ch` ({id, number, name}), with what's on now when the TV tells it. */
   function showAntennaChannel(ch) {
@@ -2111,20 +2084,6 @@
   // MARK: - Opening things
 
   var iptvLaunchAt = 0;
-
-  function launcher(id, name) {
-    return function () {
-      TV.launch(id, null, function (ok) {
-        if (!ok) toast(trf("Couldn't open {app}.", {app: name || id}));
-      });
-    };
-  }
-
-  function tvSettings() {
-    TV.settings(function (ok) {
-      if (!ok) toast(tr("Couldn't open TV Settings"));
-    });
-  }
 
   // MARK: - The antenna full screen: the channel the TV is on, inside the launcher (TV ao vivo on the top bar)
   //
