@@ -53,4 +53,8 @@ node tools/test_sports.js
 node tools/test_m3u_guide.js
 python3 tools/test_sports_control.py
 
+# How the home screen behaves (web/home.js), step by step, in headless Chrome: a change shows up as a difference from
+# tools/home-test/baseline.json (python3 tools/home_test.py --update records it again when the change is meant).
+python3 tools/home_test.py
+
 echo "All checks passed."

@@ -1,0 +1,2314 @@
+{
+ "scenarios": [
+  {
+   "scenario": "inicio",
+   "errors": [],
+   "records": [
+    {
+     "step": "aberto",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "setas na Home",
+   "errors": [],
+   "records": [
+    {
+     "step": "cima",
+     "zone": "cards",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "TV ao VivoAo vivoO canal em que a TV está"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "direita",
+     "zone": "cards",
+     "tab": 0,
+     "card": 1,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui."
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "baixo",
+     "zone": "cards",
+     "tab": 0,
+     "card": 2,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "baixo 2",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 2,
+     "shelf": 6,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Globoplay"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "gaveta",
+     "zone": "drawer",
+     "tab": 0,
+     "card": 2,
+     "shelf": 6,
+     "row": 0,
+     "body": "drawer-open",
+     "sheets": [],
+     "focus": [
+      "Ajustes do Início"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "gaveta direita",
+     "zone": "drawer",
+     "tab": 0,
+     "card": 2,
+     "shelf": 6,
+     "row": 0,
+     "body": "drawer-open",
+     "sheets": [],
+     "focus": [
+      "Ajustes da TV"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "fecha gaveta",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 2,
+     "shelf": 7,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Spotify"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "topo",
+     "zone": "cards",
+     "tab": 0,
+     "card": 1,
+     "shelf": 7,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui."
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "voltar",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 1,
+     "shelf": 7,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Spotify"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "filmes, titulo e pessoa",
+   "errors": [],
+   "records": [
+    {
+     "step": "aba filmes",
+     "zone": "top",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Filmes"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "fileira",
+     "zone": "catalog",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Filme 1001"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "segundo titulo",
+     "zone": "catalog",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Filme 1002"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "segunda fileira",
+     "zone": "catalog",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Filme 1001"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "pagina do titulo",
+     "zone": "detail",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Assistir"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Filme 1002",
+      "Assistir",
+      "Elenco",
+      "Filmes semelhantes"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "elenco",
+     "zone": "detail",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Atriz UmPersonagem Um"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Filme 1002",
+      "Assistir",
+      "Elenco",
+      "Filmes semelhantes"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "pagina da pessoa",
+     "zone": "detail",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Filme 30012025 · Papel"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Pessoa 501",
+      "Filmes",
+      "Séries"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "volta ao titulo",
+     "zone": "detail",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Atriz UmPersonagem Um"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Filme 1002",
+      "Assistir",
+      "Elenco",
+      "Filmes semelhantes"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "volta a fileira",
+     "zone": "catalog",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Filme 1002"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "volta as abas",
+     "zone": "top",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Filmes"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "volta a home",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "serie e episodios",
+   "errors": [],
+   "records": [
+    {
+     "step": "aba series",
+     "zone": "top",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Séries"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "pagina da serie",
+     "zone": "detail",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Assistir T1 · E1"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Série 2001",
+      "Assistir T1 · E1",
+      "Episódios",
+      "Elenco",
+      "Séries semelhantes"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "botao episodios",
+     "zone": "detail",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Episódios"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Série 2001",
+      "Assistir T1 · E1",
+      "Episódios",
+      "Elenco",
+      "Séries semelhantes"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "episodios",
+     "zone": "detail",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "1. Episódio 1 da temporada 145 minHistória do episódio 1."
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Temporada 1",
+      "Temporada 2",
+      "1. Episódio 1 da temporada 1",
+      "2. Episódio 2 da temporada 1",
+      "3. Episódio 3 da temporada 1"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "temporada 2",
+     "zone": "detail",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "1. Episódio 1 da temporada 145 minHistória do episódio 1."
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Temporada 1",
+      "Temporada 2",
+      "1. Episódio 1 da temporada 1",
+      "2. Episódio 2 da temporada 1",
+      "3. Episódio 3 da temporada 1"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "episodio",
+     "zone": "detail",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "2. Episódio 2 da temporada 145 minHistória do episódio 2."
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Temporada 1",
+      "Temporada 2",
+      "1. Episódio 1 da temporada 1",
+      "2. Episódio 2 da temporada 1",
+      "3. Episódio 3 da temporada 1"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "volta a serie",
+     "zone": "detail",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Episódios"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Série 2001",
+      "Assistir T1 · E1",
+      "Episódios",
+      "Elenco",
+      "Séries semelhantes"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "volta a fileira",
+     "zone": "catalog",
+     "tab": 3,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Série 2001"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "ajustes e acessibilidade",
+   "errors": [],
+   "records": [
+    {
+     "step": "ajustes",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [
+      "settings"
+     ],
+     "focus": [
+      "Card grandeO canal da TV›"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Ajustes do Início",
+      "Card grandeO canal da TV›",
+      "Card pequenoRecord News · internet›",
+      "Lista IPTVNenhuma›",
+      "Som dos canais",
+      "Prateleira›",
+      "Trakt.tvNão configurado›",
+      "Acessibilidade›",
+      "Tema‹Automático›",
+      "Proteção de tela‹Depois de 5 min›",
+      "IdiomaPortuguês›",
+      "Temperatura‹Automática›",
+      "Widget do clima",
+      "Ajustes da TV›",
+      "Restaurar o padrão›"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "linha 4",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 3,
+     "body": "",
+     "sheets": [
+      "settings"
+     ],
+     "focus": [
+      "Som dos canais"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Ajustes do Início",
+      "Card grandeO canal da TV›",
+      "Card pequenoRecord News · internet›",
+      "Lista IPTVNenhuma›",
+      "Som dos canais",
+      "Prateleira›",
+      "Trakt.tvNão configurado›",
+      "Acessibilidade›",
+      "Tema‹Automático›",
+      "Proteção de tela‹Depois de 5 min›",
+      "IdiomaPortuguês›",
+      "Temperatura‹Automática›",
+      "Widget do clima",
+      "Ajustes da TV›",
+      "Restaurar o padrão›"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "som trocado",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 3,
+     "body": "",
+     "sheets": [
+      "settings"
+     ],
+     "focus": [
+      "Som dos canais"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Ajustes do Início",
+      "Card grandeO canal da TV›",
+      "Card pequenoRecord News · internet›",
+      "Lista IPTVNenhuma›",
+      "Som dos canais",
+      "Prateleira›",
+      "Trakt.tvNão configurado›",
+      "Acessibilidade›",
+      "Tema‹Automático›",
+      "Proteção de tela‹Depois de 5 min›",
+      "IdiomaPortuguês›",
+      "Temperatura‹Automática›",
+      "Widget do clima",
+      "Ajustes da TV›",
+      "Restaurar o padrão›"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "acessibilidade",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [
+      "settings(side)"
+     ],
+     "focus": [
+      "Tamanho do texto‹Normal›"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Acessibilidade",
+      "Tamanho do texto‹Normal›",
+      "Alto contraste",
+      "Foco reforçado",
+      "Menos animações"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "texto grande",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "text-large",
+     "sheets": [
+      "settings(side)"
+     ],
+     "focus": [
+      "Tamanho do texto‹Grande›"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Acessibilidade",
+      "Tamanho do texto‹Grande›",
+      "Alto contraste",
+      "Foco reforçado",
+      "Menos animações"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "texto muito grande",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "text-xlarge",
+     "sheets": [
+      "settings(side)"
+     ],
+     "focus": [
+      "Tamanho do texto‹Muito grande›"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Acessibilidade",
+      "Tamanho do texto‹Muito grande›",
+      "Alto contraste",
+      "Foco reforçado",
+      "Menos animações"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "contraste",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 1,
+     "body": "contrast text-xlarge",
+     "sheets": [
+      "settings(side)"
+     ],
+     "focus": [
+      "Alto contraste"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Acessibilidade",
+      "Tamanho do texto‹Muito grande›",
+      "Alto contraste",
+      "Foco reforçado",
+      "Menos animações"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "foco",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 2,
+     "body": "contrast focus-strong text-xlarge",
+     "sheets": [
+      "settings(side)"
+     ],
+     "focus": [
+      "Foco reforçado"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Acessibilidade",
+      "Tamanho do texto‹Muito grande›",
+      "Alto contraste",
+      "Foco reforçado",
+      "Menos animações"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "animacoes",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 3,
+     "body": "contrast focus-strong still text-xlarge",
+     "sheets": [
+      "settings(side)"
+     ],
+     "focus": [
+      "Menos animações"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Acessibilidade",
+      "Tamanho do texto‹Muito grande›",
+      "Alto contraste",
+      "Foco reforçado",
+      "Menos animações"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "volta a lista",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 6,
+     "body": "contrast focus-strong still text-xlarge",
+     "sheets": [
+      "settings"
+     ],
+     "focus": [
+      "Acessibilidade›"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Ajustes do Início",
+      "Card grandeO canal da TV›",
+      "Card pequenoRecord News · internet›",
+      "Lista IPTVNenhuma›",
+      "Som dos canais",
+      "Prateleira›",
+      "Trakt.tvNão configurado›",
+      "Acessibilidade›",
+      "Tema‹Automático›",
+      "Proteção de tela‹Depois de 5 min›",
+      "IdiomaPortuguês›",
+      "Temperatura‹Automática›",
+      "Widget do clima",
+      "Ajustes da TV›",
+      "Restaurar o padrão›"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "fecha",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 6,
+     "body": "contrast focus-strong still text-xlarge",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "seletores dos cards",
+   "errors": [],
+   "records": [
+    {
+     "step": "card grande",
+     "zone": "lang",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [
+      "langpick"
+     ],
+     "focus": [
+      "Globo · antena"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Card grande",
+      "Globo · antena",
+      "Record News · antena",
+      "Band Minas · antena",
+      "TV Alterosa · antena"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "card grande desce",
+     "zone": "lang",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [
+      "langpick"
+     ],
+     "focus": [
+      "Record News · antena"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Card grande",
+      "Globo · antena",
+      "Record News · antena",
+      "Band Minas · antena",
+      "TV Alterosa · antena"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "volta",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [
+      "settings"
+     ],
+     "focus": [
+      "Card grandeO canal da TV›",
+      "Record News · antena"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Ajustes do Início",
+      "Card grandeO canal da TV›",
+      "Card pequenoRecord News · internet›",
+      "Lista IPTVNenhuma›",
+      "Som dos canais",
+      "Prateleira›",
+      "Trakt.tvNão configurado›",
+      "Acessibilidade›",
+      "Tema‹Automático›",
+      "Proteção de tela‹Depois de 5 min›",
+      "IdiomaPortuguês›",
+      "Temperatura‹Automática›",
+      "Widget do clima",
+      "Ajustes da TV›",
+      "Restaurar o padrão›"
+     ],
+     "toast": ""
+    },
+    {
+     "step": "card pequeno",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 1,
+     "body": "",
+     "sheets": [
+      "settings"
+     ],
+     "focus": [
+      "Card pequenoRecord News · internet›",
+      "Record News · antena"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Ajustes do Início",
+      "Card grandeO canal da TV›",
+      "Card pequenoRecord News · internet›",
+      "Lista IPTVNenhuma›",
+      "Som dos canais",
+      "Prateleira›",
+      "Trakt.tvNão configurado›",
+      "Acessibilidade›",
+      "Tema‹Automático›",
+      "Proteção de tela‹Depois de 5 min›",
+      "IdiomaPortuguês›",
+      "Temperatura‹Automática›",
+      "Widget do clima",
+      "Ajustes da TV›",
+      "Restaurar o padrão›"
+     ],
+     "toast": "Configure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui."
+    },
+    {
+     "step": "fecha",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 1,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix",
+      "Record News · antena"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": "Configure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui."
+    }
+   ]
+  },
+  {
+   "scenario": "editor da prateleira",
+   "errors": [],
+   "records": [
+    {
+     "step": "editor",
+     "zone": "edit",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [
+      "shelfedit"
+     ],
+     "focus": [
+      "NetflixNetflix1Escondido"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "segundo app",
+     "zone": "edit",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [
+      "shelfedit"
+     ],
+     "focus": [
+      "YouTubeYouTube2Escondido"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "menu",
+     "zone": "edit",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [
+      "shelfedit"
+     ],
+     "focus": [
+      "YouTubeYouTube2Escondido",
+      "Mover"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "mover",
+     "zone": "edit",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [
+      "shelfedit"
+     ],
+     "focus": [
+      "YouTubeYouTube2Escondido"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "movido",
+     "zone": "edit",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [
+      "shelfedit"
+     ],
+     "focus": [
+      "YouTubeYouTube3Escondido"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "solto",
+     "zone": "edit",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [
+      "shelfedit"
+     ],
+     "focus": [
+      "YouTubeYouTube3Escondido"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": "YouTube ficou aqui."
+    },
+    {
+     "step": "volta",
+     "zone": "settings",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [
+      "settings"
+     ],
+     "focus": [
+      "Prateleira›",
+      "YouTubeYouTube3Escondido"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [
+      "Ajustes do Início",
+      "Card grandeO canal da TV›",
+      "Card pequenoRecord News · internet›",
+      "Lista IPTVNenhuma›",
+      "Som dos canais",
+      "Prateleira›",
+      "Trakt.tvNão configurado›",
+      "Acessibilidade›",
+      "Tema‹Automático›",
+      "Proteção de tela‹Depois de 5 min›",
+      "IdiomaPortuguês›",
+      "Temperatura‹Automática›",
+      "Widget do clima",
+      "Ajustes da TV›",
+      "Restaurar o padrão›"
+     ],
+     "toast": "YouTube ficou aqui."
+    },
+    {
+     "step": "fecha",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 4,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix",
+      "YouTubeYouTube3Escondido"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": "YouTube ficou aqui."
+    }
+   ]
+  },
+  {
+   "scenario": "reabrir e player",
+   "errors": [],
+   "records": [
+    {
+     "step": "pagina aberta",
+     "zone": "detail",
+     "tab": 2,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog detail-open",
+     "sheets": [],
+     "focus": [
+      "Assistir"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Em alta nos seus apps",
+      "No Netflix",
+      "No Prime Video",
+      "Lançamentos"
+     ],
+     "page": [
+      "Filme 1001",
+      "Assistir",
+      "Elenco",
+      "Filmes semelhantes"
+     ],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "reaberto",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "volta de canal",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "progresso recebido",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "roda e protetor de tela",
+   "errors": [],
+   "records": [
+    {
+     "step": "roda baixo",
+     "zone": "drawer",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "drawer-open",
+     "sheets": [],
+     "focus": [
+      "TV ao Vivo"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "roda baixo 2",
+     "zone": "drawer",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "drawer-open",
+     "sheets": [],
+     "focus": [
+      "TV ao Vivo"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "roda cima",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "protetor",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "acorda",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "depois de acordar",
+     "zone": "drawer",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "drawer-open",
+     "sheets": [],
+     "focus": [
+      "TV ao Vivo"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "antena",
+   "errors": [],
+   "records": [
+    {
+     "step": "card da antena",
+     "zone": "cards",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "TV ao VivoAo vivoO canal em que a TV está"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "ok na antena",
+     "zone": "cards",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "TV ao VivoAo vivoO canal em que a TV está"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "voltar",
+     "zone": "shelf",
+     "tab": 0,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "",
+     "sheets": [],
+     "focus": [
+      "Netflix"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [
+      "TV ao VivoAo vivoO canal em que a TV está",
+      "TV ao VivoAo vivoConfigure a sua lista IPTV no Player IPTV: os canais dela aparecem aqui.",
+      "Todos os canaisAbre o Player IPTV"
+     ],
+     "catalog": [],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  },
+  {
+   "scenario": "esportes",
+   "errors": [],
+   "records": [
+    {
+     "step": "aba esportes",
+     "zone": "top",
+     "tab": 1,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Esportes"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Futebol",
+      "Programação do BrazilTVEPG"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "fileira",
+     "zone": "catalog",
+     "tab": 1,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Em breve · hh:mmCanal não confirmadoFLAxPALFlamengo x Palmeiras"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Futebol",
+      "Programação do BrazilTVEPG"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "segundo jogo",
+     "zone": "catalog",
+     "tab": 1,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Em breve · hh:mmCanal não confirmadoCORxSANCorinthians x Santos"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Futebol",
+      "Programação do BrazilTVEPG"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    },
+    {
+     "step": "voltar",
+     "zone": "top",
+     "tab": 1,
+     "card": 0,
+     "shelf": 0,
+     "row": 0,
+     "body": "catalog",
+     "sheets": [],
+     "focus": [
+      "Esportes"
+     ],
+     "tabs": [
+      "TV aberta",
+      "Esportes",
+      "Filmes",
+      "Séries"
+     ],
+     "cards": [],
+     "catalog": [
+      "Futebol",
+      "Programação do BrazilTVEPG"
+     ],
+     "page": [],
+     "settings": [],
+     "toast": ""
+    }
+   ]
+  }
+ ],
+ "errors": []
+}
