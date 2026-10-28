@@ -6,6 +6,7 @@
 13-rules-settings.js
 20-data-iptv.js
 21-data-tv.js
+31-ui-top.js
 32-ui-live.js
 33-ui-catalog.js
 33-ui-sports.js
