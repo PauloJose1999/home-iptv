@@ -6,5 +6,6 @@
 13-rules-settings.js
 20-data-iptv.js
 21-data-tv.js
+37-ui-shelfedit.js
 home.js
 90-start.js
