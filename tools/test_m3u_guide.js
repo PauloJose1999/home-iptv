@@ -156,4 +156,7 @@ const failedAt = requests.length;
 context.Channels.guide(offline, list => assert.strictEqual(list, null));
 assert.strictEqual(requests.length, failedAt, 'a failed guide is not downloaded again right away');
 
+// A name with an accent finds the channel written without it (and the other way round).
+assert.strictEqual(context.Channels.lookup('Spórtv').name, 'SporTV HD', 'accents are ignored');
+
 console.log('M3U guide (XMLTV) channel confirmation checks passed.');

@@ -37,7 +37,13 @@
   /** All channels: the IPTV player's channel list (Back there comes back here). */
   function openAllChannels() {
     stopPlayer();
-    if (!openInIptv('section', 'live', null, noPlayer)) noPlayer();
+    if (!openInIptv('section', 'live', null, playerMissing)) playerMissing();
+  }
+
+  /** The IPTV player didn't open: say so, and the card that played plays again. */
+  function playerMissing() {
+    noPlayer();
+    placePlayer();
   }
 
   /**
@@ -173,5 +179,5 @@
     if (!ch) { toast(noChannelsText()); return; }
     var entry = ch.iptv;
     stopPlayer();
-    if (!openInIptv('channel', entry.name, {url: entry.url, logo: entry.logo || ''}, noPlayer)) noPlayer();
+    if (!openInIptv('channel', entry.name, {url: entry.url, logo: entry.logo || ''}, playerMissing)) playerMissing();
   }

@@ -3,7 +3,7 @@
   // draws (a row's step opens its screen only when it's picked). A part of web/home.js, joined in order by
   // tools/webapp.py into the one function the other parts share.
 
-  /** The three channels of TV aberta, by name: set on the TV, else config.properties' live_channels. */
+  /** TV aberta's channels, by name (the second is the small card's when none is picked): set on the TV, else config.properties' live_channels. */
   function liveWanted() { return Prefs.liveChannels() || CONFIG.liveChannels || []; }
 
   function settingRows() {

@@ -349,9 +349,12 @@ var Channels = (function () {
     for (var i = 0; i < w.length; i++) w[i]();
   }
 
-  /** A channel's name, to compare: lower case, letters and digits only, without HD/SD/FHD/4K. */
+  /** A channel's name, to compare: lower case, without accents, letters and digits only, without HD/SD/FHD/4K. */
   function plain(x) {
-    return (x || '').toLowerCase().replace(/\b(f?hd|sd|4k|uhd)\b/g, '').replace(/[^a-z0-9]/g, '');
+    return (x || '').toLowerCase()
+      .replace(/[áàâãä]/g, 'a').replace(/[éèêë]/g, 'e').replace(/[íìîï]/g, 'i')
+      .replace(/[óòôõö]/g, 'o').replace(/[úùûü]/g, 'u').replace(/ç/g, 'c')
+      .replace(/\b(f?hd|sd|4k|uhd)\b/g, '').replace(/[^a-z0-9]/g, '');
   }
 
   /** The list's channel for a name ("GloboNews"): the one that is that name, else the shortest that contains it. */

@@ -50,7 +50,7 @@
 
   // MARK: - Picks and background
 
-  // MARK: - TV aberta: the channels, live (a big card and two small ones, as in smart_tv_ui.html)
+  // MARK: - TV aberta: the channels, live (two cards and the All channels button)
 
   var liveChannels = null, liveProblem = '', channelsAt = 0;
   // The antenna big on the left; on the right an IPTV channel, and under it the button to all the list's channels.

@@ -216,7 +216,17 @@
   function pickChannel(which) {
     var picks = cardPicks(), kinds = which === 'big' ? ['antenna', 'iptv'] : [picks.big.kind === 'antenna' ? 'iptv' : 'antenna'];
     TV.channels([], 999, function (antenna) {
-      Channels.load(function () {
+      // The IPTV list, when it's wanted and set: waited for 3 seconds at most (a server down takes 20 to answer), then
+      // the choices there are; it goes on loading for the next time.
+      var shown = false;
+      function listed(show) {
+        if (kinds.indexOf('iptv') < 0 || !Channels.count()) show();
+        else {
+          Channels.load(function () { if (!shown) { shown = true; show(); } });
+          setTimeout(function () { if (!shown) { shown = true; show(); } }, 3000);
+        }
+      }
+      listed(function () {
         var choices = [], seen = {};
         function add(kind, list) {
           for (var i = 0; list && i < list.length; i++) {

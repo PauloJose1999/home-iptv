@@ -201,16 +201,20 @@ Depois desta refatoração (fora deste escopo, se você quiser): trocar os `swit
 `back`/`hover`/`updateFocus` por uma tabela onde cada tela registra o que faz — isso sim reduz o "quebra ali", mas
 muda a estrutura da navegação e precisa de aprovação à parte.
 
-## 6. Possíveis problemas anotados (não corrigidos)
+## 6. Problemas anotados durante a refatoração (corrigidos depois)
 
-1. O comentário da seção "TV aberta" ainda fala em "um card grande e dois pequenos"; hoje são dois cards e o botão.
-2. `openAllChannels` para os vídeos dos cards antes de saber se o Player IPTV abriu; se não abrir, os cards ficam
-   parados até o próximo movimento de foco. *(a confirmar na TV)*
-3. Três funções diferentes normalizam nomes de canais (`plainName`, `Channels.plain` e a do Player); podem dar
-   resultados diferentes para o mesmo nome. *(a confirmar)*
-4. O seletor de canal dos cards (Ajustes › Card grande) só abre depois que a lista IPTV responde; com o servidor da
-   conta fora do ar, leva uns 20 segundos (o tempo limite do pedido), embora os canais da antena já estejam prontos.
-   *(visto na TV no passo 12; já era assim antes da refatoração)*
+1. O comentário da seção "TV aberta" ainda falava em "um card grande e dois pequenos". **Corrigido:** agora diz
+   "dois cards e o botão Todos os canais" (50-state.js; e o de `liveWanted` em 13-rules-settings.js).
+2. `openAllChannels` parava os vídeos dos cards antes de saber se o Player IPTV abriu; se não abrisse, os cards
+   ficavam parados até o próximo movimento de foco. **Corrigido:** quando o Player não abre, `playerMissing` avisa e
+   volta a tocar o card (`placePlayer`); vale também para OK num card (`openLiveCard`).
+3. Três funções normalizam nomes de canais. A de verdade divergente era `Channels.plain` (web/channels.js): apagava
+   a letra acentuada inteira, então "Notícias" não achava "Noticias". **Corrigido:** tira os acentos como as
+   outras duas (teste em tools/test_m3u_guide.js). As três continuam separadas de propósito: cada uma compara só
+   nomes do próprio app, e o Player recebe o nome original, não a chave.
+4. O seletor de canal dos cards só abria depois que a lista IPTV respondia (uns 20 segundos com o servidor fora do
+   ar). **Corrigido:** a lista IPTV é esperada no máximo 3 segundos (e nada, quando não é pedida ou não há lista);
+   depois o seletor abre com o que houver. Na TV, Card grande abriu em 1,3 s com os canais da antena.
 
 ## 7. Decisão antes do passo 1
 
