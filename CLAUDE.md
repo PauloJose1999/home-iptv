@@ -37,7 +37,14 @@ person's, stay only in that file (git ignores it), are never printed and never c
   was tuned (`guide` in localStorage); `tv/openChannel` switches the tuner but brings the TV's Live TV app to the front
   (and a hidden app's timers stop, so it can't come back by itself).
 - `web/home.js`: the screen, built from its parts in `web/home/` (joined as they are, in `_order.txt`'s order, by
-  `tools/webapp.py` `home_js()`: one closure, as one file was). Edit the parts, never a `home.js`. TV aberta has a big card and a small card, plus All channels. Settings choose any channel
+  `tools/webapp.py` `home_js()`: one closure, as one file was). Edit the parts, never a `home.js`. Parts by layer:
+  `00-base` (DOM helpers); rules, which decide and never draw: `10-rules-shelf`, `11-rules-live`, `12-rules-titles`,
+  `13-rules-settings`; data, the IPTV player and the TV: `20-data-iptv`, `21-data-tv`; screens: `30-ui-focus`,
+  `31-ui-top`, `32-ui-live`, `33-ui-catalog`, `33-ui-sports`, `34-ui-detail`, `35-ui-shelf`, `36-ui-settings`,
+  `37-ui-shelfedit`, `38-ui-saver`; `50-state` (the shared state and the listeners, in the order they must run);
+  `80-input` (OK, arrows, Back, pointer, wheel); `90-start`. A part holds functions only, except `00-base`, `50-state`
+  and `90-start`: moving a function between parts changes nothing (`tools/same_home.py` proves a change is only that).
+  How the screen behaves is recorded in `tools/home-test/` (`tools/home_test.py`, run by `tools/check.sh`). TV aberta has a big card and a small card, plus All channels. Settings choose any channel
   for the big card; the small card is restricted to the other kind (antenna or IPTV). Only the focused (or last
   focused) card plays: with a broadcast `<video>` (`service/webos-broadcast`) and an IPTV one playing, the TV shows the
   broadcast black, and two streams pause each other. The other card shows its logo. Antenna retuning goes through the
