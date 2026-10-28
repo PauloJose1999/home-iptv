@@ -45,6 +45,9 @@ def pieces(text):
         current = None
 
     for line in lines:
+        if not line.strip() and current and current[0] == 'function':
+            current = ('function', current[1], current[2] + '\n' + line)   # a blank line inside a function: still it
+            continue
         if not line.strip():
             flush()
             if comment:
