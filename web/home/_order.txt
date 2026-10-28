@@ -4,5 +4,6 @@
 11-rules-live.js
 12-rules-titles.js
 13-rules-settings.js
+20-data-iptv.js
 home.js
 90-start.js
