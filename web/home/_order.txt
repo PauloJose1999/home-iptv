@@ -1,5 +1,6 @@
 # The parts of web/home.js, in order: tools/webapp.py joins them into one home.js, one function as before.
 00-base.js
 11-rules-live.js
+12-rules-titles.js
 home.js
 90-start.js
