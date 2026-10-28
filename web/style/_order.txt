@@ -1,0 +1,11 @@
+# The parts of web/home.css, in order (in CSS, a later rule wins over an earlier one): tools/webapp.py joins them.
+base.css
+cards.css
+shelf.css
+sheets.css
+saver.css
+catalog.css
+detail.css
+trakt.css
+sports.css
+access.css

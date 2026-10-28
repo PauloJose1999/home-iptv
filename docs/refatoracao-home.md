@@ -8,6 +8,20 @@ externos" aqui é o que fala com a TV (Luna/SSAP), com o Player IPTV (deep link 
 Trakt/ESPN (pela `Data`, `Trakt`, `Channels`) e com o `localStorage` (`Prefs`). Esses módulos **já estão fora** do
 `home.js` (`web/data.js`, `web/tv.js`, `web/trakt.js`, `web/channels.js`); dentro dele fica a "cola" que os chama.
 
+## Situação: concluído (29/10/2026)
+
+Os 20 passos foram feitos, um commit cada (`b19316f` a passo 20). O `web/home.js` saiu de um arquivo de 3.260
+linhas para 19 partes em `web/home/`, por camada (base, regras, dados, telas, estado, navegação, início); o
+`web/home.css`, para 10 fatias em `web/style/`. A prova:
+- passos 1 a 3 e 20: o arquivo montado é idêntico byte a byte ao de antes;
+- passos 4 a 19: `tools/same_home.py` contra o arquivo de antes da refatoração (`b667f66`): as mesmas 180 funções,
+  letra por letra, e todo o resto na mesma ordem;
+- `tools/home_test.py` (11 roteiros, 70 passos) igual em todos os passos; conferido na TV nos passos 4, 7, 12, 16,
+  18, 19 e 20.
+
+Desvios do plano: `Z` e `st` ficaram em `50-state.js` (subi-los muda a ordem do código); Esportes ganhou parte própria
+(`33-ui-sports.js`); o CSS foi para `web/style/` em vez de `web/home/*.css`.
+
 ## 1. Mapa e classificação
 
 Legenda: **UI** = desenha, posiciona, recebe tecla/mouse · **Regra** = calcula ou decide, sem tocar a tela ·
@@ -127,7 +141,7 @@ web/home/                       (fontes; o build gera web/home.js a partir daqui
   38-ui-saver.js    UI          aviso, noite, proteção de tela
   80-input.js       UI          activate, move, back, hover, teclas, roda
   90-start.js       Início      escutadores e inicialização (por último, como hoje)
-web/home.css → web/home/*.css   (depois, do mesmo jeito)
+web/home.css → web/style/*.css  (fatias seguidas, na ordem: no CSS a regra de depois vence)
 ```
 
 O que muda fora de `web/`: `webos/build.py` e `tools/webapp.py` (juntar `web/home/*.js` na ordem), `tools/check.sh`
@@ -181,7 +195,7 @@ caracterização) e a prévia; a cada 3 ou 4 passos, instalar na TV.
 | 10–17 | Uma tela por passo: editor, proteção de tela, Ajustes, prateleira/gaveta, detalhe, catálogo, cards, topo | Médio |
 | 18 | Navegação (`activate`, `move`, `back`, `hover`, teclas) → `80-input.js` | Alto (central) |
 | 19 | Foco (`updateFocus`) → `30-ui-focus.js` | Alto (central) |
-| 20 | `home.css` → `web/home/*.css`, pelos mesmos passos | Médio |
+| 20 | `home.css` → `web/style/*.css`, em fatias seguidas (a ordem do CSS não muda) | Médio |
 
 Depois desta refatoração (fora deste escopo, se você quiser): trocar os `switch` por zona em `activate`/`move`/
 `back`/`hover`/`updateFocus` por uma tabela onde cada tela registra o que faz — isso sim reduz o "quebra ali", mas

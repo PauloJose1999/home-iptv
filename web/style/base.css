@@ -1,0 +1,220 @@
+/*
+ * The home screen on a 1920 × 1080 stage: the tabs at the top
+ * left, icon-only glass buttons at the top right, three picks, and the glass shelf at the bottom; ↓ on the shelf opens
+ * the drawer (inputs, shortcuts, weather). Light by day, dark from sunset to sunrise.
+ * No CSS variables, grid or backdrop-filter: older LG TVs (webOS 3 and 4) don't have them, and blur is too heavy for
+ * their GPUs. Only transform and opacity animate.
+ */
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/InterVariable.ttf') format('truetype');
+  font-weight: 100 900;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #F1F5F9;
+}
+
+body {
+  font-family: 'Inter', 'LG Smart UI', 'Helvetica Neue', Arial, sans-serif;
+  color: #1D1D1F;
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; outline: none; }
+
+#stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  -webkit-transform-origin: 0 0;
+  transform-origin: 0 0;
+}
+
+.layer { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+
+/* Symbols: Material Symbols as white PNGs, tinted by the background color. */
+.sym {
+  display: inline-block;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  background-color: currentColor;
+}
+
+/* MARK: - Background: the first pick's photo, very blurred and almost white (almost black at night). */
+
+#sky { background: #E2E8F0; }
+#sky .grad { position: absolute; left: 0; top: 0; width: 100%; height: 100%; -webkit-transition: opacity 2s; transition: opacity 2s; }
+#sky .day { background: -webkit-linear-gradient(top, #F1F5F9, #E2E8F0); background: linear-gradient(#F1F5F9, #E2E8F0); }
+#sky .night { background: -webkit-linear-gradient(top, #0F172A, #020617); background: linear-gradient(#0F172A, #020617); opacity: 0; }
+#sky canvas { position: absolute; left: -4%; top: -4%; width: 108%; height: 108%; opacity: 0; -webkit-transition: opacity 0.8s; transition: opacity 0.8s; }
+#sky canvas.on { opacity: 1; }
+#sky .veil { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(245, 245, 247, 0.74); -webkit-transition: background-color 2s; transition: background-color 2s; }
+#sky .lift { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #FFF; opacity: 0; -webkit-transition: opacity 0.45s, background-color 2s; transition: opacity 0.45s, background-color 2s; }
+.night #sky .day { opacity: 0; }
+.night #sky .night { opacity: 1; }
+.night #sky .veil { background: rgba(2, 6, 23, 0.8); }
+.night #sky .lift { background: #000; }
+.drawer-open #sky .lift { opacity: 0.32; }
+.night.drawer-open #sky .lift { opacity: 0.42; }
+
+/* MARK: - Moving parts: the top fades and everything rises when the drawer opens. */
+
+/* Each part is its own stack, so a focused tile (z-index) never shows over the drawer, a sheet or the screensaver. */
+#home { z-index: 1; }
+#drawer { z-index: 2; }
+.sheet { z-index: 3; }
+#saver { z-index: 4; }
+#sportsalert { z-index: 5; visibility: hidden; opacity: 0; pointer-events: none; background: rgba(2, 6, 23, 0.86); -webkit-transition: opacity 0.2s; transition: opacity 0.2s; }
+#sportsalert.on { visibility: visible; opacity: 1; pointer-events: auto; }
+
+#home, #drawer {
+  -webkit-transition: -webkit-transform 0.38s cubic-bezier(0.32, 0.72, 0.2, 1), opacity 0.28s;
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0.2, 1), opacity 0.28s;
+}
+.drawer-open #home { -webkit-transform: translateY(-560px); transform: translateY(-560px); }
+#top { -webkit-transition: opacity 0.2s; transition: opacity 0.2s; }
+/* The top spans the screen: only what's on it takes the pointer, so the Movies and Shows rows under it can be clicked. */
+#top { pointer-events: none; }
+#top > * { pointer-events: auto; }
+.drawer-open #top { opacity: 0; }
+#drawer { -webkit-transform: translateY(560px); transform: translateY(560px); opacity: 0; }
+.drawer-open #drawer { -webkit-transform: none; transform: none; opacity: 1; }
+/* Closed, it still spans the screen below the shelf: only its keys take the pointer, and only when it's open. */
+#drawer { pointer-events: none; }
+.drawer-open #drawer .key { pointer-events: auto; }
+
+/* MARK: - Title and tabs */
+
+#title {
+  position: absolute;
+  left: 76px;
+  top: 52px;
+  margin: 0;
+  font-size: 76px;
+  font-weight: 600;
+  letter-spacing: 0.004em;
+  line-height: 1;
+  white-space: nowrap;
+  color: #1D1D1F;
+  -webkit-transition: color 2s;
+  transition: color 2s;
+}
+
+/* No title ("Para você"): the Home IPTV mark takes its place, and the tabs follow it, in line with the buttons. */
+#title { display: none; }
+#brand {
+  position: absolute;
+  left: 76px;
+  top: 62px;
+  height: 56px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#brand svg { display: inline-block; vertical-align: top; }
+#brand .house { fill: #0088AA; stroke: #0088AA; -webkit-transition: fill 2s, stroke 2s; transition: fill 2s, stroke 2s; }
+#brand .word {
+  display: inline-block;
+  margin-left: 12px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 56px;
+  color: #1D1D1F;
+  -webkit-transition: color 2s;
+  transition: color 2s;
+}
+#brand b { font-weight: 800; color: #0088AA; -webkit-transition: color 2s; transition: color 2s; }
+.night #brand .house { fill: #00D4FF; stroke: #00D4FF; }
+.night #brand .word { color: #F5F5F7; }
+.night #brand b { color: #00D4FF; }
+#tabs { position: absolute; left: 316px; top: 56px; height: 68px; white-space: nowrap; }
+.tab {
+  position: relative;
+  display: inline-block;
+  height: 68px;
+  padding: 0 26px;
+  margin-right: 4px;
+  border-radius: 34px;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 68px;
+  color: #6E6E73;
+  -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), background-color 0.17s, box-shadow 0.2s, color 0.17s;
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), background-color 0.17s, box-shadow 0.2s, color 0.17s;
+}
+.tab.on { font-weight: 800; color: #0F172A; }
+.tab.on::after {
+  content: '';
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  bottom: 2px;
+  height: 5px;
+  border-radius: 3px;
+  background: -webkit-linear-gradient(left, #A855F7, #7C3AED);
+  background: linear-gradient(90deg, #A855F7, #7C3AED);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+}
+.tab.focus {
+  background: #FFF;
+  color: #6D28D9;
+  -webkit-transform: scale(1.05);
+  transform: scale(1.05);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
+}
+.night #title, .night .tab.on { color: #F5F5F7; }
+.night .tab { color: rgba(245, 245, 247, 0.62); }
+.night .tab.focus { color: #6D28D9; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.4); }
+
+/* Live TV, HDMI Inputs and Settings: glass circles; the focused one turns white, with its name below. */
+.round {
+  position: absolute;
+  top: 64px;
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
+  background: linear-gradient(rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  color: #1D1D1F;
+  -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, background-color 0.17s;
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, background-color 0.17s;
+}
+.round .sym { position: absolute; left: 15px; top: 15px; width: 22px; height: 22px; }
+.round.focus { background: #7C3AED; color: #FFF; -webkit-transform: scale(1.1); transform: scale(1.1); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24); }
+.round .tip { font-size: 19px !important;
+  position: absolute;
+  top: 66px;
+  left: 50%;
+  width: 300px;
+  margin-left: -150px;
+  text-align: center;
+  font-size: 23px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  -webkit-transition: opacity 0.14s;
+  transition: opacity 0.14s;
+}
+.round.last .tip { left: auto; right: -10px; margin-left: 0; text-align: right; }
+.round.focus .tip { opacity: 1; }
+.night .round {
+  background: -webkit-linear-gradient(top, rgba(40, 40, 44, 0.8), rgba(17, 17, 19, 0.62));
+  background: linear-gradient(rgba(40, 40, 44, 0.8), rgba(17, 17, 19, 0.62));
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+}
+.night .round.focus { background: #7C3AED; color: #FFF; }
+.night .round.focus .tip { color: #F5F5F7; }
+

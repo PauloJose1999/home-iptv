@@ -1,0 +1,259 @@
+/* MARK: - Picks: a wide card and two tall ones; focused, a card grows 5%, rises and its edge lights up. */
+
+.card {
+  position: absolute;
+  top: 172px;
+  height: 442px;
+  -webkit-transition: -webkit-transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+  transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+.card .img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  background-color: #DADADF;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  -webkit-transition: box-shadow 0.22s;
+  transition: box-shadow 0.22s;
+}
+.card .img::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  box-shadow: inset 0 0 0 3px #A855F7;
+  background: -webkit-linear-gradient(-60deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%);
+  opacity: 0;
+  -webkit-transition: opacity 0.17s;
+  transition: opacity 0.17s;
+}
+.card.focus { -webkit-transform: translateY(-6px) scale(1.05); transform: translateY(-6px) scale(1.05); z-index: 2; }
+.card.focus .img { box-shadow: 0 24px 46px rgba(124, 58, 237, 0.4); }
+.card.focus .img::after { opacity: 1; }
+.card .name {
+  position: absolute;
+  left: 0;
+  top: 464px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 31px;
+  font-weight: 600;
+  letter-spacing: 0.012em;
+  color: #1D1D1F;
+  -webkit-transition: color 2s;
+  transition: color 2s;
+}
+.card .meta {
+  position: absolute;
+  left: 0;
+  top: 506px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 25px;
+  font-weight: 500;
+  color: #6E6E73;
+}
+.night .card .img { background-color: #2C2C2E; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32); }
+.night .card .name { color: #F5F5F7; }
+.night .card .meta { color: rgba(245, 245, 247, 0.62); }
+
+/* Without a TMDB key (or picks yet): the date and the time instead of the cards. */
+#clock {
+  position: absolute;
+  left: 76px;
+  top: 210px;
+  font-size: 176px;
+  font-weight: 200;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: #1D1D1F;
+  display: none;
+}
+#clock .date { display: block; font-size: 40px; font-weight: 500; letter-spacing: 0; margin-top: 18px; color: #6E6E73; }
+.no-picks #clock { display: block; }
+.night #clock { color: #F5F5F7; }
+.night #clock .date { color: rgba(245, 245, 247, 0.62); }
+
+/* The clock next to the round buttons, as in smart_tv_ui.html */
+#topclock {
+  position: absolute;
+  right: 276px;
+  top: 64px;
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 18px;
+  line-height: 52px;
+  font-size: 26px;
+  font-weight: 700;
+  font-feature-settings: 'tnum';
+  color: #0F172A;
+  background: rgba(226, 232, 240, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.5);
+}
+.night #topclock { color: #FFF; background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
+
+/* MARK: - TV aberta: channel cards with the name on top, a red LIVE badge and what's on at the bottom */
+
+.card.live .img { box-shadow: 0 14px 34px rgba(15, 23, 42, 0.28); -webkit-transition: opacity 0.4s; transition: opacity 0.4s; }
+/* Over the color or the picture: dark at the top and the bottom, so the white text always reads. */
+.card.live .shade {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  /* The top is darker than the bottom fades in: channels draw their own logo and clock in that corner. */
+  background: -webkit-linear-gradient(top, rgba(2, 6, 23, 0.86), rgba(2, 6, 23, 0.62) 16%, rgba(2, 6, 23, 0) 36%, rgba(2, 6, 23, 0) 45%, rgba(2, 6, 23, 0.82));
+  background: linear-gradient(rgba(2, 6, 23, 0.86), rgba(2, 6, 23, 0.62) 16%, rgba(2, 6, 23, 0) 36%, rgba(2, 6, 23, 0) 45%, rgba(2, 6, 23, 0.82));
+}
+.card.live.playing .img { opacity: 0; }
+.card.live.playing .mark { opacity: 0; }
+.card.live.focus .shade { box-shadow: inset 0 0 0 3px #A855F7; }
+
+/* The TV draws a playing card's picture on its own layer, under the page: it neither grows with the card nor keeps
+   its rounded corners. So a channel card doesn't grow when focused (its ring lights up), and its corners are
+   rounded over the picture in the page's own color. */
+.card.live.focus { -webkit-transform: none; transform: none; }
+.card.live::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 100%, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) left top / 24px 24px no-repeat,
+    radial-gradient(circle at 0 100%, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) right top / 24px 24px no-repeat,
+    radial-gradient(circle at 100% 0, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) left bottom / 24px 24px no-repeat,
+    radial-gradient(circle at 0 0, rgba(238, 241, 245, 0) 23px, #EEF1F5 24px) right bottom / 24px 24px no-repeat;
+}
+.night .card.live::after {
+  background:
+    radial-gradient(circle at 100% 100%, rgba(5, 10, 26, 0) 23px, #050A1A 24px) left top / 24px 24px no-repeat,
+    radial-gradient(circle at 0 100%, rgba(5, 10, 26, 0) 23px, #050A1A 24px) right top / 24px 24px no-repeat,
+    radial-gradient(circle at 100% 0, rgba(5, 10, 26, 0) 23px, #050A1A 24px) left bottom / 24px 24px no-repeat,
+    radial-gradient(circle at 0 0, rgba(5, 10, 26, 0) 23px, #050A1A 24px) right bottom / 24px 24px no-repeat;
+}
+
+/* All channels: under the channel card, a glass button as wide as it: the list's symbol, its name and size, an arrow.
+   Focused, it rises and lights up like the cards. */
+.card.allch .img {
+  background: -webkit-linear-gradient(-20deg, #4C1D95, #1E1B4B 60%, #0F172A);
+  background: linear-gradient(110deg, #4C1D95, #1E1B4B 60%, #0F172A);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.card.allch .icon {
+  position: absolute; left: 26px; top: 50%; width: 84px; height: 84px; margin-top: -42px; border-radius: 22px;
+  background: rgba(255, 255, 255, 0.12); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); color: #FFF; text-align: center;
+}
+.card.allch .icon .sym { width: 48px; height: 48px; margin-top: 18px; }
+.card.allch .text { position: absolute; left: 134px; right: 90px; top: 50%; -webkit-transform: translateY(-50%); transform: translateY(-50%); color: #FFF; }
+.card.allch .title { font-size: 36px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.allch .sub { margin-top: 4px; font-size: 24px; font-weight: 600; color: rgba(255, 255, 255, 0.7); white-space: nowrap; }
+.card.allch .go { position: absolute; right: 26px; top: 50%; width: 48px; height: 48px; margin-top: -24px; color: rgba(255, 255, 255, 0.55); -webkit-transition: color 0.17s, -webkit-transform 0.22s; transition: color 0.17s, transform 0.22s; }
+.card.allch .go .sym { width: 48px; height: 48px; }
+.card.allch.focus .go { color: #FFF; -webkit-transform: translateX(6px); transform: translateX(6px); }
+.card.allch.focus { -webkit-transform: translateY(-4px) scale(1.03); transform: translateY(-4px) scale(1.03); }
+
+/* The antenna full screen (TV ao vivo): the TV's picture over the whole home screen, under the toast. */
+video.antenna { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #000; z-index: 5; }
+#toast { z-index: 6; }
+
+/* Each card's picture (home.js, placePlayer): under the card it plays in, which shows through. */
+.cardplayer {
+  position: absolute;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #000;
+  object-fit: cover;
+}
+
+.card.live .mark { position: absolute; right: 40px; top: 50%; margin-top: -60px; width: 120px; height: 120px; color: rgba(255, 255, 255, 0.12); -webkit-transition: opacity 0.4s; transition: opacity 0.4s; }
+.card.live .mark .sym { width: 120px; height: 120px; }
+.card.live.small .mark { right: 28px; margin-top: -40px; width: 80px; height: 80px; }
+.card.live.small .mark .sym { width: 80px; height: 80px; }
+/* The channel's logo from the IPTV list, in place of the symbol, while no picture plays on the card. */
+.card.live .mark.has-logo { width: 280px; height: 160px; margin-top: -80px; text-align: right; }
+.card.live.small .mark.has-logo { width: 180px; height: 100px; margin-top: -50px; }
+.card.live .mark .logo { max-width: 100%; max-height: 100%; opacity: 0.92; }
+.card.live .head { position: absolute; left: 30px; top: 26px; right: 200px; white-space: nowrap; color: #FFF; }
+.card.live.small .head { right: 170px; overflow: hidden; text-overflow: ellipsis; }
+.card.live .chan { font-size: 36px; font-weight: 900; letter-spacing: -0.02em; vertical-align: middle; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45); }
+.card.live.big .chan { font-size: 54px; }
+.card.live .num {
+  display: inline-block;
+  margin-left: 16px;
+  padding: 0 14px;
+  height: 34px;
+  line-height: 34px;
+  border-radius: 17px;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.card.live .badge {
+  position: absolute;
+  right: 26px;
+  top: 26px;
+  height: 38px;
+  padding: 0 16px;
+  line-height: 38px;
+  border-radius: 19px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #FFF;
+  background: #DC2626;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
+  white-space: nowrap;
+}
+.card.live.big .badge { height: 44px; line-height: 44px; font-size: 21px; padding: 0 20px; border-radius: 22px; }
+.card.live .dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 10px;
+  border-radius: 6px;
+  background: #FFF;
+  -webkit-animation: livedot 1.2s ease-in-out infinite;
+  animation: livedot 1.2s ease-in-out infinite;
+}
+@-webkit-keyframes livedot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes livedot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.card.live .foot { position: absolute; left: 30px; right: 30px; bottom: 22px; color: #FFF; }
+.card.live .prog { font-size: 30px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); }
+.card.live.big .prog { font-size: 48px; font-weight: 800; letter-spacing: -0.01em; }
+/* Start time, the progress, end time, on one line. */
+.card.live .timeline { position: relative; height: 30px; margin-top: 10px; }
+.card.live .timeline .t { position: absolute; top: 0; font-size: 21px; font-weight: 700; line-height: 30px; font-feature-settings: 'tnum'; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
+.card.live .timeline .t:first-child { left: 0; }
+.card.live .timeline .t:last-child { right: 0; }
+.card.live .bar { position: absolute; left: 78px; right: 78px; top: 10px; height: 10px; border-radius: 5px; overflow: hidden; background: rgba(255, 255, 255, 0.25); }
+.card.live .fill { height: 10px; border-radius: 5px; background: -webkit-linear-gradient(left, #A855F7, #6366F1); background: linear-gradient(90deg, #A855F7, #6366F1); }
+.card.live.big .timeline { height: 34px; margin-top: 14px; }
+.card.live.big .timeline .t { font-size: 24px; line-height: 34px; }
+.card.live.big .bar { left: 90px; right: 90px; top: 11px; height: 12px; border-radius: 6px; }
+.card.live.big .fill { height: 12px; border-radius: 6px; }
+.card.live .left { margin-top: 6px; font-size: 20px; font-weight: 600; color: #E9D5FF; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
+

@@ -44,7 +44,9 @@ person's, stay only in that file (git ignores it), are never printed and never c
   `37-ui-shelfedit`, `38-ui-saver`; `50-state` (the shared state and the listeners, in the order they must run);
   `80-input` (OK, arrows, Back, pointer, wheel); `90-start`. A part holds functions only, except `00-base`, `50-state`
   and `90-start`: moving a function between parts changes nothing (`tools/same_home.py` proves a change is only that).
-  How the screen behaves is recorded in `tools/home-test/` (`tools/home_test.py`, run by `tools/check.sh`). TV aberta has a big card and a small card, plus All channels. Settings choose any channel
+  How the screen behaves is recorded in `tools/home-test/` (`tools/home_test.py`, run by `tools/check.sh`).
+  `web/home.css` is built the same way from `web/style/` (`_order.txt`; `home_css()`), in consecutive slices: in CSS
+  a later rule wins, so a rule moves between slices only where its place in the whole stays the same. TV aberta has a big card and a small card, plus All channels. Settings choose any channel
   for the big card; the small card is restricted to the other kind (antenna or IPTV). Only the focused (or last
   focused) card plays: with a broadcast `<video>` (`service/webos-broadcast`) and an IPTV one playing, the TV shows the
   broadcast black, and two streams pause each other. The other card shows its logo. Antenna retuning goes through the

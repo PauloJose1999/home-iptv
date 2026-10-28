@@ -1,0 +1,141 @@
+/* MARK: - Movies and Shows: as on Netflix, the focused title large at the top and rows of titles below; light by day
+   and dark at night, as the rest of the home screen (the solid colors are the sky's, under its veil). */
+
+#catalog { display: none; background: #F2F4F7; overflow: hidden; }
+.night #catalog { background: #040A1B; }
+.catalog #catalog { display: block; }
+.catalog #platter, .catalog #tiles, .catalog #cards, .catalog #clock { display: none; }
+
+#hero .bg {
+  position: absolute;
+  left: 560px;
+  top: 0;
+  width: 1360px;
+  height: 765px;
+  background-size: cover;
+  background-position: center top;
+  opacity: 0;
+  -webkit-transition: opacity 0.5s;
+  transition: opacity 0.5s;
+}
+#hero .bg.on { opacity: 1; }
+/* The photo melts into the dark on the left and at the bottom, where the text and the rows are. */
+#hero .fade {
+  position: absolute;
+  left: 560px;
+  top: 0;
+  width: 1360px;
+  height: 765px;
+  background: -webkit-linear-gradient(left, #F2F4F7, rgba(242, 244, 247, 0.6) 30%, rgba(242, 244, 247, 0) 60%),
+    -webkit-linear-gradient(top, rgba(242, 244, 247, 0.5), rgba(242, 244, 247, 0) 25%, rgba(242, 244, 247, 0) 60%, #F2F4F7);
+  background: linear-gradient(90deg, #F2F4F7, rgba(242, 244, 247, 0.6) 30%, rgba(242, 244, 247, 0) 60%),
+    linear-gradient(rgba(242, 244, 247, 0.5), rgba(242, 244, 247, 0) 25%, rgba(242, 244, 247, 0) 60%, #F2F4F7);
+}
+.night #hero .fade {
+  background: -webkit-linear-gradient(left, #040A1B, rgba(4, 10, 27, 0.6) 30%, rgba(4, 10, 27, 0) 60%),
+    -webkit-linear-gradient(top, rgba(4, 10, 27, 0.5), rgba(4, 10, 27, 0) 25%, rgba(4, 10, 27, 0) 60%, #040A1B);
+  background: linear-gradient(90deg, #040A1B, rgba(4, 10, 27, 0.6) 30%, rgba(4, 10, 27, 0) 60%),
+    linear-gradient(rgba(4, 10, 27, 0.5), rgba(4, 10, 27, 0) 25%, rgba(4, 10, 27, 0) 60%, #040A1B);
+}
+#hero .info { position: absolute; left: 80px; top: 176px; width: 900px; color: #0F172A; }
+.night #hero .info { color: #FFF; }
+#hero .htitle {
+  max-height: 160px;
+  overflow: hidden;
+  font-size: 68px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.night #hero .htitle { text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+#hero .hmeta { margin-top: 18px; font-size: 27px; font-weight: 600; color: #475569; white-space: nowrap; }
+.night #hero .hmeta { color: rgba(255, 255, 255, 0.85); }
+#hero .svc {
+  display: inline-block;
+  margin-left: 18px;
+  padding: 4px 14px;
+  border-radius: 8px;
+  font-size: 23px;
+  font-weight: 800;
+  color: #FFF;
+  background: #E50914;
+  vertical-align: 2px;
+}
+/* The IMDb rating, in IMDb's yellow. */
+#hero .imdb {
+  display: inline-block;
+  margin-right: 18px;
+  padding: 3px 12px;
+  border-radius: 8px;
+  font-size: 23px;
+  font-weight: 900;
+  color: #000;
+  background: #F5C518;
+  vertical-align: 2px;
+}
+#hero .story { margin-top: 18px; height: 114px; overflow: hidden; font-size: 27px; line-height: 38px; color: #334155; }
+.night #hero .story { color: rgba(255, 255, 255, 0.78); }
+
+#rows {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  -webkit-transition: -webkit-transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.crow { position: absolute; left: 80px; width: 1840px; height: 300px; -webkit-transition: opacity 0.25s; transition: opacity 0.25s; }
+.crow.gone { opacity: 0; }
+.ctitle { font-size: 30px; font-weight: 800; color: #1E293B; white-space: nowrap; }
+.night .ctitle { color: #E5E5E5; }
+.strip {
+  position: absolute;
+  left: 0;
+  top: 52px;
+  -webkit-transition: -webkit-transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.item {
+  position: absolute;
+  top: 0;
+  width: 336px;
+  height: 189px;
+  -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.item .thumb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background-color: #DADDE3;
+  background-size: cover;
+  background-position: center;
+}
+/* The name on the photo, over a dark band, as the photos have no title of their own. */
+.item .label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px 14px 10px;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 23px;
+  font-weight: 700;
+  color: #FFF;
+  background: -webkit-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85));
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85));
+}
+.item.focus { -webkit-transform: scale(1.1); transform: scale(1.1); z-index: 2; }
+.night .item .thumb { background-color: #1E2433; }
+/* Focused: the theme's purple ring, as on the channel cards. */
+.item.focus .thumb { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(124, 58, 237, 0.35); }
+.night .item.focus .thumb { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(0, 0, 0, 0.6); }
+#catalog .msg { position: absolute; left: 80px; top: 640px; width: 1400px; font-size: 32px; font-weight: 600; color: #475569; }
+.night #catalog .msg { color: rgba(255, 255, 255, 0.7); }
+

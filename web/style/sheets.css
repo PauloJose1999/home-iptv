@@ -1,0 +1,160 @@
+/* MARK: - Sheets over the home screen: All Apps, Settings, Shelf */
+
+.sheet {
+  background: rgba(0, 0, 0, 0.66);
+  color: #FFF;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none; /* while it fades out, the pointer goes to what's under it, not to its rows */
+  -webkit-transform: scale(1.04);
+  transform: scale(1.04);
+  -webkit-transition: opacity 0.24s, -webkit-transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1), visibility 0s 0.3s;
+  transition: opacity 0.24s, transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1), visibility 0s 0.3s;
+}
+.sheet.open { opacity: 1; visibility: visible; pointer-events: auto; -webkit-transform: none; transform: none; -webkit-transition-delay: 0s; transition-delay: 0s; }
+.sheet h2 { position: absolute; left: 0; right: 0; top: 84px; margin: 0; text-align: center; font-size: 40px; font-weight: 600; }
+
+/* Nearly opaque, like the Shelf editor: the cards and the shelf underneath would read through the grid. */
+#apps { background: rgba(4, 6, 14, 0.94); }
+#apps .grid { position: absolute; left: 0; top: 0; width: 1920px; -webkit-transition: -webkit-transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1); transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1); }
+.cell { position: absolute; width: 300px; height: 169px; }
+.cell .face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 300px;
+  height: 169px;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+  -webkit-transition: -webkit-transform 0.19s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.19s;
+  transition: transform 0.19s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.19s;
+}
+.cell .face img { position: absolute; left: 50%; top: 50%; max-width: 70%; max-height: 60%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
+.cell .face img.logo { width: 64%; height: 46%; max-width: none; max-height: none; object-fit: contain; }
+.cell .face .word { position: absolute; left: 6%; right: 6%; top: 50%; margin-top: -22px; height: 44px; line-height: 44px; text-align: center; font-size: 32px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #FFF; }
+.cell .label { position: absolute; left: 0; right: 0; top: 186px; text-align: center; font-size: 24px; font-weight: 500; color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell.focus .face { -webkit-transform: scale(1.08); transform: scale(1.08); box-shadow: 0 16px 34px rgba(124, 58, 237, 0.5), inset 0 0 0 3px #A855F7; }
+.cell.focus .label { color: #FFF; }
+
+#settings .box, #shelfedit .box, #langpick .box, #traktsheet .box {
+  position: absolute;
+  left: 560px;
+  top: 150px;
+  width: 800px;
+  border-radius: 40px;
+  padding: 30px 30px 26px;
+  box-sizing: border-box;
+  background: -webkit-linear-gradient(top, rgba(34, 36, 44, 0.96), rgba(18, 20, 26, 0.97));
+  background: linear-gradient(rgba(34, 36, 44, 0.96), rgba(18, 20, 26, 0.97));
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.box .title { font-size: 38px; font-weight: 700; padding: 6px 18px 18px; letter-spacing: -0.01em; }
+.box .title .sym { width: 36px; height: 36px; vertical-align: -5px; margin-right: 14px; color: rgba(255, 255, 255, 0.85); }
+.box .list { position: relative; overflow: hidden; }
+.box .rows { -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1); transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1); }
+.box .row { position: relative; height: 70px; margin-bottom: 8px; border-radius: 20px; font-size: 30px; font-weight: 600; line-height: 70px; padding: 0 24px; white-space: nowrap; -webkit-transition: background-color 0.13s; transition: background-color 0.13s; }
+.box .row.focus { background: rgba(168, 85, 247, 0.28); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.box .row .value { position: absolute; right: 24px; top: 0; color: rgba(255, 255, 255, 0.92); font-weight: 500; }
+.box .row .value .chev { color: rgba(255, 255, 255, 0.35); margin: 0 10px; }
+.box .row .value .sym { width: 26px; height: 26px; vertical-align: -3px; }
+.box .row.dim { color: rgba(255, 255, 255, 0.4); }
+.box .hint { padding: 14px 18px 0; font-size: 22px; font-weight: 500; color: rgba(255, 255, 255, 0.5); }
+/* Home Settings: what the focused row does, in plain words, above the keys' hint. */
+.box .about { min-height: 64px; padding: 16px 18px 0; font-size: 25px; line-height: 32px; font-weight: 500; color: rgba(255, 255, 255, 0.86); }
+.box .row.warn { background: rgba(239, 68, 68, 0.3); }
+.box .row.warn .value { color: #FCA5A5; font-weight: 700; }
+
+/* MARK: - Shelf editor: the apps in a grid; the one being moved is lifted and glows, the others slide to make room. */
+
+#shelfedit { background: rgba(4, 6, 14, 0.94); }
+#shelfedit .grid { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+#shelfedit .cell {
+  -webkit-transition: left 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s;
+  transition: left 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s;
+}
+#shelfedit .cell.away { opacity: 0; pointer-events: none; }
+#shelfedit .cell.held { z-index: 5; }
+#shelfedit .cell.held .face {
+  -webkit-transform: scale(1.16) rotate(-2deg);
+  transform: scale(1.16) rotate(-2deg);
+  box-shadow: 0 30px 60px rgba(124, 58, 237, 0.7), inset 0 0 0 4px #FFF;
+}
+#shelfedit .cell.held .label { color: #FFF; font-weight: 700; }
+/* Following the pointer: no sliding, it's where the pointer is. */
+#shelfedit .cell.dragging { -webkit-transition: none; transition: none; z-index: 6; }
+#shelfedit .cell .num {
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: 22px;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 44px;
+  text-align: center;
+  color: #FFF;
+  background: #7C3AED;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+#shelfedit .cell .num:empty { display: none; }
+#shelfedit .cell .off {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 62px;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 22px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #FFF;
+  background: rgba(0, 0, 0, 0.75);
+}
+#shelfedit .cell.hidden-app .face { opacity: 0.3; }
+#shelfedit .cell.hidden-app .off { display: block; }
+#shelfedit .banner {
+  position: absolute;
+  left: 50%;
+  top: 158px;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-size: 28px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #FFF;
+  background: #7C3AED;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.5);
+  opacity: 0;
+  -webkit-transition: opacity 0.15s;
+  transition: opacity 0.15s;
+}
+#shelfedit .banner.on { opacity: 1; }
+#shelfedit .menu {
+  display: none;
+  position: absolute;
+  width: 380px;
+  padding: 14px;
+  border-radius: 28px;
+  background: -webkit-linear-gradient(top, rgba(34, 36, 44, 0.98), rgba(18, 20, 26, 0.98));
+  background: linear-gradient(rgba(34, 36, 44, 0.98), rgba(18, 20, 26, 0.98));
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+#shelfedit .menu.on { display: block; }
+#shelfedit .menu .opt { height: 64px; padding: 0 22px; border-radius: 18px; font-size: 28px; font-weight: 600; line-height: 64px; white-space: nowrap; }
+#shelfedit .menu .opt.focus { background: #7C3AED; }
+#shelfedit .keys { position: absolute; left: 0; right: 0; bottom: 44px; text-align: center; font-size: 26px; font-weight: 500; color: rgba(255, 255, 255, 0.75); }
+.toggle { position: absolute; right: 24px; top: 13px; width: 78px; height: 44px; border-radius: 22px; background: #3A3D45; -webkit-transition: background-color 0.14s; transition: background-color 0.14s; }
+.toggle::after { content: ''; position: absolute; left: 4px; top: 4px; width: 36px; height: 36px; border-radius: 18px; background: #FFF; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); -webkit-transition: -webkit-transform 0.14s; transition: transform 0.14s; }
+.toggle.on { background: #8B5CF6; }
+.toggle.on::after { -webkit-transform: translateX(34px); transform: translateX(34px); }
+

@@ -1,0 +1,134 @@
+/* MARK: - Sports: today's games as the catalog's rows; the focused one large on top, over the teams' colors */
+
+#hero.sports .bg { opacity: 0; }
+#hero.sports .bg.on { opacity: 0.55; }
+/* The sport's drawing over the teams' colors, under the top bar and the fade (only on Sports). */
+#hero .sart {
+  display: none;
+  position: absolute;
+  left: 560px;
+  top: 150px;
+  width: 1320px;
+  height: 600px;
+  background-size: contain;
+  background-position: right center;
+  background-repeat: no-repeat;
+}
+#hero.sports .sart { display: block; }
+#hero .gkicker { font-size: 24px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; color: #7C3AED; }
+.night #hero .gkicker { color: #C4B5FD; }
+#hero .gstatus { margin-top: 14px; font-size: 27px; font-weight: 600; color: #475569; white-space: nowrap; }
+.night #hero .gstatus { color: rgba(255, 255, 255, 0.85); }
+#hero .gstatus .gbadge { margin-right: 16px; vertical-align: 3px; }
+#hero .gmatch { margin-top: 26px; white-space: nowrap; }
+#hero .gside, #hero .gbig { display: inline-block; vertical-align: middle; }
+#hero .gside span { display: inline-block; vertical-align: middle; max-width: 340px; overflow: hidden; text-overflow: ellipsis; font-size: 40px; font-weight: 900; line-height: 1.1; }
+#hero .gside .crest { display: inline-block; vertical-align: middle; margin-right: 20px; }
+#hero .gside.away .crest { margin: 0 0 0 20px; }
+#hero .gbig { margin: 0 36px; font-size: 104px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+.night #hero .gbig { text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); }
+.sports-reminder { display: inline-block; margin-top: 18px; padding: 14px 24px; border-radius: 14px; color: #FFF; background: #6D28D9; font-size: 24px; font-weight: 800; cursor: pointer; }
+.sports-reminder:focus { box-shadow: 0 0 0 4px #C4B5FD; }
+
+/* A match reminder takes over the launcher and keeps all choices large enough for a TV remote. */
+#sportsalert .alert-shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 75% 35%, rgba(124, 58, 237, 0.38), transparent 58%); }
+#sportsalert .alert-box { position: absolute; left: 250px; top: 210px; width: 1420px; text-align: center; color: #FFF; }
+#sportsalert .alert-kicker { color: #C4B5FD; font-size: 28px; font-weight: 900; letter-spacing: 7px; text-transform: uppercase; }
+#sportsalert .alert-title { margin-top: 36px; font-size: 76px; font-weight: 900; line-height: 1.08; }
+#sportsalert .alert-subtitle { margin-top: 22px; color: #CBD5E1; font-size: 34px; }
+#sportsalert .alert-actions { display: flex; justify-content: center; gap: 24px; margin-top: 78px; }
+#sportsalert .alert-action { min-width: 300px; padding: 24px 30px; border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 16px; color: #FFF; background: rgba(30, 41, 59, 0.9); font-size: 28px; font-weight: 800; }
+#sportsalert .alert-action:first-child { background: #6D28D9; }
+#sportsalert .alert-action.focus { border-color: #C4B5FD; box-shadow: 0 0 0 4px #A855F7; transform: scale(1.04); }
+#sportsalert .alert-hint { margin-top: 46px; color: #94A3B8; font-size: 22px; }
+
+/* Status in a word, never only a color. */
+.gbadge {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 999px;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 28px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.gbadge.live { color: #FFF; background: #E11D48; }
+.gbadge.live::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #FFF;
+  vertical-align: 1px;
+  -webkit-animation: gpulse 1.2s ease-in-out infinite;
+  animation: gpulse 1.2s ease-in-out infinite;
+}
+.gbadge.soon { color: #FFF; background: #6D28D9; }
+.gbadge.ended { color: #E2E8F0; background: #334155; }
+@-webkit-keyframes gpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes gpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+.crest {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 64px;
+  color: #FFF;
+  background: #1E293B;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.16);
+}
+.crest img { width: 76%; height: 76%; margin-top: 12%; }
+.crest.lg { width: 96px; height: 96px; font-size: 30px; line-height: 96px; }
+
+/* The card: always dark (a poster), the teams' colors faint behind the score. */
+.item .game { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 8px; overflow: hidden; background: #12121A; }
+.item .game .tint { position: absolute; left: 0; top: 0; right: 0; bottom: 0; opacity: 0.38; }
+.item .gtop { position: absolute; left: 12px; right: 12px; top: 10px; white-space: nowrap; }
+.item .gtop .gbadge { font-size: 16px; line-height: 24px; padding: 2px 10px; }
+.item .greminder { margin-left: 8px; color: #DDD6FE; font-size: 15px; font-weight: 800; text-transform: uppercase; }
+.item .gch {
+  float: right;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 28px;
+  color: #FFF;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.item .gmid { position: absolute; left: 0; right: 0; top: 46px; text-align: center; white-space: nowrap; }
+.item .gteam, .item .gscore { display: inline-block; vertical-align: middle; }
+.item .gteam .crest { width: 56px; height: 56px; line-height: 56px; font-size: 18px; }
+.item .gscore { width: 150px; color: #FFF; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7); }
+.item .gscore b { display: block; font-size: 38px; font-weight: 900; line-height: 44px; }
+.item .gscore span { display: block; font-size: 19px; font-weight: 700; line-height: 22px; }
+.item .gevent { position: absolute; left: 16px; right: 16px; top: 54px; font-size: 26px; font-weight: 900; line-height: 32px; color: #FFF; text-align: center; overflow: hidden; height: 64px; }
+.item .game + .label { padding: 6px 14px 12px; background: rgba(0, 0, 0, 0.55); }
+.item .gprog { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; border-radius: 0 0 8px 8px; overflow: hidden; background: rgba(255, 255, 255, 0.15); }
+.item .gbar { display: block; height: 100%; background: #E11D48; }
+.item.focus .game { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(124, 58, 237, 0.35); }
+.night .item.focus .game { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(0, 0, 0, 0.6); }
+
+.item .epg-card, .item .epg-empty {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%; box-sizing: border-box;
+  overflow: hidden; padding: 20px 22px; border-radius: 8px; color: #FFF;
+  background: linear-gradient(135deg, #29213D, #11131C);
+}
+.item .epg-time { color: #D8B4FE; font-size: 21px; font-weight: 800; }
+.item .epg-channel { margin-top: 8px; color: #C4B5FD; font-size: 17px; font-weight: 700; }
+.item .epg-title { margin-top: 8px; max-height: 62px; overflow: hidden; font-size: 24px; line-height: 30px; font-weight: 900; }
+.item .epg-subtitle { margin-top: 5px; max-height: 38px; overflow: hidden; color: #DDD6FE; font-size: 16px; line-height: 19px; }
+.item .epg-card + .label { padding: 6px 14px 12px; background: rgba(0, 0, 0, 0.5); }
+.item .epg-empty { padding-top: 62px; color: #DDD6FE; font-size: 22px; line-height: 29px; font-weight: 700; }
+.item.focus .epg-card, .item.focus .epg-empty { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(124, 58, 237, 0.35); }
+.night .item.focus .epg-card, .night .item.focus .epg-empty { box-shadow: 0 0 0 4px #A855F7, 0 14px 30px rgba(0, 0, 0, 0.6); }
+

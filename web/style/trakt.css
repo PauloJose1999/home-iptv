@@ -1,0 +1,22 @@
+/* MARK: - Trakt.tv: the account in Home Settings; the code to type on another device, large enough to read from afar */
+
+.tbody { padding: 4px 18px 18px; }
+.tline { font-size: 30px; font-weight: 700; }
+.tsmall { margin-top: 10px; font-size: 24px; line-height: 34px; font-weight: 500; color: rgba(255, 255, 255, 0.78); }
+.tcode {
+  margin: 18px 0 6px;
+  padding: 18px 0;
+  border-radius: 20px;
+  text-align: center;
+  font-size: 84px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #FFF;
+  background: rgba(168, 85, 247, 0.22);
+}
+/* The QR code (on white, for any phone camera) on the left; the address and the code on the right. */
+.tqr { position: relative; min-height: 264px; margin-top: 8px; }
+.tqr canvas { position: absolute; left: 0; top: 0; width: 240px; height: 240px; padding: 12px; border-radius: 20px; background: #FFF; }
+.tqrside { margin-left: 290px; }
+.tqrside .tcode { font-size: 56px; letter-spacing: 0.06em; white-space: nowrap; }
+

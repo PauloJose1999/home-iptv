@@ -79,22 +79,39 @@ def catalogues():
     return {lang: {k: v for k, v in sorted(translate.load(lang).items()) if k in keys} for lang in translate.languages()}
 
 
-def home_parts():
-    """The parts of web/home.js, in the order web/home/_order.txt gives (one file name a line; # starts a comment)."""
-    folder = os.path.join(ROOT, 'web', 'home')
+def parts(folder='home'):
+    """The parts of a file built from web/<folder>/, in the order its _order.txt gives (one file name a line; # starts
+    a comment): web/home/ makes home.js, web/style/ makes home.css."""
+    folder = os.path.join(ROOT, 'web', folder)
     with open(os.path.join(folder, '_order.txt'), encoding='utf-8') as f:
         names = [line.strip() for line in f if line.strip() and not line.lstrip().startswith('#')]
     return [os.path.join(folder, name) for name in names]
 
 
-def home_js():
-    """web/home.js as the app loads it: its parts joined as they are, nothing added between them, so the parts stay
-    one function (one closure) as the file was before it was split."""
+def joined(folder):
+    """The parts of web/<folder>/ joined as they are, nothing added between them."""
     out = b''
-    for path in home_parts():
+    for path in parts(folder):
         with open(path, 'rb') as f:
             out += f.read()
     return out
+
+
+def home_parts():
+    """The parts of web/home.js, in order (web/home/_order.txt)."""
+    return parts('home')
+
+
+def home_js():
+    """web/home.js as the app loads it: its parts joined as they are, so the parts stay one function (one closure) as
+    the file was before it was split."""
+    return joined('home')
+
+
+def home_css():
+    """web/home.css as the app loads it: its parts (web/style/) joined in order, which in CSS is the order rules win
+    in: a later rule over an earlier one."""
+    return joined('style')
 
 
 def files(config, made_by):
@@ -107,6 +124,7 @@ def files(config, made_by):
         with open(os.path.join(web, name), 'rb') as f:
             out[name] = f.read()
     out['home.js'] = home_js()
+    out['home.css'] = home_css()
     icons = os.path.join(web, 'icons')
     for name in sorted(os.listdir(icons)):
         with open(os.path.join(icons, name), 'rb') as f:

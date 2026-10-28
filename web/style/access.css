@@ -1,0 +1,124 @@
+/* MARK: - Accessibility (Home Settings › Accessibility): classes on <body>, set by applyAccess() in home.js */
+
+/* The Accessibility page is a panel at the right edge, the home screen undimmed beside it: what each choice changes
+   shows on the real screen as it's picked. */
+#settings.side { background: none; }
+#settings.side .box { left: auto; right: 0; top: 0; bottom: 0; width: 860px; padding: 56px 40px 40px; border-radius: 40px 0 0 40px; }
+
+/* Text size: the smaller texts grow (Large x1.2, at least 26 px; Extra large x1.4, at least 30 px). The places stay. */
+.text-large .tab { font-size: 36px; }
+.text-large .round .tip { font-size: 26px; }
+.text-large #topclock { font-size: 31px; }
+.text-large .card .meta { font-size: 30px; }
+.text-large .card.allch .sub { font-size: 29px; }
+.text-large .card.live .num { font-size: 26px; }
+.text-large .card.live .badge { font-size: 26px; }
+.text-large .card.live.big .badge { font-size: 26px; }
+.text-large .card.live .prog { font-size: 36px; }
+.text-large .card.live .timeline .t { font-size: 26px; }
+.text-large .card.live.big .timeline .t { font-size: 29px; }
+.text-large .card.live .left { font-size: 26px; }
+.text-large .tile .word { font-size: 36px; }
+.text-large .row-title { font-size: 30px; }
+.text-large .key .label { font-size: 28px; }
+.text-large .panel .head { font-size: 30px; }
+.text-large .panel .side { font-size: 26px; }
+.text-large #weather .cond { font-size: 35px; }
+.text-large #weather .range { font-size: 28px; }
+.text-large #weather .hour .t { font-size: 26px; }
+.text-large #weather .hour .d { font-size: 31px; }
+.text-large #weather .sun { font-size: 28px; }
+.text-large .cell .label { font-size: 29px; }
+.text-large .box .row { font-size: 36px; }
+.text-large .box .hint { font-size: 26px; }
+.text-large .box .about { font-size: 30px; }
+.text-large #toast { font-size: 31px; }
+.text-large #hero .hmeta { font-size: 32px; }
+.text-large #hero .svc { font-size: 28px; }
+.text-large #hero .story { font-size: 32px; }
+.text-large .ctitle { font-size: 36px; }
+.text-large .item .label { font-size: 28px; }
+.text-large #catalog .msg { font-size: 38px; }
+.text-large .dmeta { font-size: 32px; }
+.text-large .dstory { font-size: 32px; }
+.text-large .dstory.bio { font-size: 30px; }
+.text-large .dsmall { font-size: 26px; }
+.text-large .dbtn { font-size: 36px; }
+.text-large .dlabel { font-size: 36px; }
+.text-large .ditem .dname { font-size: 28px; }
+.text-large .ditem .drole { font-size: 26px; }
+.text-large .dleft { font-size: 26px; }
+.text-large .eppill { font-size: 31px; }
+.text-large .epname { font-size: 36px; }
+.text-large .epmeta { font-size: 26px; }
+.text-large .epstory { font-size: 26px; }
+.text-large .tline { font-size: 36px; }
+.text-large .tsmall { font-size: 29px; }
+.text-xlarge .tab { font-size: 42px; }
+.text-xlarge .round .tip { font-size: 30px; }
+.text-xlarge #topclock { font-size: 36px; }
+.text-xlarge .card .meta { font-size: 35px; }
+.text-xlarge .card.allch .sub { font-size: 34px; }
+.text-xlarge .card.live .num { font-size: 30px; }
+.text-xlarge .card.live .badge { font-size: 30px; }
+.text-xlarge .card.live.big .badge { font-size: 30px; }
+.text-xlarge .card.live .prog { font-size: 42px; }
+.text-xlarge .card.live .timeline .t { font-size: 30px; }
+.text-xlarge .card.live.big .timeline .t { font-size: 34px; }
+.text-xlarge .card.live .left { font-size: 30px; }
+.text-xlarge .tile .word { font-size: 42px; }
+.text-xlarge .row-title { font-size: 35px; }
+.text-xlarge .key .label { font-size: 32px; }
+.text-xlarge .panel .head { font-size: 35px; }
+.text-xlarge .panel .side { font-size: 30px; }
+.text-xlarge #weather .cond { font-size: 41px; }
+.text-xlarge #weather .range { font-size: 32px; }
+.text-xlarge #weather .hour .t { font-size: 31px; }
+.text-xlarge #weather .hour .d { font-size: 36px; }
+.text-xlarge #weather .sun { font-size: 32px; }
+.text-xlarge .cell .label { font-size: 34px; }
+.text-xlarge .box .row { font-size: 42px; }
+.text-xlarge .box .hint { font-size: 31px; }
+.text-xlarge .box .about { font-size: 35px; }
+.text-xlarge #toast { font-size: 36px; }
+.text-xlarge #hero .hmeta { font-size: 38px; }
+.text-xlarge #hero .svc { font-size: 32px; }
+.text-xlarge #hero .story { font-size: 38px; }
+.text-xlarge .ctitle { font-size: 42px; }
+.text-xlarge .item .label { font-size: 32px; }
+.text-xlarge #catalog .msg { font-size: 45px; }
+.text-xlarge .dmeta { font-size: 38px; }
+.text-xlarge .dstory { font-size: 38px; }
+.text-xlarge .dstory.bio { font-size: 35px; }
+.text-xlarge .dsmall { font-size: 30px; }
+.text-xlarge .dbtn { font-size: 42px; }
+.text-xlarge .dlabel { font-size: 42px; }
+.text-xlarge .ditem .dname { font-size: 32px; }
+.text-xlarge .ditem .drole { font-size: 30px; }
+.text-xlarge .dleft { font-size: 31px; }
+.text-xlarge .eppill { font-size: 36px; }
+.text-xlarge .epname { font-size: 42px; }
+.text-xlarge .epmeta { font-size: 31px; }
+.text-xlarge .epstory { font-size: 31px; }
+.text-xlarge .tline { font-size: 42px; }
+.text-xlarge .tsmall { font-size: 34px; }
+
+/* High contrast: the smaller texts in solid colors, no transparency (on the page: dark by day, white at night; on the
+   dark sheets and cards: white). */
+.contrast .tab, .contrast .row-title, .contrast .key .label, .contrast .panel .side, .contrast #hero .hmeta,
+.contrast #hero .story, .contrast .ctitle, .contrast #catalog .msg, .contrast .dmeta, .contrast .dstory,
+.contrast .dline, .contrast .dsmall, .contrast .dnote, .contrast .ditem .drole, .contrast .epmeta,
+.contrast .epstory { color: #0F172A; opacity: 1; }
+.night.contrast .tab, .night.contrast .row-title, .night.contrast .key .label, .night.contrast .panel .side,
+.night.contrast #hero .hmeta, .night.contrast #hero .story, .night.contrast .ctitle, .night.contrast #catalog .msg,
+.night.contrast .dmeta, .night.contrast .dstory, .night.contrast .dline, .night.contrast .dsmall, .night.contrast .dnote,
+.night.contrast .ditem .drole, .night.contrast .epmeta, .night.contrast .epstory { color: #FFF; }
+.contrast .box .about, .contrast .box .hint, .contrast .tsmall, .contrast .card .meta,
+.contrast .card.allch .sub { color: #FFF; opacity: 1; }
+
+/* Stronger focus: a thick yellow frame around whatever has the focus, over every theme and picture. */
+.focus-strong .focus { outline: 6px solid #FACC15; outline-offset: 4px; }
+
+/* Fewer animations: every change at once. */
+.still *, .still *::before, .still *::after { -webkit-transition: none !important; transition: none !important;
+  -webkit-animation: none !important; animation: none !important; }
