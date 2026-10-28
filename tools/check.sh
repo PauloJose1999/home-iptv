@@ -12,10 +12,15 @@ if [ -f HomeIPTV-webos.ipk ]; then cp HomeIPTV-webos.ipk "$kept/"; fi
 trap 'if [ -f "$kept/HomeIPTV-webos.ipk" ]; then mv "$kept/HomeIPTV-webos.ipk" .; else rm -f HomeIPTV-webos.ipk; fi; rm -rf "$kept"' EXIT
 python3 webos/build.py --generic
 
+# web/home.js is built from its parts (web/home/, in _order.txt's order): the checks below read it joined, as the TV.
+mkdir -p out/check
+python3 -c "import sys; sys.path.insert(0, 'tools'); import webapp; open('out/check/home.js', 'wb').write(webapp.home_js())"
+scripts="web/*.js out/check/home.js"
+
 # webOS 3 and 4 run a Chromium from 2015 to 2017: web/ has to be ES5, in syntax...
-for f in web/*.js; do npx --yes acorn@8.14.0 --ecma5 --silent "$f"; done
+for f in $scripts; do npx --yes acorn@8.14.0 --ecma5 --silent "$f"; done
 # ...and in what it calls. These parse fine but don't exist there (wrap a feature check in try, as strings.js does).
-if grep -nE '\.(includes|startsWith|endsWith|padStart|padEnd|repeat|find|findIndex|closest)\(|Object\.(assign|entries|values)\(|Array\.from\(|\bPromise\b|\bfetch\(|new (Map|Set|WeakMap)\b' web/*.js; then
+if grep -nE '\.(includes|startsWith|endsWith|padStart|padEnd|repeat|find|findIndex|closest)\(|Object\.(assign|entries|values)\(|Array\.from\(|\bPromise\b|\bfetch\(|new (Map|Set|WeakMap)\b' $scripts; then
   echo "web/ calls something older TVs don't have (above)." >&2
   exit 1
 fi
@@ -24,7 +29,7 @@ fi
 python3 - <<'PY'
 import re, sys, glob
 bad = []
-for f in sorted(glob.glob('web/*.js')):
+for f in sorted(glob.glob('web/*.js')) + ['out/check/home.js']:
     seen = {}
     for n, line in enumerate(open(f, encoding='utf-8'), 1):
         if re.match(r'^(var |\}\))', line):

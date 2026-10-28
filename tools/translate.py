@@ -105,7 +105,9 @@ def calls():
 
 
 def web_calls():
-    for name in sorted(os.listdir(WEB)):
+    # web/*.js, and the parts web/home.js is built from (web/home/*.js).
+    names = sorted(os.listdir(WEB)) + ["home/" + n for n in sorted(os.listdir(os.path.join(WEB, "home")))]
+    for name in names:
         if not name.endswith(".js") or name == "strings.js":   # strings.js is where the calls are made, not used
             continue
         path = os.path.join(WEB, name)

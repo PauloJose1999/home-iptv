@@ -36,7 +36,8 @@ person's, stay only in that file (git ignores it), are never printed and never c
   `tv/getChannelProgramInfo` returns an empty list on Brazilian open TV, so each channel's program is kept from when it
   was tuned (`guide` in localStorage); `tv/openChannel` switches the tuner but brings the TV's Live TV app to the front
   (and a hidden app's timers stop, so it can't come back by itself).
-- `web/home.js`: the screen. TV aberta has a big card and a small card, plus All channels. Settings choose any channel
+- `web/home.js`: the screen, built from its parts in `web/home/` (joined as they are, in `_order.txt`'s order, by
+  `tools/webapp.py` `home_js()`: one closure, as one file was). Edit the parts, never a `home.js`. TV aberta has a big card and a small card, plus All channels. Settings choose any channel
   for the big card; the small card is restricted to the other kind (antenna or IPTV). Only the focused (or last
   focused) card plays: with a broadcast `<video>` (`service/webos-broadcast`) and an IPTV one playing, the TV shows the
   broadcast black, and two streams pause each other. The other card shows its logo. Antenna retuning goes through the

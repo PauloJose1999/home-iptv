@@ -150,7 +150,7 @@ canais de reserva do card (`live_channels`), o Player IPTV (`iptv_app`) e a chav
 - HTML, CSS e JavaScript simples (ES5, sem bibliotecas) em [`web/`](web), para o Chromium das TVs LG mais antigas.
 - [`web/tv.js`](web/tv.js) fala com a TV: os apps e as entradas pelo barramento da LG (Luna) e, onde o webOS 6+ não
   deixa, pelo controle remoto por rede da própria TV (`ws://127.0.0.1:3000`), que também dá os canais e a programação.
-- [`web/home.js`](web/home.js) é a tela; [`web/channels.js`](web/channels.js), os canais das listas do Player IPTV;
+- [`web/home/`](web/home) é a tela (as partes, na ordem de `_order.txt`, viram um `home.js` no build); [`web/channels.js`](web/channels.js), os canais das listas do Player IPTV;
   [`web/data.js`](web/data.js), as sugestões (TMDB) e o clima (Open-Meteo).
 - [`webos/build.py`](webos/build.py) monta o `.ipk` sem as ferramentas da LG; [`webos/install.py`](webos/install.py)
   instala pelo Developer Mode. `python3 webos/build.py --preview` deixa uma prévia em `out/webos/index.html`.

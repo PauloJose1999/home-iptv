@@ -79,6 +79,24 @@ def catalogues():
     return {lang: {k: v for k, v in sorted(translate.load(lang).items()) if k in keys} for lang in translate.languages()}
 
 
+def home_parts():
+    """The parts of web/home.js, in the order web/home/_order.txt gives (one file name a line; # starts a comment)."""
+    folder = os.path.join(ROOT, 'web', 'home')
+    with open(os.path.join(folder, '_order.txt'), encoding='utf-8') as f:
+        names = [line.strip() for line in f if line.strip() and not line.lstrip().startswith('#')]
+    return [os.path.join(folder, name) for name in names]
+
+
+def home_js():
+    """web/home.js as the app loads it: its parts joined as they are, nothing added between them, so the parts stay
+    one function (one closure) as the file was before it was split."""
+    out = b''
+    for path in home_parts():
+        with open(path, 'rb') as f:
+            out += f.read()
+    return out
+
+
 def files(config, made_by):
     """The web app's files, {path inside the app: bytes}: web/, the settings, the catalogues, the app's symbols and font."""
     out = {}
@@ -88,6 +106,7 @@ def files(config, made_by):
             continue
         with open(os.path.join(web, name), 'rb') as f:
             out[name] = f.read()
+    out['home.js'] = home_js()
     icons = os.path.join(web, 'icons')
     for name in sorted(os.listdir(icons)):
         with open(os.path.join(icons, name), 'rb') as f:
