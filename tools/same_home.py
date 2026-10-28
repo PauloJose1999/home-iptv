@@ -60,6 +60,10 @@ def pieces(text):
         if current is None and is_comment:
             comment.append(line)
             continue
+        if is_comment and indent <= 2 and current and current[0] == 'code':
+            flush()   # a comment right under a statement belongs to what follows it, not to the statement
+            comment.append(line)
+            continue
         if current and current[0] == 'function':
             current = ('function', current[1], current[2] + '\n' + line)
             if line.rstrip() == '  }':

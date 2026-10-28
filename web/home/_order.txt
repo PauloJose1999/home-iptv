@@ -16,4 +16,5 @@
 37-ui-shelfedit.js
 38-ui-saver.js
 home.js
+80-input.js
 90-start.js
