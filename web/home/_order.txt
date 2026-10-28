@@ -3,5 +3,6 @@
 10-rules-shelf.js
 11-rules-live.js
 12-rules-titles.js
+13-rules-settings.js
 home.js
 90-start.js
