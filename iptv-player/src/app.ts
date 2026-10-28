@@ -33,7 +33,7 @@ import { SearchHistoryDropdown } from './components/search-history-dropdown';
 import { showToast } from './components/toast';
 import { showNumberEntry, hideNumberEntry } from './components/number-entry';
 import { ReminderService } from './services/reminder-service';
-import { parseDeepLink, matchTitle, opensWithoutChannels, type DeepLink } from './services/deep-link';
+import { parseDeepLink, matchChannel, matchTitle, opensWithoutChannels, type DeepLink } from './services/deep-link';
 import { LauncherReport, launcherSources } from './services/launcher-report';
 import { loadAllVodStreams, loadAllSeries } from './services/xtream-catalog';
 import { ReminderPrompt } from './components/reminder-prompt';
@@ -1541,15 +1541,22 @@ class App {
     if (link.kind === 'channel') {
       // From its place in the list: channel up and down, the guide and the list work from there. The launcher's
       // stream only when no list here has it.
-      const channel = matchTitle(PlaylistService.channels, link);
+      const match = matchChannel(PlaylistService.channels, link);
+      if (match.ambiguous) {
+        showToast(t('deepLink.channelAmbiguous'));
+        return true;
+      }
+      const channel = match.channel;
       const index = channel ? PlaylistService.channels.indexOf(channel) : -1;
       if (index >= 0) {
         this.launcherReturn = link.from ?? '';
         this.playChannel(index);
         return true;
       }
-      if (link.url) {
-        this.playLinkedStream(link.url, link.title, link.logo ?? '', link.from);
+      const streamUrl = link.url ?? link.channelUrl;
+      if (streamUrl) {
+        showToast(t('deepLink.channelFallback'));
+        this.playLinkedStream(streamUrl, link.title, link.logo ?? '', link.from);
         return true;
       }
       showToast(t('deepLink.notFound', { title: link.title }));
@@ -1633,7 +1640,8 @@ class App {
   private backToLauncher(from: string | undefined, params: Record<string, unknown>): void {
     if (from && isLunaAvailable()) {
       lunaRequest('luna://com.webos.applicationManager/launch', {
-        parameters: { id: from, params: { ...params, iptv: launcherSources(StorageService.getPlaylists()) } },
+        parameters: { id: from, params: { ...params, iptv: launcherSources(StorageService.getPlaylists(),
+          [...StorageService.getManualEpgSources(), ...PlaylistService.epgSources]) } },
         onFailure: (err) => log.warn('Launcher return failed', 'event=deeplink.return.failed', err),
       });
     }

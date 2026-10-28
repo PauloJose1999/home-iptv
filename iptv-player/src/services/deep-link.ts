@@ -17,6 +17,13 @@ export interface DeepLink {
   id?: string;
   /** A channel's stream, played when no playlist here has the channel. */
   url?: string;
+  /** Stable playlist ID shared with the launcher, never a credential. */
+  sourceId?: string;
+  sourceType?: 'xtream' | 'm3u';
+  /** Xtream stream_id, distinct from an EPG channel ID. */
+  streamId?: string;
+  /** Exact M3U stream URL, used with sourceId to distinguish duplicate names. */
+  channelUrl?: string;
   logo?: string;
   /** The launcher's id for the title (TMDB), handed back with the series' progress. */
   tmdbId?: string;
@@ -56,6 +63,13 @@ export function parseDeepLink(raw: unknown): DeepLink | null {
   if (id) out.id = id;
   const url = text(o.url);
   if (/^https?:\/\//i.test(url)) out.url = url;
+  const sourceId = text(o.sourceId);
+  if (sourceId) out.sourceId = sourceId;
+  if (o.sourceType === 'xtream' || o.sourceType === 'm3u') out.sourceType = o.sourceType;
+  const streamId = text(o.streamId);
+  if (streamId) out.streamId = streamId;
+  const channelUrl = text(o.channelUrl);
+  if (/^https?:\/\//i.test(channelUrl)) out.channelUrl = channelUrl;
   const logo = text(o.logo);
   if (/^https?:\/\//i.test(logo)) out.logo = logo;
   const tmdbId = text(o.tmdbId);
@@ -129,6 +143,57 @@ export function matchTitle<T extends Candidate>(
     if (best) return best;
   }
   return null;
+}
+
+export interface ChannelCandidate {
+  name: string;
+  url: string;
+  playlistIds?: readonly string[];
+  xtreamStreamId?: string;
+}
+
+export interface ChannelMatch<T> {
+  channel: T | null;
+  ambiguous: boolean;
+  via: 'identity' | 'url' | 'name' | '';
+}
+
+/** Channel matching is exact: IDs first, then exact URL, then a unique exact normalized name for older launchers. */
+export function matchChannel<T extends ChannelCandidate>(items: readonly T[], link: DeepLink): ChannelMatch<T> {
+  const result = (matches: T[], via: ChannelMatch<T>['via']): ChannelMatch<T> => ({
+    channel: matches.length === 1 ? matches[0] : null,
+    ambiguous: matches.length > 1,
+    via: matches.length ? via : '',
+  });
+  let matches: T[] = [];
+  if (link.sourceType === 'xtream' && link.sourceId && link.streamId) {
+    matches = items.filter(item => item.xtreamStreamId === link.streamId
+      && !!item.playlistIds?.includes(link.sourceId!));
+    if (matches.length) return result(matches, 'identity');
+    return result([], 'identity');
+  }
+  if (link.sourceType === 'm3u' && link.sourceId && link.channelUrl) {
+    matches = items.filter(item => item.url === link.channelUrl && !!item.playlistIds?.includes(link.sourceId!));
+    if (matches.length) return result(matches, 'identity');
+    return result([], 'identity');
+  }
+  if (link.sourceId || link.streamId || link.channelUrl) return result([], 'identity');
+  const url = link.channelUrl || link.url;
+  if (url) {
+    matches = items.filter(item => item.url === url);
+    if (matches.length) return result(matches, 'url');
+  }
+  const wanted = normalizeChannelName(link.title);
+  if (!wanted) return result([], '');
+  matches = items.filter(item => normalizeChannelName(item.name) === wanted);
+  return result(matches, 'name');
+}
+
+function normalizeChannelName(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/\+/g, ' plus ')
+    .replace(/\b(fhd|uhd|hd|sd|4k|8k|1080p|720p|480p)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
 }
 
 /**

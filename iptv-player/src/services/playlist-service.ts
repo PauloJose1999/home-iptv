@@ -92,6 +92,7 @@ function xtreamLivePlaylist(
   const categoryNames = new Map(categories.map(category => [category.id, category.name]));
   const channels: Channel[] = streams.map(stream => ({
     id: stream.epgChannelId || stream.streamId,
+    xtreamStreamId: stream.streamId,
     name: stream.name || stream.streamId,
     logo: stream.icon,
     group: categoryNames.get(stream.categoryId) || UNCATEGORIZED_GROUP,

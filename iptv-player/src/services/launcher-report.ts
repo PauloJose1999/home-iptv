@@ -102,11 +102,21 @@ export const LauncherReport = {
  * (the channel cards, All channels, Sports): an Xtream account or an M3U link.
  */
 export interface LauncherSource {
+  /** Stable playlist identity shared with the launcher; never a credential. */
+  id: string;
   type: 'xtream' | 'm3u';
   name: string;
   url: string;
   user?: string;
   pass?: string;
+  /** An M3U list's XMLTV guides (the ones set up here for it, and the ones it declares), for the Sports tab. */
+  epg?: string[];
+}
+
+/** A guide address and the lists it serves (none: every list), as Settings › Guide sources keeps them. */
+export interface LauncherGuide {
+  url: string;
+  playlistIds: readonly string[];
 }
 
 /**
@@ -114,14 +124,22 @@ export interface LauncherSource {
  * this app alone: the enabled Xtream accounts and M3U links. A file uploaded
  * from a phone lives only here (the launcher can't fetch it) and stays out.
  */
-export function launcherSources(playlists: readonly PlaylistEntry[]): LauncherSource[] {
+export function launcherSources(
+  playlists: readonly PlaylistEntry[],
+  guides: readonly LauncherGuide[] = [],
+): LauncherSource[] {
   const out: LauncherSource[] = [];
   for (const p of playlists) {
     if (p.enabled === false) continue;
     if (p.source === 'xtream' && p.xtream) {
-      out.push({ type: 'xtream', name: p.name, url: p.url, user: p.xtream.username, pass: p.xtream.password });
+      out.push({ id: p.id, type: 'xtream', name: p.name, url: p.url, user: p.xtream.username, pass: p.xtream.password });
     } else if (p.source !== 'upload' && /^https?:\/\//i.test(p.url)) {
-      out.push({ type: 'm3u', name: p.name, url: p.url });
+      const epg: string[] = [];
+      for (const g of guides) {
+        if (!/^https?:\/\//i.test(g.url) || epg.includes(g.url)) continue;
+        if (!g.playlistIds.length || g.playlistIds.includes(p.id)) epg.push(g.url);
+      }
+      out.push({ id: p.id, type: 'm3u', name: p.name, url: p.url, ...(epg.length ? { epg } : {}) });
     }
   }
   return out;

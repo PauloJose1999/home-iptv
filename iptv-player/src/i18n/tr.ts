@@ -133,6 +133,8 @@ export const TR_MESSAGES = {
   'deepLink.searching': '{title} aranıyor…',
   'deepLink.notFound': '{title} bu hesapta yok.',
   'deepLink.noAccount': 'Film ve dizi oynatmak için Ayarlar bölümünden bir Xtream hesabı ekleyin.',
+  'deepLink.channelAmbiguous': 'Birden fazla kanal eşleşiyor. Launcher’dan birini seçin.',
+  'deepLink.channelFallback': 'Bu kanal listede bulunamadı. Doğrudan yayın açılıyor; kanal değiştirme kullanılamayabilir.',
   'catalog.noSeries': 'Bu hesapta dizi yok.',
   'catalog.noSeriesCategory': 'Bu kategoride dizi yok.',
   'catalog.cast': 'Oyuncular',

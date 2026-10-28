@@ -148,6 +148,8 @@ export const RU_MESSAGES = {
   'deepLink.searching': 'Поиск: {title}…',
   'deepLink.notFound': '{title} нет в этом аккаунте.',
   'deepLink.noAccount': 'Добавьте аккаунт Xtream в настройках, чтобы смотреть фильмы и сериалы.',
+  'deepLink.channelAmbiguous': 'Подходят несколько каналов. Выберите один в лаунчере.',
+  'deepLink.channelFallback': 'Канал не найден в списке. Открывается прямая трансляция; переключение каналов может быть недоступно.',
   'catalog.noSeries': 'Для этого аккаунта нет доступных сериалов.',
   'catalog.noSeriesCategory': 'В этой категории нет сериалов.',
   'catalog.cast': 'В ролях',

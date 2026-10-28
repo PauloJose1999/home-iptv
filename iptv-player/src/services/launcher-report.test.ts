@@ -82,8 +82,24 @@ describe('launcherSources', () => {
       { id: 'c', name: 'Do celular', url: 'upload://x', source: 'upload' },
       { id: 'd', name: 'Desligada', url: 'https://example.com/off.m3u', enabled: false },
     ])).toEqual([
-      { type: 'xtream', name: 'Conta', url: 'http://srv:8080', user: 'u', pass: 'p' },
-      { type: 'm3u', name: 'Lista', url: 'https://example.com/list.m3u' },
+      { id: 'a', type: 'xtream', name: 'Conta', url: 'http://srv:8080', user: 'u', pass: 'p' },
+      { id: 'b', type: 'm3u', name: 'Lista', url: 'https://example.com/list.m3u' },
     ]);
+  });
+
+  it("gives each M3U list the guides that serve it (its own and the shared ones), never an Xtream account", () => {
+    const sources = launcherSources([
+      { id: 'a', name: 'Conta', url: 'http://srv:8080', source: 'xtream', xtream: { username: 'u', password: 'p' } },
+      { id: 'b', name: 'Lista', url: 'https://example.com/list.m3u' },
+      { id: 'c', name: 'Outra', url: 'https://example.com/other.m3u' },
+    ], [
+      { url: 'https://example.com/all.xml', playlistIds: [] },
+      { url: 'https://example.com/b.xml', playlistIds: ['b'] },
+      { url: 'https://example.com/b.xml', playlistIds: ['b'] },
+      { url: 'file:///local.xml', playlistIds: [] },
+    ]);
+    expect(sources[0].epg).toBeUndefined();
+    expect(sources[1].epg).toEqual(['https://example.com/all.xml', 'https://example.com/b.xml']);
+    expect(sources[2].epg).toEqual(['https://example.com/all.xml']);
   });
 });

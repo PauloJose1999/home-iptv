@@ -138,6 +138,8 @@ export const DE_MESSAGES = {
   'deepLink.searching': 'Suche {title}…',
   'deepLink.notFound': '{title} ist in diesem Konto nicht verfügbar.',
   'deepLink.noAccount': 'Füge in den Einstellungen ein Xtream-Konto hinzu, um Filme und Serien abzuspielen.',
+  'deepLink.channelAmbiguous': 'Mehrere Sender passen. Wähle einen im Launcher aus.',
+  'deepLink.channelFallback': 'Dieser Sender wurde nicht in der Liste gefunden. Der Direktstream wird geöffnet; der Senderwechsel ist möglicherweise nicht verfügbar.',
   'catalog.noSeries': 'Für dieses Konto sind keine Serien verfügbar.',
   'catalog.noSeriesCategory': 'Keine Serien in dieser Kategorie.',
   'catalog.cast': 'Besetzung',

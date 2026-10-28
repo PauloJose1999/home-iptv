@@ -148,6 +148,8 @@ export const PL_MESSAGES = {
   'deepLink.searching': 'Szukam: {title}…',
   'deepLink.notFound': 'Brak na tym koncie: {title}.',
   'deepLink.noAccount': 'Dodaj konto Xtream w Ustawieniach, aby odtwarzać filmy i seriale.',
+  'deepLink.channelAmbiguous': 'Pasuje kilka kanałów. Wybierz jeden w launcherze.',
+  'deepLink.channelFallback': 'Nie znaleziono kanału na liście. Otwieram bezpośredni strumień; zmiana kanałów może być niedostępna.',
   'catalog.noSeries': 'Brak seriali na tym koncie.',
   'catalog.noSeriesCategory': 'Brak seriali w tej kategorii.',
   'catalog.cast': 'Obsada',

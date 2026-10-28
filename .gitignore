@@ -9,3 +9,5 @@ __pycache__/
 # macOS
 .DS_Store
 tools/.i18n-cache.json
+tools/sports-control/central-state.json
+tools/sports-control/central-state.json.tmp
