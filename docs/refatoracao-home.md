@@ -194,6 +194,9 @@ muda a estrutura da navegação e precisa de aprovação à parte.
    parados até o próximo movimento de foco. *(a confirmar na TV)*
 3. Três funções diferentes normalizam nomes de canais (`plainName`, `Channels.plain` e a do Player); podem dar
    resultados diferentes para o mesmo nome. *(a confirmar)*
+4. O seletor de canal dos cards (Ajustes › Card grande) só abre depois que a lista IPTV responde; com o servidor da
+   conta fora do ar, leva uns 20 segundos (o tempo limite do pedido), embora os canais da antena já estejam prontos.
+   *(visto na TV no passo 12; já era assim antes da refatoração)*
 
 ## 7. Decisão antes do passo 1
 
